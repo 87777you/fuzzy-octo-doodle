@@ -1,0 +1,40 @@
+[tools]
+node = "24"
+pnpm = "10.34.7"
+
+[tasks.install]
+description = "依存関係をロックファイルどおりにインストールする"
+run = "pnpm install --frozen-lockfile"
+
+[tasks.dev]
+description = "frontend と backend を並列に起動する"
+depends = ["install"]
+run = "pnpm -r --parallel --filter ./frontend --filter ./backend dev"
+
+[tasks.typecheck]
+description = "全パッケージの型検査"
+depends = ["install"]
+run = "pnpm -r typecheck"
+
+[tasks.test]
+description = "全パッケージのテスト"
+depends = ["install"]
+run = "pnpm -r test"
+
+[tasks.build]
+description = "全パッケージのビルド（frontend は frontend/dist に静的出力）"
+depends = ["install"]
+run = "pnpm -r build"
+
+[tasks."image:build"]
+description = "backend の OCI イメージをビルドする"
+run = "docker build -f backend/Dockerfile -t hackathon-api:ci ."
+
+[tasks."image:smoke"]
+description = "ビルド済みイメージを起動して /healthz を確認する"
+depends = ["image:build"]
+run = "bash scripts/smoke.sh hackathon-api:ci"
+
+[tasks.ci]
+description = "CI と同じ検証をローカルで実行する"
+depends = ["typecheck", "test", "build", "image:smoke"]
