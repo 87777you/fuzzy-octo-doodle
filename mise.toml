@@ -8,17 +8,17 @@ run = "pnpm install --frozen-lockfile"
 
 [tasks.dev]
 description = "frontend と backend を並列に起動する"
-depends = ["install"]
+depends = ["build"]
 run = "pnpm -r --parallel --filter ./frontend --filter ./backend dev"
 
 [tasks.typecheck]
 description = "全パッケージの型検査"
-depends = ["install"]
+depends = ["build"]
 run = "pnpm -r typecheck"
 
 [tasks.test]
 description = "全パッケージのテスト"
-depends = ["install"]
+depends = ["build"]
 run = "pnpm -r test"
 
 [tasks.build]
