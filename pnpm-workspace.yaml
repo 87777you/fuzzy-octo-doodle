@@ -1,12 +1,11 @@
 packages:
   - frontend
   - backend
-  - packages/*
 
 # 公開から7日未満のバージョンは解決しない（サプライチェーン対策）
 minimumReleaseAge: 10080
 
-# `pnpm deploy`（backend のイメージ作成）で workspace 依存を実体としてコピーする
+# `pnpm deploy`（backend のイメージ作成）に必要
 injectWorkspacePackages: true
 
 onlyBuiltDependencies:

@@ -1,14 +1,12 @@
 import { createServer } from "node:http";
-import { HEALTH_PATH, type HealthResponse } from "@app/shared";
 
 export function createApp() {
   return createServer((req, res) => {
     const path = new URL(req.url ?? "/", "http://localhost").pathname;
 
-    if (req.method === "GET" && path === HEALTH_PATH) {
-      const body: HealthResponse = { status: "ok" };
+    if (req.method === "GET" && path === "/healthz") {
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify(body));
+      res.end(JSON.stringify({ status: "ok" }));
       return;
     }
 

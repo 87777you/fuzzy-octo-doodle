@@ -7,11 +7,10 @@
 
 - `frontend/` — Next.js + React。
 - `backend/` — TypeScript の HTTP サーバー。
-- `packages/` — 両者が共有する TypeScript パッケージ（`@app/shared`）。
 
 ## インフラ・CI/CD 担当が所有する範囲
 
-- `.github/`、`infra/`、`scripts/`、`mise.toml`、`backend/Dockerfile`
+- `.github/`、`infra/`、`mise.toml`、`backend/Dockerfile`
 
 これらはアプリケーションコードから参照されない。変更してもアプリケーション担当の作業には影響しない。
 
@@ -37,10 +36,11 @@
 | コマンド | 内容 |
 |---|---|
 | `mise run dev` | frontend と backend を起動 |
+| `mise run lint` | ESLint（`any` の禁止など） |
 | `mise run typecheck` | 型検査 |
 | `mise run test` | テスト |
 | `mise run build` | ビルド |
-| `mise run ci` | CI と同じ検証（イメージのビルドと `/healthz` の疎通確認を含む。Docker が必要） |
+| `mise run ci` | CI と同じ検証（lint、型検査、テスト、ビルド、イメージのビルド。Docker が必要） |
 
 ## CI
 

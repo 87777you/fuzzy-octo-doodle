@@ -5,12 +5,10 @@ FROM node:24-slim AS build
 WORKDIR /repo
 RUN corepack enable
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
-COPY packages/shared/package.json packages/shared/
 COPY backend/package.json backend/
 RUN pnpm install --frozen-lockfile --filter @app/backend...
-COPY packages/shared packages/shared
 COPY backend backend
-RUN pnpm --filter @app/backend... build
+RUN pnpm --filter @app/backend build
 RUN pnpm --filter @app/backend deploy --prod /out
 
 FROM node:24-slim

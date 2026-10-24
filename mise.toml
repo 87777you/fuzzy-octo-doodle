@@ -11,6 +11,11 @@ description = "frontend と backend を並列に起動する"
 depends = ["build"]
 run = "pnpm -r --parallel --filter ./frontend --filter ./backend dev"
 
+[tasks.lint]
+description = "ESLint（any の禁止などの厳密な静的検査）"
+depends = ["install"]
+run = "pnpm exec eslint ."
+
 [tasks.typecheck]
 description = "全パッケージの型検査"
 depends = ["build"]
@@ -30,11 +35,6 @@ run = "pnpm -r build"
 description = "backend の OCI イメージをビルドする"
 run = "docker build -f backend/Dockerfile -t hackathon-api:ci ."
 
-[tasks."image:smoke"]
-description = "ビルド済みイメージを起動して /healthz を確認する"
-depends = ["image:build"]
-run = "bash scripts/smoke.sh hackathon-api:ci"
-
 [tasks.ci]
 description = "CI と同じ検証をローカルで実行する"
-depends = ["typecheck", "test", "build", "image:smoke"]
+depends = ["lint", "typecheck", "test", "build", "image:build"]

@@ -1,7 +1,7 @@
 import { createApp } from "./app.ts";
 
 // Cloud Run などのコンテナ実行環境は PORT を注入する。
-const port = Number(process.env.PORT ?? 8080);
+const port = Number(process.env["PORT"] ?? 8080);
 const server = createApp();
 
 server.listen(port, "0.0.0.0", () => {
