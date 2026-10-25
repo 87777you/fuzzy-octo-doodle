@@ -1,0 +1,13 @@
+packages:
+  - frontend
+  - backend
+
+# 公開から7日未満のバージョンは解決しない（サプライチェーン対策）
+minimumReleaseAge: 10080
+
+# `pnpm deploy`（backend のイメージ作成）に必要
+injectWorkspacePackages: true
+
+onlyBuiltDependencies:
+  - sharp
+  - unrs-resolver
