@@ -1,0 +1,11 @@
+# フロントエンドのレビュワー
+frontend/ @Satoukk
+
+# バックエンドのレビュワー
+backend/ @AkatukiSora
+.dockerignore @AkatukiSora
+
+# CI/CD、Lintなどその他のレビュワー
+.github/ @AkatukiSora
+eslint.config.mjs @AkatukiSora
+tsconfig.base.json @AkatukiSora
