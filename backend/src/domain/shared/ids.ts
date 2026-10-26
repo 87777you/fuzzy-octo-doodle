@@ -1,5 +1,4 @@
-declare const brand: unique symbol;
-type Brand<T, B> = T & { readonly [brand]: B };
+import type { Brand } from "./brand.ts";
 
 export type UserId = Brand<string, "UserId">;
 export type TaskId = Brand<string, "TaskId">;
