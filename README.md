@@ -24,4 +24,5 @@ mise run ci       # CI と同じ検証（Docker が必要）
 ## ドキュメント
 
 - [docs/tooling.md](docs/tooling.md) — mise でツールを追加する手順と、pnpm の基本的な使い方
+- [docs/backend-architecture.md](docs/backend-architecture.md) — バックエンドの層構成、タスクの状態遷移、実装時の規約
 - [docs/contracts.md](docs/contracts.md) — アプリケーションとインフラ・CI/CD の契約
