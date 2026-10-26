@@ -26,7 +26,7 @@ export interface TaskRepository {
 
   /** 初回未提出(active)の件数 */
   countActiveInitial(tx: Tx, owner: UserId): Promise<number>;
-  /** 同一ユーザーの作成を直列化するロック（PG: pg_advisory_xact_lock / MariaDB: GET_LOCK 等） */
+  /** 同一ユーザーのタスク作成を直列化するロック。製品固有の手段に頼らず、ユーザー行の排他ロックなどで実現する */
   lockUserForCreation(tx: Tx, owner: UserId): Promise<void>;
 
   listByOwner(tx: Tx, q: ListMyTasksQuery): Promise<Page<Task>>;
