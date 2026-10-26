@@ -1,4 +1,4 @@
-import type { Friendship } from "../../domain/friendship/friendship.ts";
+import type { BlockedFriendship, Friendship, PendingFriendship } from "../../domain/friendship/friendship.ts";
 import type { FriendInvite } from "../../domain/friendship/friend-invite.ts";
 import type { FriendshipId, UserId } from "../../domain/shared/ids.ts";
 import type { Tx } from "./unit-of-work.port.ts";
@@ -13,9 +13,9 @@ export interface FriendshipRepository {
   areFriends(tx: Tx, a: UserId, b: UserId): Promise<boolean>;
   countFriends(tx: Tx, user: UserId): Promise<number>;
   listFriendIds(tx: Tx, user: UserId): Promise<UserId[]>;
-  listIncomingPending(tx: Tx, user: UserId): Promise<Friendship[]>;
-  listOutgoingPending(tx: Tx, user: UserId): Promise<Friendship[]>;
-  listBlockedBy(tx: Tx, user: UserId): Promise<Friendship[]>;
+  listIncomingPending(tx: Tx, user: UserId): Promise<PendingFriendship[]>;
+  listOutgoingPending(tx: Tx, user: UserId): Promise<PendingFriendship[]>;
+  listBlockedBy(tx: Tx, user: UserId): Promise<BlockedFriendship[]>;
 }
 export const FRIENDSHIP_REPOSITORY = Symbol("FriendshipRepository");
 

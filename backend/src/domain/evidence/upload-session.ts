@@ -1,122 +1,106 @@
 import { DomainError } from "../shared/errors.ts";
-import { required } from "../shared/invariant.ts";
 import type { TaskId, UploadSessionId, UserId } from "../shared/ids.ts";
-import type { Task } from "../task/task.ts";
+import type { ActiveTask, DisputedTask } from "../task/task.ts";
 import { canStartUploadBy, uploadCompleteBy } from "../task/task-policy.ts";
+import type { PhotoPaths } from "./evidence.ts";
 
 export type SubmissionType = "initial" | "additional";
-export type UploadSessionStatus = "uploading" | "completed" | "expired" | "cancelled";
 
-export interface UploadSessionProps {
+type SessionBase<T extends SubmissionType> = Readonly<{
   id: UploadSessionId;
   taskId: TaskId;
   userId: UserId;
-  submissionType: SubmissionType;
+  submissionType: T;
   startedAt: Date;
   uploadExpiresAt: Date;
-  status: UploadSessionStatus;
-  completedAt: Date | null;
+}>;
+
+type UploadingOf<T extends SubmissionType> = SessionBase<T> & Readonly<{ status: "uploading" }>;
+export type UploadingSession<T extends SubmissionType = SubmissionType> = T extends SubmissionType
+  ? UploadingOf<T>
+  : never;
+export type CompletedSession = SessionBase<SubmissionType> &
+  Readonly<{ status: "completed"; completedAt: Date }>;
+export type ClosedSession = SessionBase<SubmissionType> & Readonly<{ status: "expired" | "cancelled" }>;
+export type UploadSession = UploadingSession | CompletedSession | ClosedSession;
+
+/** 写真パスはセッション配下に限定する（他人のオブジェクトを流用させない） */
+export const photoPathPrefix = (taskId: TaskId, sessionId: UploadSessionId): string =>
+  `evidence/${taskId}/${sessionId}/`;
+
+function start<T extends SubmissionType>(
+  id: UploadSessionId,
+  task: ActiveTask | DisputedTask,
+  userId: UserId,
+  type: T,
+  baseDeadline: Date,
+  now: Date,
+): UploadingSession<T> {
+  if (task.ownerId !== userId) throw new DomainError("FORBIDDEN", "本人のタスクのみ証拠を提出できます");
+  if (!canStartUploadBy(baseDeadline, now))
+    throw new DomainError("DEADLINE_EXPIRED", "提出期限を過ぎています");
+  const s: UploadingOf<T> = {
+    id,
+    taskId: task.id,
+    userId,
+    submissionType: type,
+    startedAt: now,
+    uploadExpiresAt: uploadCompleteBy(baseDeadline),
+    status: "uploading",
+  };
+  return s as UploadingSession<T>;
 }
 
-export const MIN_PHOTOS = 1;
-export const MAX_PHOTOS = 3;
+/** 初回証拠のアップロード開始。期限ちょうどは有効。完了期限は 期限 + 5分 */
+export function startInitialUpload(
+  id: UploadSessionId,
+  task: ActiveTask,
+  userId: UserId,
+  now: Date,
+): UploadingSession<"initial"> {
+  return start(id, task, userId, "initial", task.deadlineAt, now);
+}
 
-export class UploadSession {
-  private props: UploadSessionProps;
-  private constructor(props: UploadSessionProps) {
-    this.props = props;
-  }
+/** 追加証拠のアップロード開始。追加証拠待ち（disputed）のタスクだけを受け付ける */
+export function startAdditionalUpload(
+  id: UploadSessionId,
+  task: DisputedTask,
+  userId: UserId,
+  now: Date,
+): UploadingSession<"additional"> {
+  return start(id, task, userId, "additional", task.additionalEvidenceDeadlineAt, now);
+}
 
-  /** 期限内にアップロード開始を受理した場合のみ作成できる。完了期限は 本来の期限 + 5分 */
-  static start(
-    id: UploadSessionId,
-    task: Task,
-    userId: UserId,
-    type: SubmissionType,
-    now: Date,
-  ): UploadSession {
-    if (task.ownerId !== userId) throw new DomainError("FORBIDDEN", "本人のタスクのみ証拠を提出できます");
+/** 入力の配列を 1〜3 枚のタプルに絞り、セッション配下のパスだけを許可する */
+export function parsePhotoPaths(session: UploadingSession, paths: readonly string[]): PhotoPaths {
+  if (paths.length < 1 || paths.length > 3 || new Set(paths).size !== paths.length) {
+    throw new DomainError("INVALID_EVIDENCE_COUNT", "証拠写真は1〜3枚で指定してください");
+  }
+  const prefix = photoPathPrefix(session.taskId, session.id);
+  if (!paths.every((p) => p.startsWith(prefix))) {
+    throw new DomainError("VALIDATION_ERROR", "不正な写真パスが含まれています");
+  }
+  return paths as unknown as PhotoPaths;
+}
 
-    let baseDeadline: Date;
-    if (type === "initial") {
-      if (task.status !== "active")
-        throw new DomainError("STATE_CONFLICT", "初回証拠を提出できる状態ではありません");
-      baseDeadline = task.deadlineAt;
-    } else {
-      if (task.status !== "disputed")
-        throw new DomainError("STATE_CONFLICT", "追加証拠を提出できる状態ではありません");
-      baseDeadline = required(task.additionalEvidenceDeadlineAt, "additionalEvidenceDeadlineAt");
-    }
-    if (!canStartUploadBy(baseDeadline, now))
-      throw new DomainError("DEADLINE_EXPIRED", "提出期限を過ぎています");
+/** 完了。uploading 状態のセッションだけを受け取る */
+export function completeUpload(session: UploadingSession, userId: UserId, now: Date): CompletedSession {
+  if (session.userId !== userId) throw new DomainError("FORBIDDEN", "このセッションは利用できません");
+  if (now.getTime() > session.uploadExpiresAt.getTime()) {
+    throw new DomainError("DEADLINE_EXPIRED", "アップロード完了期限を過ぎています");
+  }
+  return { ...session, status: "completed", completedAt: now };
+}
 
-    return new UploadSession({
-      id,
-      taskId: task.snapshot().id,
-      userId,
-      submissionType: type,
-      startedAt: now,
-      uploadExpiresAt: uploadCompleteBy(baseDeadline),
-      status: "uploading",
-      completedAt: null,
-    });
-  }
+/** 完了期限を過ぎた uploading を expired にする（ジョブ用・冪等）。まだなら null */
+export function expireUpload(session: UploadingSession, now: Date): ClosedSession | null {
+  if (now.getTime() <= session.uploadExpiresAt.getTime()) return null;
+  return { ...session, status: "expired" };
+}
 
-  static reconstitute(props: UploadSessionProps): UploadSession {
-    return new UploadSession({ ...props });
+export function expectUploading(session: UploadSession): UploadingSession {
+  if (session.status !== "uploading") {
+    throw new DomainError("STATE_CONFLICT", "このアップロードセッションは完了できません");
   }
-
-  /** 写真のStorage上のパスはセッション配下に限定する（他人のオブジェクトを流用させない） */
-  static pathPrefix(taskId: TaskId, sessionId: UploadSessionId): string {
-    return `evidence/${taskId}/${sessionId}/`;
-  }
-
-  assertCompletable(userId: UserId, photoPaths: readonly string[], now: Date): void {
-    if (this.props.userId !== userId) throw new DomainError("FORBIDDEN", "このセッションは利用できません");
-    if (this.props.status !== "uploading")
-      throw new DomainError("STATE_CONFLICT", "このアップロードセッションは完了できません");
-    if (now.getTime() > this.props.uploadExpiresAt.getTime())
-      throw new DomainError("DEADLINE_EXPIRED", "アップロード完了期限を過ぎています");
-    if (
-      photoPaths.length < MIN_PHOTOS ||
-      photoPaths.length > MAX_PHOTOS ||
-      new Set(photoPaths).size !== photoPaths.length
-    ) {
-      throw new DomainError("INVALID_EVIDENCE_COUNT", "証拠写真は1〜3枚で指定してください");
-    }
-    const prefix = UploadSession.pathPrefix(this.props.taskId, this.props.id);
-    if (!photoPaths.every((p) => p.startsWith(prefix))) {
-      throw new DomainError("VALIDATION_ERROR", "不正な写真パスが含まれています");
-    }
-  }
-
-  complete(now: Date): void {
-    this.props.status = "completed";
-    this.props.completedAt = now;
-  }
-
-  /** 完了期限を過ぎた uploading を expired にする（ジョブ用・冪等） */
-  expireIfStale(now: Date): boolean {
-    if (this.props.status === "uploading" && now.getTime() > this.props.uploadExpiresAt.getTime()) {
-      this.props.status = "expired";
-      return true;
-    }
-    return false;
-  }
-
-  get id(): UploadSessionId {
-    return this.props.id;
-  }
-  get taskId(): TaskId {
-    return this.props.taskId;
-  }
-  get submissionType(): SubmissionType {
-    return this.props.submissionType;
-  }
-  get uploadExpiresAt(): Date {
-    return this.props.uploadExpiresAt;
-  }
-  snapshot(): Readonly<UploadSessionProps> {
-    return { ...this.props };
-  }
+  return session;
 }

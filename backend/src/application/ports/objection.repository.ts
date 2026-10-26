@@ -9,10 +9,10 @@ export interface ObjectionRepository {
    * @returns 挿入できたら true、既に枠が使われていれば false（取り下げ済みでも false のまま）。
    * 事前 SELECT での判定は禁止（競合するため）。
    */
-  tryInsert(tx: Tx, o: Objection): Promise<boolean>;
+  tryInsert(tx: Tx, o: Objection<1 | 2, "open">): Promise<boolean>;
   findById(tx: Tx, id: ObjectionId): Promise<Objection | null>;
   findByTaskAndRound(tx: Tx, taskId: TaskId, round: 1 | 2): Promise<Objection | null>;
-  save(tx: Tx, o: Objection): Promise<void>; // withdrawn_at の更新
+  save(tx: Tx, o: Objection<1, "withdrawn">): Promise<void>; // withdrawn_at の更新
   /** 自分が申し立てた異議（全期間） */
   listByObjector(
     tx: Tx,

@@ -19,15 +19,6 @@ export function assertDeadlineInRange(deadline: Date, now: Date): void {
   }
 }
 
-export function assertPenaltyAmount(amount: number): void {
-  if (!Number.isInteger(amount) || amount < PENALTY_MIN || amount > PENALTY_MAX) {
-    throw new DomainError(
-      "VALIDATION_ERROR",
-      `ペナルティ金額は${String(PENALTY_MIN)}〜${String(PENALTY_MAX)}円の整数で指定してください`,
-    );
-  }
-}
-
 /** 初回証拠未提出（active）が3件以上なら作成不可。呼び出し側がロック下で件数を渡す */
 export function assertCanCreateTask(activeInitialCount: number): void {
   if (activeInitialCount >= MAX_PENDING_INITIAL_TASKS) {
