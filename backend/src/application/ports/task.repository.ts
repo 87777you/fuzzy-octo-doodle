@@ -19,6 +19,7 @@ export interface Page<T> {
 export interface TaskRepository {
   insert(tx: Tx, task: ActiveTask): Promise<void>;
   findById(tx: Tx, id: TaskId): Promise<Task | null>;
+  findByIds(tx: Tx, ids: readonly TaskId[]): Promise<Task[]>;
   /** SELECT ... FOR UPDATE。状態を変更する全ユースケースは必ずこれで取得する */
   findByIdForUpdate(tx: Tx, id: TaskId): Promise<Task | null>;
   save(tx: Tx, task: Task): Promise<void>;

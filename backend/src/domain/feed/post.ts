@@ -1,6 +1,7 @@
 import type { PostId, TaskId, UserId } from "../shared/ids.ts";
 
-export type PostType = "created" | "reported" | "failed";
+export const POST_TYPES = ["created", "reported", "failed"] as const;
+export type PostType = (typeof POST_TYPES)[number];
 export const REACTION_TYPES = ["support", "fire", "congrats", "laugh"] as const;
 export type ReactionType = (typeof REACTION_TYPES)[number];
 

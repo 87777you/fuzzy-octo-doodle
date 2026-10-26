@@ -1,6 +1,7 @@
 /** 不透明なトランザクションハンドル。実装（infra）だけが中身を知る */
+declare const txBrand: unique symbol;
 export interface Tx {
-  readonly __tx: unique symbol;
+  readonly [txBrand]: true;
 }
 
 export interface UnitOfWork {

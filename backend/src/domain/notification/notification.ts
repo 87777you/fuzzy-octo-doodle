@@ -1,11 +1,13 @@
 import type { NotificationId, TaskId, UserId } from "../shared/ids.ts";
 
-export type NotificationType =
-  | "friend_request"
-  | "objection_received" // 所有者へ: 異議が成立し追加証拠待ち
-  | "objection_withdrawn" // 所有者へ: 取り下げにより達成
-  | "additional_evidence_submitted" // 申立人へ
-  | "judgement_finalized";
+export const NOTIFICATION_TYPES = [
+  "friend_request",
+  "objection_received", // 所有者へ: 異議が成立し追加証拠待ち
+  "objection_withdrawn", // 所有者へ: 取り下げにより達成
+  "additional_evidence_submitted", // 申立人へ
+  "judgement_finalized",
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export interface Notification {
   readonly id: NotificationId;
