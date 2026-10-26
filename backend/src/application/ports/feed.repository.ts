@@ -5,7 +5,9 @@ import type { Tx } from "./unit-of-work.port.ts";
 
 export interface FeedQuery {
   viewer: UserId;
-  filter: "all" | "objected"; // all: 直近7日 / objected: 自分が異議を申し立てたタスク（期間制限なし）
+  filter: "all" | "objected"; // all: since 以降 / objected: 自分が異議を申し立てたタスク（期間制限なし）
+  /** filter が "all" のときの対象期間の開始時刻（直近7日 = now - FEED_WINDOW_DAYS） */
+  since: Date;
   cursor?: string;
   limit: number;
 }
@@ -24,6 +26,7 @@ export interface PostRepository {
   findById(tx: Tx, id: PostId): Promise<Post | null>;
   /** viewer の承認済みフレンドの投稿のみ。自分の投稿は含めない。新しい順 */
   listFeed(tx: Tx, q: FeedQuery): Promise<Page<FeedItem>>;
+  /** 本人またはフレンドの投稿のみ返す（それ以外は null） */
   findFeedItem(tx: Tx, id: PostId, viewer: UserId): Promise<FeedItem | null>;
   hasPost(tx: Tx, taskId: TaskId, type: PostType): Promise<boolean>;
 }
