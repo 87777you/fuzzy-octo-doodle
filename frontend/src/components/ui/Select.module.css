@@ -1,0 +1,91 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.required {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fff0f0;
+  color: var(--color-danger);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.optional {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.selectWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.select {
+  appearance: none;
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 40px 12px 14px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+
+.select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(121 85 199 / 10%);
+}
+
+.select.error {
+  border-color: var(--color-danger);
+}
+
+.select:disabled {
+  background: var(--color-background-secondary);
+  cursor: not-allowed;
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  color: var(--color-text-secondary);
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.helperText,
+.errorText {
+  margin: 0;
+  font-size: 12px;
+}
+
+.helperText {
+  color: var(--color-text-secondary);
+}
+
+.errorText {
+  color: var(--color-danger);
+}

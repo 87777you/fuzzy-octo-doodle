@@ -1,0 +1,44 @@
+.card {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: var(--radius-lg);
+}
+
+/* 白背景の基本カード */
+.default {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+}
+
+/* 枠線付きカード */
+.outlined {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+}
+
+/* 問い合わせ情報などの薄紫カード */
+.tinted {
+  background-color: #f7f5ff;
+  border: 1px solid transparent;
+}
+
+/* プロフィールなどの淡いベージュカード */
+.warm {
+  background-color: #f8f5f1;
+  border: 1px solid transparent;
+}
+
+/* 内側の余白 */
+.sm {
+  padding: var(--spacing-sm);
+}
+
+.md {
+  padding: var(--spacing-md);
+}
+
+.lg {
+  padding: var(--spacing-lg);
+}

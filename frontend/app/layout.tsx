@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import "../src/styles/variables.css";
+
 export const metadata = {
   title: "fuzzy-octo-doodle",
 };

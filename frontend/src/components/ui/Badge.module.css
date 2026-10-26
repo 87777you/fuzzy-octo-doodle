@@ -1,0 +1,55 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  gap: 4px;
+  border-radius: 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sm {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.md {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+/* 挑戦中・確認中など */
+.primary {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* 達成 */
+.success {
+  background-color: #e8f8ef;
+  color: var(--color-success);
+}
+
+/* 期限間近・確認待ち */
+.warning {
+  background-color: #fff0e4;
+  color: #e87816;
+}
+
+/* 期限切れ・未達成 */
+.danger {
+  background-color: #fff0f0;
+  color: var(--color-danger);
+}
+
+/* 未確定・終了など */
+.neutral {
+  background-color: #f1f1f5;
+  color: var(--color-text-secondary);
+}
+/* 審査中 */
+.review {
+  background-color: #eaf3ff;
+  color: #3784e8;
+}

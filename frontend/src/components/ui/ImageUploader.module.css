@@ -1,0 +1,134 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.label {
+  color: #101a33;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.required {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #fff0f0;
+  color: var(--color-danger);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.description {
+  margin: 0;
+  color: #9298b2;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.slot {
+  position: relative;
+  aspect-ratio: 1 / 1.1;
+  min-width: 0;
+  overflow: hidden;
+  border: 1.5px dashed #d5cdef;
+  border-radius: 10px;
+  background: #faf9ff;
+}
+
+.selectButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 12px 4px;
+  border: none;
+  background: transparent;
+  color: #9274ed;
+  cursor: pointer;
+}
+
+.selectButton span {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.selectButton:hover {
+  background: #f3edff;
+}
+
+.selectButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.number {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  width: 100%;
+  color: #999fbd;
+  font-size: 11px !important;
+  text-align: center;
+}
+
+.filled {
+  border-style: solid;
+  border-color: var(--color-border);
+  background: white;
+}
+
+.preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.removeButton {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 65%);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.removeButton:hover {
+  background: var(--color-danger);
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 12px;
+}

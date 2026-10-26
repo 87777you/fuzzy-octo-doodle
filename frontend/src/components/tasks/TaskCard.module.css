@@ -1,0 +1,153 @@
+.card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+}
+
+.statusIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 21px;
+  font-weight: 600;
+}
+
+.active {
+  background: #f8f8fa;
+  color: #999;
+}
+
+.reviewing {
+  background: #eaf3ff;
+  color: #3784e8;
+}
+
+.disputed {
+  background: #fff0e4;
+  color: #e87816;
+}
+
+.success {
+  background: #e8f8ef;
+  color: #22a06b;
+}
+
+.failed {
+  background: #fff0f0;
+  color: #dc4545;
+}
+
+.indeterminate,
+.closed {
+  background: #f1f1f5;
+  color: #777;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title,
+.titleButton {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #303044;
+  overflow-wrap: anywhere;
+}
+
+.titleButton {
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.titleButton:hover {
+  color: var(--color-primary);
+}
+
+.description {
+  margin: 5px 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-secondary);
+}
+
+.remainingTime {
+  color: #e87816;
+  font-weight: 600;
+}
+
+.reviewTime {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f1f1f5;
+  color: #777;
+  font-weight: 600;
+}
+
+.menuButton {
+  flex-shrink: 0;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.menuButton:hover {
+  color: var(--color-primary);
+}
+
+@media (max-width: 480px) {
+  .card {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .heading {
+    flex-wrap: wrap;
+  }
+
+  .statusIcon {
+    width: 32px;
+    height: 32px;
+  }
+}
