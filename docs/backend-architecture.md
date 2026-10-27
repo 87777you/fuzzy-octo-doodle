@@ -90,7 +90,7 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 | `infrastructure/db/repositories/` | 各 `*Repository` の実装 |
 | `infrastructure/db/unit-of-work.ts` | `UnitOfWork` の実装 |
 | `infrastructure/db/errors.ts` | 一意制約違反の判定と、重複を許容する INSERT |
-| `infrastructure/db/cloud-sql.ts` | Cloud SQL への IAM 認証接続 |
+| `infrastructure/db/postgres.ts` | 環境変数（または `_FILE` で指すファイル）から読む PostgreSQL の接続設定と Dialect |
 | `infrastructure/storage/` | `ObjectStorage` の実装 |
 | `infrastructure/payment/` | `PaymentGateway` のモック実装 |
 | `infrastructure/system/` | `Clock` と `IdGenerator` の実装 |
@@ -389,9 +389,14 @@ domain と application は `DomainError`（`code`、`message`、`details`）を�
 
 ## DB
 
-- DB は Cloud SQL for PostgreSQL（シングルインスタンス）、クエリビルダーは Kysely を使う。
-- 接続は IAM 認証で行い、パスワードは持たない。Cloud Run のサービスアカウントを IAM データベースユーザーとして登録する。
-- 製品に依存するのは接続の `Dialect` だけである。別の製品に変える場合は、`cloud-sql.ts` の差し替えと `migrations/` の書き直しで対応する。
+- DB は PostgreSQL、クエリビルダーは Kysely を使う。
+- 接続先と認証情報は環境変数で渡す。各項目は `NAME`（値そのもの）または `NAME_FILE`（値を書いたファイルのパス。Secret のマウントなど）で指定できる。両方の指定はエラーにする。
+  - `DATABASE_HOST`、`DATABASE_NAME`、`DATABASE_USER`、`DATABASE_PASSWORD`: 必須
+  - `DATABASE_PORT`: 既定は 5432
+  - `DATABASE_SSL_MODE`: `disable`（既定）、`require`、`verify-full`。`verify-full` では `DATABASE_SSL_CA`（PEM）で CA を指定できる
+  - `DATABASE_POOL_MAX`: 既定は 10
+- 起動時に `loadPostgresConfig(process.env)` で 1 回だけ検証し、`createPostgresDialect` で Dialect を作る。
+- 製品に依存するのは接続の `Dialect` だけである。別の製品に変える場合は、`postgres.ts` の差し替えと `migrations/` の書き直しで対応する。
 - テーブルの定義は `infrastructure/db/schema.ts` を正とし、`migrations/` の SQL と対応させる。
 
 ## 要件に対する判断

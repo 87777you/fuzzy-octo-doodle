@@ -1,3 +1,10 @@
+import { IDEMPOTENT_RESPONSE_STATUSES, parseRequestHash } from "../../../domain/shared/idempotency.ts";
+import type {
+  IdempotencyKey,
+  IdempotentOperation,
+  IdempotentResponseStatus,
+  RequestHash,
+} from "../../../domain/shared/idempotency.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import type {
   IdempotencyRecord,
@@ -5,6 +12,7 @@ import type {
 } from "../../../application/ports/idempotency.repository.ts";
 import type { Tx } from "../../../application/ports/unit-of-work.port.ts";
 import { insertUnlessDuplicate } from "../errors.ts";
+import { oneOfNumber, parsedColumn } from "../mappers/common.ts";
 import { dbOf } from "../tx.ts";
 
 export class KyselyIdempotencyRepository implements IdempotencyRepository {
@@ -15,9 +23,9 @@ export class KyselyIdempotencyRepository implements IdempotencyRepository {
   async reserve(
     tx: Tx,
     user: UserId,
-    operation: string,
-    key: string,
-    requestHash: string,
+    operation: IdempotentOperation,
+    key: IdempotencyKey,
+    requestHash: RequestHash,
     now: Date,
   ): Promise<IdempotencyRecord | null> {
     const inserted = await insertUnlessDuplicate(tx, (q) =>
@@ -45,10 +53,25 @@ export class KyselyIdempotencyRepository implements IdempotencyRepository {
       .executeTakeFirst();
     if (row === undefined) return null;
     const body: unknown = row.response_body === null ? null : JSON.parse(row.response_body);
-    return { requestHash: row.request_hash, responseStatus: row.response_status, responseBody: body };
+    const table = "idempotency_requests";
+    return {
+      requestHash: parsedColumn(parseRequestHash, row.request_hash, table, "request_hash"),
+      responseStatus:
+        row.response_status === null
+          ? null
+          : oneOfNumber(IDEMPOTENT_RESPONSE_STATUSES, row.response_status, table, "response_status"),
+      responseBody: body,
+    };
   }
 
-  async complete(tx: Tx, user: UserId, operation: string, key: string, status: number, body: unknown): Promise<void> {
+  async complete(
+    tx: Tx,
+    user: UserId,
+    operation: IdempotentOperation,
+    key: IdempotencyKey,
+    status: IdempotentResponseStatus,
+    body: unknown,
+  ): Promise<void> {
     await dbOf(tx)
       .updateTable("idempotency_requests")
       .set({ response_status: status, response_body: JSON.stringify(body) })

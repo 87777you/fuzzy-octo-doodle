@@ -1,13 +1,16 @@
+import { parseStoragePath } from "../../../domain/shared/storage-path.ts";
+import type { StoragePath } from "../../../domain/shared/storage-path.ts";
 import type { Evidence, PhotoPaths } from "../../../domain/evidence/evidence.ts";
 import type { CompletedSession, UploadSession } from "../../../domain/evidence/upload-session.ts";
 import type { EvidencePhotosTable, EvidenceUploadSessionsTable, Row, TaskEvidencesTable } from "../schema.ts";
-import { CorruptRowError, nonNull, oneOf } from "./common.ts";
+import { CorruptRowError, nonNull, oneOf, parsedColumn } from "./common.ts";
 import { evidenceId, taskId, uploadSessionId, userId } from "./ids.ts";
 
 const SUBMISSION_TYPES = ["initial", "additional"] as const;
 
 /** display_order 昇順の配列から 1〜3 要素のタプルを作る */
-function toPhotoPaths(paths: string[], evidence: string): PhotoPaths {
+function toPhotoPaths(rawPaths: string[], evidence: string): PhotoPaths {
+  const paths: StoragePath[] = rawPaths.map((p) => parsedColumn(parseStoragePath, p, "evidence_photos", "storage_path"));
   const [a, b, c] = paths;
   if (a === undefined || paths.length > 3) {
     throw new CorruptRowError("evidence_photos", `${evidence}: 写真は1〜3枚`);

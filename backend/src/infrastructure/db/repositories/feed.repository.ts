@@ -21,19 +21,21 @@ async function hydrate(tx: Tx, posts: Row<PostsTable>[], viewer: UserId): Promis
   if (posts.length === 0) return [];
   const q = dbOf(tx);
   const ids = posts.map((p) => p.id);
-  const counts = await q
+  // 2 つのクエリは互いに独立しているので、先に両方を発行してから結果を待つ
+  const countsQuery = q
     .selectFrom("reactions")
     .select(["post_id", "reaction_type"])
     .select((eb) => eb.fn.countAll<string | number | bigint>().as("c"))
     .where("post_id", "in", ids)
     .groupBy(["post_id", "reaction_type"])
     .execute();
-  const mine = await q
+  const mineQuery = q
     .selectFrom("reactions")
     .select(["post_id", "reaction_type"])
     .where("post_id", "in", ids)
     .where("user_id", "=", viewer)
     .execute();
+  const [counts, mine] = await Promise.all([countsQuery, mineQuery]);
   return posts.map((p) => {
     const reactionCounts = Object.fromEntries(REACTION_TYPES.map((t) => [t, 0])) as Record<ReactionType, number>;
     for (const c of counts) if (c.post_id === p.id) reactionCounts[asReactionType(c.reaction_type)] = toNumber(c.c);

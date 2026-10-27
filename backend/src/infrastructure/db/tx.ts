@@ -4,12 +4,27 @@ import type { Database } from "./schema.ts";
 
 export type DbTransaction = ControlledTransaction<Database>;
 
-/** application 層に渡す不透明な Tx にする。infrastructure 内でここだけが型を作る */
-export function wrapTx(trx: DbTransaction): Tx {
-  return trx as unknown as Tx;
+/** Kysely のトランザクションを包む実体。application 層には不透明な Tx として渡る */
+class KyselyTx {
+  readonly transaction: DbTransaction;
+
+  constructor(transaction: DbTransaction) {
+    this.transaction = transaction;
+  }
 }
 
-/** repository 実装がクエリを実行するためにハンドルを取り出す */
+/**
+ * application 層に渡す不透明な Tx にする。
+ * Tx のブランドはポート側で非公開のため、型の上では変換が必要になる。変換するのはここだけ。
+ */
+export function wrapTx(trx: DbTransaction): Tx {
+  return new KyselyTx(trx) as unknown as Tx;
+}
+
+/** repository 実装がクエリを実行するためにハンドルを取り出す。wrapTx で作った Tx 以外は拒否する */
 export function dbOf(tx: Tx): DbTransaction {
-  return tx as unknown as DbTransaction;
+  if (!(tx instanceof KyselyTx)) {
+    throw new TypeError("Tx は KyselyUnitOfWork が発行したものを使ってください");
+  }
+  return tx.transaction;
 }
