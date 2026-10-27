@@ -6,18 +6,7 @@ import { CLOCK } from "../../../application/ports/clock.port.ts";
 import type { Clock } from "../../../application/ports/clock.port.ts";
 import { NOTIFICATION_REPOSITORY } from "../../../application/ports/notification.repository.ts";
 import type { NotificationRepository } from "../../../application/ports/notification.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** MarkNotificationReadUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface MarkNotificationReadInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-  /** /api/notifications/:id/read の path parameter。Controller が Zod で ID 形式を検証した文字列である。 */
-  notificationId: string;
-}
-
-/** 既読更新後の本文はなく、Controller は204を返す。 */
-export type MarkNotificationReadOutput = null;
+import type { MarkNotificationReadInput } from "../../ports/usecases/mark-notification-read.port.ts";
 
 /**
  * 責務: 利用者本人の指定通知を未読から既読に更新する。他人の通知や存在しない通知の有無は知らせない。
@@ -62,7 +51,7 @@ export class MarkNotificationReadUseCase {
    * 利用者本人の指定通知を未読から既読に更新する。他人の通知や存在しない通知の有無は知らせない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: MarkNotificationReadInput): Promise<MarkNotificationReadOutput> {
+  execute(_input: MarkNotificationReadInput): Promise<null> {
     return todo("MarkNotificationReadUseCase");
   }
 }

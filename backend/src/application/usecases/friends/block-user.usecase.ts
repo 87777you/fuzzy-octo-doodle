@@ -8,18 +8,7 @@ import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.rep
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import { ID_GENERATOR } from "../../../application/ports/id-generator.port.ts";
 import type { IdGenerator } from "../../../application/ports/id-generator.port.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** BlockUserUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface BlockUserInput {
-  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
-  userId: UserId;
-  /** URL の :userId から得るブロック対象 ID。controller で UUID 形式を検証した値である。 */
-  targetUserId: string;
-}
-
-/** 本文を持たない成功を示す null。controller は HTTP 204 を返す。 */
-export type BlockUserOutput = null;
+import type { BlockUserInput } from "../../ports/usecases/block-user.port.ts";
 
 /**
  * 責務: 指定した相手との関係を blocked 状態にする。既存関係の有無を応答で区別せず、ブロック対象の存在を列挙する機能も持たない。
@@ -70,7 +59,7 @@ export class BlockUserUseCase {
    * 指定した相手との関係を blocked 状態にする。既存関係の有無を応答で区別せず、ブロック対象の存在を列挙する機能も持たない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: BlockUserInput): Promise<BlockUserOutput> {
+  execute(_input: BlockUserInput): Promise<null> {
     return todo("BlockUserUseCase");
   }
 }

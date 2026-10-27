@@ -7,18 +7,7 @@ import type { Clock } from "../../../application/ports/clock.port.ts";
 import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
 import type { User } from "../../../domain/user/user.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** UpdateMeUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface UpdateMeInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-  /** PATCH body の nickname。Controller が文字列形式を検証し、parseNickname が長さと空文字を検証する。 */
-  nickname: string;
-}
-
-/** ニックネームと updatedAt を更新した User。 */
-export type UpdateMeOutput = User;
+import type { UpdateMeInput } from "../../ports/usecases/update-me.port.ts";
 
 /**
  * 責務: 認証利用者本人のニックネームを検証して更新する。認証情報や他利用者のプロフィールは変更しない。
@@ -65,7 +54,7 @@ export class UpdateMeUseCase {
    * 認証利用者本人のニックネームを検証して更新する。認証情報や他利用者のプロフィールは変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: UpdateMeInput): Promise<UpdateMeOutput> {
+  execute(_input: UpdateMeInput): Promise<User> {
     return todo("UpdateMeUseCase");
   }
 }

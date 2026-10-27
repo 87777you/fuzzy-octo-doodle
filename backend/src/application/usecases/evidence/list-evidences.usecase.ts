@@ -1,3 +1,4 @@
+import type { EvidenceListResult } from "../../ports/usecases/list-evidences.port.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -10,35 +11,7 @@ import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.rep
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import { OBJECT_STORAGE } from "../../../application/ports/object-storage.port.ts";
 import type { ObjectStorage } from "../../../application/ports/object-storage.port.ts";
-import type { SubmissionType } from "../../../domain/evidence/upload-session.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** タスクに紐づく証拠項目の一覧。 */
-export interface EvidenceListResult {
-  /** 保存済み証拠を EvidenceListItem に変換した一覧。 */
-  evidences: readonly EvidenceListItem[];
-}
-
-/** 1 回分の初回または追加証拠と、その写真の閲覧 URL。 */
-export interface EvidenceListItem {
-  /** initial は初回提出、additional は追加提出を表す。 */
-  submissionType: SubmissionType;
-  /** 証拠を確定した日時。 */
-  submittedAt: Date;
-  /** 写真ごとの短期署名付き閲覧 URL。認可後に ObjectStorage が発行する。 */
-  photoUrls: readonly string[];
-}
-
-/** ListEvidencesUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface ListEvidencesInput {
-  /** 認証済みセッションから得た閲覧者 ID。@CurrentUser() で名目型として検証済み。 */
-  viewerId: UserId;
-  /** URL の :id パス値。コントローラが UUID 形式を検証し TaskId に変換して渡す。 */
-  taskId: string;
-}
-
-/** 権限を確認した証拠一覧。各写真 URL は短期署名付きで、判定確定後のフレンドには発行しない。 */
-export type ListEvidencesOutput = EvidenceListResult;
+import type { ListEvidencesInput } from "../../ports/usecases/list-evidences.port.ts";
 
 /**
  * 責務: 本人または許可されたフレンドに証拠一覧と写真の短期閲覧 URL を返す。権限のない利用者には URL を発行しない。
@@ -99,7 +72,7 @@ export class ListEvidencesUseCase {
    * 本人または許可されたフレンドに証拠一覧と写真の短期閲覧 URL を返す。権限のない利用者には URL を発行しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListEvidencesInput): Promise<ListEvidencesOutput> {
+  execute(_input: ListEvidencesInput): Promise<EvidenceListResult> {
     return todo("ListEvidencesUseCase");
   }
 }

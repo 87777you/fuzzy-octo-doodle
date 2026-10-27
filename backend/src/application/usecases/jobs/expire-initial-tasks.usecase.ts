@@ -1,3 +1,4 @@
+import type { JobResult } from "../../ports/usecases/job-result.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -11,16 +12,7 @@ import type { UploadSessionRepository } from "../../../application/ports/evidenc
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
 import { PAYMENT_GATEWAY } from "../../../application/ports/payment-gateway.port.ts";
 import type { PaymentGateway } from "../../../application/ports/payment-gateway.port.ts";
-import type { JobResult } from "../views.ts";
-
-/** ExpireInitialTasksUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface ExpireInitialTasksInput {
-  /** ジョブ起動側が指定する1回の処理上限。単位はタスク件数であり、外部入力かどうかは起動方式の決定後に検証する。 */
-  batchSize: number;
-}
-
-/** ジョブの実行結果を表す JobResult。processed は処理した対象件数であり、HTTP レスポンスではない。 */
-export type ExpireInitialTasksOutput = JobResult;
+import type { ExpireInitialTasksInput } from "../../ports/usecases/expire-initial-tasks.port.ts";
 
 /**
  * 責務: 期限を過ぎた初回証拠待ちタスクを failed に確定し、失敗イベントと請求依頼につなぐ。ジョブの起動方法や認証は担わない。
@@ -82,7 +74,7 @@ export class ExpireInitialTasksUseCase {
    * 期限を過ぎた初回証拠待ちタスクを failed に確定し、失敗イベントと請求依頼につなぐ。ジョブの起動方法や認証は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ExpireInitialTasksInput): Promise<ExpireInitialTasksOutput> {
+  execute(_input: ExpireInitialTasksInput): Promise<JobResult> {
     return todo("ExpireInitialTasksUseCase");
   }
 }

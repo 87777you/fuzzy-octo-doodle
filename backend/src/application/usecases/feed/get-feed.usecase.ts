@@ -1,3 +1,4 @@
+import type { Page } from "../../../application/ports/task.repository.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -10,24 +11,8 @@ import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
 import type { TaskRepository } from "../../../application/ports/task.repository.ts";
 import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
-import type { Page } from "../../../application/ports/task.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-import type { FeedItemView } from "../views.ts";
-
-/** GetFeedUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface GetFeedInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-  /** クエリ filter。Zod で all または objected に検証済みの一覧条件である。 */
-  filter: "all" | "objected";
-  /** クエリ cursor。未指定なら先頭ページ、指定時は Zod の形式検証後に Repository が位置を復元する。 */
-  cursor?: string;
-  /** クエリ limit。1ページに含める件数であり、Controller が Zod で数値として検証する。 */
-  limit: number;
-}
-
-/** 閲覧可能な投稿を FeedItemView にまとめたページ。nextCursor は次ページがなければ null である。 */
-export type GetFeedOutput = Page<FeedItemView>;
+import type { FeedItemView } from "../../../domain/feed/feed-view.ts";
+import type { GetFeedInput } from "../../ports/usecases/get-feed.port.ts";
 
 /**
  * 責務: タイムラインの1ページを読み、投稿・投稿者・タスク・リアクションを FeedItemView にまとめる。投稿やリアクションの更新は担わない。
@@ -83,7 +68,7 @@ export class GetFeedUseCase {
    * タイムラインの1ページを読み、投稿・投稿者・タスク・リアクションを FeedItemView にまとめる。投稿やリアクションの更新は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetFeedInput): Promise<GetFeedOutput> {
+  execute(_input: GetFeedInput): Promise<Page<FeedItemView>> {
     return todo("GetFeedUseCase");
   }
 }

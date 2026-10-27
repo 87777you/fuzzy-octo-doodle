@@ -9,16 +9,8 @@ import type { TaskRepository } from "../../../application/ports/task.repository.
 import { UPLOAD_SESSION_REPOSITORY } from "../../../application/ports/evidence.repository.ts";
 import type { UploadSessionRepository } from "../../../application/ports/evidence.repository.ts";
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
-import type { JobResult } from "../views.ts";
-
-/** ExpireAdditionalEvidenceUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface ExpireAdditionalEvidenceInput {
-  /** ジョブ起動側が指定する1回の処理上限。単位はタスク件数であり、外部入力かどうかは起動方式の決定後に検証する。 */
-  batchSize: number;
-}
-
-/** ジョブの実行結果を表す JobResult。processed は処理した対象件数であり、HTTP レスポンスではない。 */
-export type ExpireAdditionalEvidenceOutput = JobResult;
+import type { JobResult } from "../../ports/usecases/job-result.ts";
+import type { ExpireAdditionalEvidenceInput } from "../../ports/usecases/expire-additional-evidence.port.ts";
 
 /**
  * 責務: 期限を過ぎた追加証拠待ちタスクを indeterminate に確定し、通知につなぐ。請求は行わず、ジョブの起動方法や認証も担わない。
@@ -73,7 +65,7 @@ export class ExpireAdditionalEvidenceUseCase {
    * 期限を過ぎた追加証拠待ちタスクを indeterminate に確定し、通知につなぐ。請求は行わず、ジョブの起動方法や認証も担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ExpireAdditionalEvidenceInput): Promise<ExpireAdditionalEvidenceOutput> {
+  execute(_input: ExpireAdditionalEvidenceInput): Promise<JobResult> {
     return todo("ExpireAdditionalEvidenceUseCase");
   }
 }

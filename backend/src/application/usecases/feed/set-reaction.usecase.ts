@@ -8,21 +8,7 @@ import { POST_REPOSITORY } from "../../../application/ports/feed.repository.ts";
 import type { PostRepository } from "../../../application/ports/feed.repository.ts";
 import { REACTION_REPOSITORY } from "../../../application/ports/feed.repository.ts";
 import type { ReactionRepository } from "../../../application/ports/feed.repository.ts";
-import type { ReactionType } from "../../../domain/feed/post.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** SetReactionUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface SetReactionInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-  /** /api/posts/:id/reaction の path parameter。Controller が Zod で ID 形式を検証した文字列である。 */
-  postId: string;
-  /** リクエスト body の type。Controller が Zod で ReactionType のいずれかに検証する。 */
-  type: ReactionType;
-}
-
-/** リアクション更新後の本文はなく、Controller は204を返す。 */
-export type SetReactionOutput = null;
+import type { SetReactionInput } from "../../ports/usecases/set-reaction.port.ts";
 
 /**
  * 責務: 閲覧可能な投稿への利用者のリアクションを1種類に設定する。投稿の可視性判定は PostRepository に委ね、投稿自体は変更しない。
@@ -71,7 +57,7 @@ export class SetReactionUseCase {
    * 閲覧可能な投稿への利用者のリアクションを1種類に設定する。投稿の可視性判定は PostRepository に委ね、投稿自体は変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: SetReactionInput): Promise<SetReactionOutput> {
+  execute(_input: SetReactionInput): Promise<null> {
     return todo("SetReactionUseCase");
   }
 }

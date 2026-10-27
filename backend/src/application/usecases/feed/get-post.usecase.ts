@@ -8,19 +8,8 @@ import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
 import type { TaskRepository } from "../../../application/ports/task.repository.ts";
 import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-import type { FeedItemView } from "../views.ts";
-
-/** GetPostUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface GetPostInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-  /** /api/posts/:id の path parameter。Controller が Zod で ID 形式を検証した文字列である。 */
-  postId: string;
-}
-
-/** 本人またはフレンドとして閲覧できる投稿の表示データ。 */
-export type GetPostOutput = FeedItemView;
+import type { FeedItemView } from "../../../domain/feed/feed-view.ts";
+import type { GetPostInput } from "../../ports/usecases/get-post.port.ts";
 
 /**
  * 責務: 指定された投稿が閲覧者本人またはフレンドの投稿であることを確認し、表示用データを返す。投稿の更新は担わない。
@@ -73,7 +62,7 @@ export class GetPostUseCase {
    * 指定された投稿が閲覧者本人またはフレンドの投稿であることを確認し、表示用データを返す。投稿の更新は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetPostInput): Promise<GetPostOutput> {
+  execute(_input: GetPostInput): Promise<FeedItemView> {
     return todo("GetPostUseCase");
   }
 }

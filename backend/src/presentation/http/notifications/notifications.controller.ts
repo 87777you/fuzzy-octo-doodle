@@ -1,15 +1,14 @@
+import type { Notification } from "../../../domain/notification/notification.ts";
+import type { Page } from "../../../application/ports/task.repository.ts";
+import type { UnreadCount } from "../../../application/ports/usecases/count-unread-notifications.port.ts";
 import { Controller, Get, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CountUnreadNotificationsUseCase } from "../../../application/usecases/notifications/count-unread-notifications.usecase.ts";
-import type { CountUnreadNotificationsOutput } from "../../../application/usecases/notifications/count-unread-notifications.usecase.ts";
 import { ListNotificationsUseCase } from "../../../application/usecases/notifications/list-notifications.usecase.ts";
-import type { ListNotificationsOutput } from "../../../application/usecases/notifications/list-notifications.usecase.ts";
 import { MarkAllNotificationsReadUseCase } from "../../../application/usecases/notifications/mark-all-notifications-read.usecase.ts";
-import type { MarkAllNotificationsReadOutput } from "../../../application/usecases/notifications/mark-all-notifications-read.usecase.ts";
 import { MarkNotificationReadUseCase } from "../../../application/usecases/notifications/mark-notification-read.usecase.ts";
-import type { MarkNotificationReadOutput } from "../../../application/usecases/notifications/mark-notification-read.usecase.ts";
 
 /**
  * 責務: 通知 API の HTTP 入出力を受け持つ。認証利用者と入力を UseCase に渡し、通知の検索・既読化は UseCase に委ねる。
@@ -44,7 +43,7 @@ export class NotificationsController {
    */
   @Get("")
   @HttpCode(200)
-  listAll(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<ListNotificationsOutput> {
+  listAll(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<Notification>> {
     return todo("NotificationsController.listAll");
   }
 
@@ -58,7 +57,7 @@ export class NotificationsController {
    */
   @Get("unread-count")
   @HttpCode(200)
-  unreadCount(@CurrentUser() _user: UserId): Promise<CountUnreadNotificationsOutput> {
+  unreadCount(@CurrentUser() _user: UserId): Promise<UnreadCount> {
     return todo("NotificationsController.unreadCount");
   }
 
@@ -72,7 +71,7 @@ export class NotificationsController {
    */
   @Post("read-all")
   @HttpCode(204)
-  readAll(@CurrentUser() _user: UserId): Promise<MarkAllNotificationsReadOutput> {
+  readAll(@CurrentUser() _user: UserId): Promise<null> {
     return todo("NotificationsController.readAll");
   }
 
@@ -86,7 +85,7 @@ export class NotificationsController {
    */
   @Post(":id/read")
   @HttpCode(204)
-  read(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<MarkNotificationReadOutput> {
+  read(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<null> {
     return todo("NotificationsController.read");
   }
 }

@@ -1,13 +1,12 @@
+import type { Page } from "../../../application/ports/task.repository.ts";
+import type { ObjectionSummary } from "../../../domain/objection/objection-view.ts";
 import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CreateObjectionUseCase } from "../../../application/usecases/objections/create-objection.usecase.ts";
-import type { CreateObjectionOutput } from "../../../application/usecases/objections/create-objection.usecase.ts";
 import { ListMyObjectionsUseCase } from "../../../application/usecases/objections/list-my-objections.usecase.ts";
-import type { ListMyObjectionsOutput } from "../../../application/usecases/objections/list-my-objections.usecase.ts";
 import { WithdrawObjectionUseCase } from "../../../application/usecases/objections/withdraw-objection.usecase.ts";
-import type { WithdrawObjectionOutput } from "../../../application/usecases/objections/withdraw-objection.usecase.ts";
 
 /**
  * 責務: 異議に関する HTTP ルートを受け、セッション利用者・path・header・query・body を検証して対応する use case に渡す。業務上の権限判定や状態遷移は行わない。
@@ -41,7 +40,7 @@ export class ObjectionsController {
    */
   @Post("tasks/:id/objections")
   @HttpCode(201)
-  create(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("id") _id: string, @Body() _body: unknown): Promise<CreateObjectionOutput> {
+  create(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("id") _id: string, @Body() _body: unknown): Promise<ObjectionSummary> {
     return todo("ObjectionsController.create");
   }
 
@@ -56,7 +55,7 @@ export class ObjectionsController {
    */
   @Post("objections/:objectionId/withdraw")
   @HttpCode(200)
-  withdraw(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("objectionId") _objectionId: string): Promise<WithdrawObjectionOutput> {
+  withdraw(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("objectionId") _objectionId: string): Promise<ObjectionSummary> {
     return todo("ObjectionsController.withdraw");
   }
 
@@ -70,7 +69,7 @@ export class ObjectionsController {
    */
   @Get("me/objections")
   @HttpCode(200)
-  listMine(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<ListMyObjectionsOutput> {
+  listMine(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<ObjectionSummary>> {
     return todo("ObjectionsController.listMine");
   }
 }

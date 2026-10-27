@@ -8,19 +8,8 @@ import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.rep
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-import type { FriendRequestView } from "../views.ts";
-
-/** RejectFriendRequestUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface RejectFriendRequestInput {
-  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
-  userId: UserId;
-  /** URL の :id から得る申請 ID。controller で UUID 形式を検証した値である。 */
-  friendshipId: string;
-}
-
-/** RejectFriendRequestUseCase.execute の戻り値。コントローラがそのまま HTTP のレスポンス本文にする。 */
-export type RejectFriendRequestOutput = FriendRequestView;
+import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
+import type { RejectFriendRequestInput } from "../../ports/usecases/reject-friend-request.port.ts";
 
 /**
  * 責務: 受信者本人の保留中フレンド申請を拒否済み状態にする。申請の作成や拒否理由の保存は担当しない。
@@ -73,7 +62,7 @@ export class RejectFriendRequestUseCase {
    * 受信者本人の保留中フレンド申請を拒否済み状態にする。申請の作成や拒否理由の保存は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: RejectFriendRequestInput): Promise<RejectFriendRequestOutput> {
+  execute(_input: RejectFriendRequestInput): Promise<FriendRequestView> {
     return todo("RejectFriendRequestUseCase");
   }
 }

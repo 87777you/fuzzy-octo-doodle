@@ -1,32 +1,23 @@
+import type { FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
+import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
+import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
 import { Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import { Public } from "../auth/public.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { AcceptFriendRequestUseCase } from "../../../application/usecases/friends/accept-friend-request.usecase.ts";
-import type { AcceptFriendRequestOutput } from "../../../application/usecases/friends/accept-friend-request.usecase.ts";
 import { BlockUserUseCase } from "../../../application/usecases/friends/block-user.usecase.ts";
-import type { BlockUserOutput } from "../../../application/usecases/friends/block-user.usecase.ts";
 import { CancelFriendRequestUseCase } from "../../../application/usecases/friends/cancel-friend-request.usecase.ts";
-import type { CancelFriendRequestOutput } from "../../../application/usecases/friends/cancel-friend-request.usecase.ts";
 import { CreateFriendInviteUseCase } from "../../../application/usecases/friends/create-friend-invite.usecase.ts";
-import type { CreateFriendInviteOutput } from "../../../application/usecases/friends/create-friend-invite.usecase.ts";
 import { CreateFriendRequestUseCase } from "../../../application/usecases/friends/create-friend-request.usecase.ts";
-import type { CreateFriendRequestOutput } from "../../../application/usecases/friends/create-friend-request.usecase.ts";
 import { GetFriendInviteUseCase } from "../../../application/usecases/friends/get-friend-invite.usecase.ts";
-import type { GetFriendInviteOutput } from "../../../application/usecases/friends/get-friend-invite.usecase.ts";
 import { ListBlockedUsersUseCase } from "../../../application/usecases/friends/list-blocked-users.usecase.ts";
-import type { ListBlockedUsersOutput } from "../../../application/usecases/friends/list-blocked-users.usecase.ts";
 import { ListFriendRequestsUseCase } from "../../../application/usecases/friends/list-friend-requests.usecase.ts";
-import type { ListFriendRequestsOutput } from "../../../application/usecases/friends/list-friend-requests.usecase.ts";
 import { ListFriendsUseCase } from "../../../application/usecases/friends/list-friends.usecase.ts";
-import type { ListFriendsOutput } from "../../../application/usecases/friends/list-friends.usecase.ts";
 import { RejectFriendRequestUseCase } from "../../../application/usecases/friends/reject-friend-request.usecase.ts";
-import type { RejectFriendRequestOutput } from "../../../application/usecases/friends/reject-friend-request.usecase.ts";
 import { RemoveFriendUseCase } from "../../../application/usecases/friends/remove-friend.usecase.ts";
-import type { RemoveFriendOutput } from "../../../application/usecases/friends/remove-friend.usecase.ts";
 import { UnblockUserUseCase } from "../../../application/usecases/friends/unblock-user.usecase.ts";
-import type { UnblockUserOutput } from "../../../application/usecases/friends/unblock-user.usecase.ts";
 
 /**
  * 責務: 招待、フレンド申請、フレンド一覧、ブロックの HTTP 入出力を受け持ち、検証済み入力を対応 use case に渡す。関係の権限・状態遷移や repository 操作は所有しない。
@@ -68,7 +59,7 @@ export class FriendsController {
    */
   @Post("friend-invites")
   @HttpCode(200)
-  createInvite(@CurrentUser() _user: UserId): Promise<CreateFriendInviteOutput> {
+  createInvite(@CurrentUser() _user: UserId): Promise<FriendInviteView> {
     return todo("FriendsController.createInvite");
   }
 
@@ -84,7 +75,7 @@ export class FriendsController {
   @Public()
   @Get("friend-invites/:token")
   @HttpCode(200)
-  getInvite(@Param("token") _token: string): Promise<GetFriendInviteOutput> {
+  getInvite(@Param("token") _token: string): Promise<UserSummary> {
     return todo("FriendsController.getInvite");
   }
 
@@ -99,7 +90,7 @@ export class FriendsController {
    */
   @Post("friend-requests")
   @HttpCode(201)
-  createRequest(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Body() _body: unknown): Promise<CreateFriendRequestOutput> {
+  createRequest(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Body() _body: unknown): Promise<FriendRequestView> {
     return todo("FriendsController.createRequest");
   }
 
@@ -113,7 +104,7 @@ export class FriendsController {
    */
   @Get("friend-requests")
   @HttpCode(200)
-  listRequests(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<ListFriendRequestsOutput> {
+  listRequests(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<readonly FriendRequestView[]> {
     return todo("FriendsController.listRequests");
   }
 
@@ -128,7 +119,7 @@ export class FriendsController {
    */
   @Post("friend-requests/:id/accept")
   @HttpCode(200)
-  accept(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<AcceptFriendRequestOutput> {
+  accept(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FriendRequestView> {
     return todo("FriendsController.accept");
   }
 
@@ -143,7 +134,7 @@ export class FriendsController {
    */
   @Post("friend-requests/:id/reject")
   @HttpCode(200)
-  reject(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<RejectFriendRequestOutput> {
+  reject(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FriendRequestView> {
     return todo("FriendsController.reject");
   }
 
@@ -158,7 +149,7 @@ export class FriendsController {
    */
   @Post("friend-requests/:id/cancel")
   @HttpCode(200)
-  cancel(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<CancelFriendRequestOutput> {
+  cancel(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FriendRequestView> {
     return todo("FriendsController.cancel");
   }
 
@@ -172,7 +163,7 @@ export class FriendsController {
    */
   @Get("friends")
   @HttpCode(200)
-  list(@CurrentUser() _user: UserId): Promise<ListFriendsOutput> {
+  list(@CurrentUser() _user: UserId): Promise<readonly UserSummary[]> {
     return todo("FriendsController.list");
   }
 
@@ -187,7 +178,7 @@ export class FriendsController {
    */
   @Delete("friends/:userId")
   @HttpCode(204)
-  remove(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<RemoveFriendOutput> {
+  remove(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<null> {
     return todo("FriendsController.remove");
   }
 
@@ -201,7 +192,7 @@ export class FriendsController {
    */
   @Get("blocked-users")
   @HttpCode(200)
-  listBlocked(@CurrentUser() _user: UserId): Promise<ListBlockedUsersOutput> {
+  listBlocked(@CurrentUser() _user: UserId): Promise<readonly UserSummary[]> {
     return todo("FriendsController.listBlocked");
   }
 
@@ -216,7 +207,7 @@ export class FriendsController {
    */
   @Post("users/:userId/block")
   @HttpCode(204)
-  block(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<BlockUserOutput> {
+  block(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<null> {
     return todo("FriendsController.block");
   }
 
@@ -231,7 +222,7 @@ export class FriendsController {
    */
   @Delete("users/:userId/block")
   @HttpCode(204)
-  unblock(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<UnblockUserOutput> {
+  unblock(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<null> {
     return todo("FriendsController.unblock");
   }
 }

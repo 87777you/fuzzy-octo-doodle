@@ -1,15 +1,13 @@
+import type { Page } from "../../../application/ports/task.repository.ts";
+import type { FeedItemView } from "../../../domain/feed/feed-view.ts";
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Put, Query } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { GetFeedUseCase } from "../../../application/usecases/feed/get-feed.usecase.ts";
-import type { GetFeedOutput } from "../../../application/usecases/feed/get-feed.usecase.ts";
 import { GetPostUseCase } from "../../../application/usecases/feed/get-post.usecase.ts";
-import type { GetPostOutput } from "../../../application/usecases/feed/get-post.usecase.ts";
 import { RemoveReactionUseCase } from "../../../application/usecases/feed/remove-reaction.usecase.ts";
-import type { RemoveReactionOutput } from "../../../application/usecases/feed/remove-reaction.usecase.ts";
 import { SetReactionUseCase } from "../../../application/usecases/feed/set-reaction.usecase.ts";
-import type { SetReactionOutput } from "../../../application/usecases/feed/set-reaction.usecase.ts";
 
 /**
  * 責務: タイムラインと投稿リアクションの HTTP 入出力を受け持つ。入力検証と UseCase 呼び出しまでを行い、閲覧権限や保存処理は担わない。
@@ -44,7 +42,7 @@ export class FeedController {
    */
   @Get("feed")
   @HttpCode(200)
-  feed(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<GetFeedOutput> {
+  feed(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<FeedItemView>> {
     return todo("FeedController.feed");
   }
 
@@ -59,7 +57,7 @@ export class FeedController {
    */
   @Get("posts/:id")
   @HttpCode(200)
-  post(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<GetPostOutput> {
+  post(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FeedItemView> {
     return todo("FeedController.post");
   }
 
@@ -74,7 +72,7 @@ export class FeedController {
    */
   @Put("posts/:id/reaction")
   @HttpCode(204)
-  react(@CurrentUser() _user: UserId, @Param("id") _id: string, @Body() _body: unknown): Promise<SetReactionOutput> {
+  react(@CurrentUser() _user: UserId, @Param("id") _id: string, @Body() _body: unknown): Promise<null> {
     return todo("FeedController.react");
   }
 
@@ -89,7 +87,7 @@ export class FeedController {
    */
   @Delete("posts/:id/reaction")
   @HttpCode(204)
-  unreact(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<RemoveReactionOutput> {
+  unreact(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<null> {
     return todo("FeedController.unreact");
   }
 }

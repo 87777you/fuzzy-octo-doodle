@@ -5,16 +5,7 @@ import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts
 import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
 import type { User } from "../../../domain/user/user.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** GetMeUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface GetMeInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-}
-
-/** 認証利用者本人の User。 */
-export type GetMeOutput = User;
+import type { GetMeInput } from "../../ports/usecases/get-me.port.ts";
 
 /**
  * 責務: 認証利用者本人のプロフィールを返す。プロフィール更新や他利用者の検索は担わない。
@@ -55,7 +46,7 @@ export class GetMeUseCase {
    * 認証利用者本人のプロフィールを返す。プロフィール更新や他利用者の検索は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetMeInput): Promise<GetMeOutput> {
+  execute(_input: GetMeInput): Promise<User> {
     return todo("GetMeUseCase");
   }
 }

@@ -6,22 +6,7 @@ import { NOTIFICATION_REPOSITORY } from "../../../application/ports/notification
 import type { NotificationRepository } from "../../../application/ports/notification.repository.ts";
 import type { Notification } from "../../../domain/notification/notification.ts";
 import type { Page } from "../../../application/ports/task.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** ListNotificationsUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface ListNotificationsInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-  /** クエリ filter。Zod で all または unread に検証済みの一覧条件である。 */
-  filter: "all" | "unread";
-  /** クエリ cursor。未指定なら先頭ページ、指定時は Zod の形式検証後に Repository が位置を復元する。 */
-  cursor?: string;
-  /** クエリ limit。1ページに含める通知件数であり、Controller が Zod で数値として検証する。 */
-  limit: number;
-}
-
-/** 利用者本人の通知ページ。nextCursor は次ページがなければ null である。 */
-export type ListNotificationsOutput = Page<Notification>;
+import type { ListNotificationsInput } from "../../ports/usecases/list-notifications.port.ts";
 
 /**
  * 責務: 認証利用者自身の通知を条件付きでページ取得する。通知の作成や既読更新は担わない。
@@ -59,7 +44,7 @@ export class ListNotificationsUseCase {
    * 認証利用者自身の通知を条件付きでページ取得する。通知の作成や既読更新は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListNotificationsInput): Promise<ListNotificationsOutput> {
+  execute(_input: ListNotificationsInput): Promise<Page<Notification>> {
     return todo("ListNotificationsUseCase");
   }
 }

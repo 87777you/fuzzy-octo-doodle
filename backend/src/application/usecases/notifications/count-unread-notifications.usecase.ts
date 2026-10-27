@@ -4,22 +4,7 @@ import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { NOTIFICATION_REPOSITORY } from "../../../application/ports/notification.repository.ts";
 import type { NotificationRepository } from "../../../application/ports/notification.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** 未読通知数を返す API の本文。 */
-export interface UnreadCount {
-  /** 認証利用者本人の未読通知数。0件の場合も0を返す。 */
-  count: number;
-}
-
-/** CountUnreadNotificationsUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface CountUnreadNotificationsInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-}
-
-/** 認証利用者本人に残っている未読通知の件数。 */
-export type CountUnreadNotificationsOutput = UnreadCount;
+import type { UnreadCount, CountUnreadNotificationsInput } from "../../ports/usecases/count-unread-notifications.port.ts";
 
 /**
  * 責務: 認証利用者本人の未読通知数を返す。通知一覧や通知状態は変更しない。
@@ -57,7 +42,7 @@ export class CountUnreadNotificationsUseCase {
    * 認証利用者本人の未読通知数を返す。通知一覧や通知状態は変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CountUnreadNotificationsInput): Promise<CountUnreadNotificationsOutput> {
+  execute(_input: CountUnreadNotificationsInput): Promise<UnreadCount> {
     return todo("CountUnreadNotificationsUseCase");
   }
 }

@@ -4,17 +4,8 @@ import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-import type { MyStats } from "../views.ts";
-
-/** GetMyStatsUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface GetMyStatsInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-}
-
-/** 本人のタスク集計と達成率。達成率は対象件数が0件なら null である。 */
-export type GetMyStatsOutput = MyStats;
+import type { MyStats } from "../../../domain/user/user-view.ts";
+import type { GetMyStatsInput } from "../../ports/usecases/get-my-stats.port.ts";
 
 /**
  * 責務: 認証利用者本人のタスク実績と達成率を返す。プロフィールやタスク状態は変更しない。
@@ -55,7 +46,7 @@ export class GetMyStatsUseCase {
    * 認証利用者本人のタスク実績と達成率を返す。プロフィールやタスク状態は変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetMyStatsInput): Promise<GetMyStatsOutput> {
+  execute(_input: GetMyStatsInput): Promise<MyStats> {
     return todo("GetMyStatsUseCase");
   }
 }

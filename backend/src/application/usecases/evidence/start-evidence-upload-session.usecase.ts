@@ -1,3 +1,4 @@
+import type { UploadingSession } from "../../../domain/evidence/upload-session.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -10,22 +11,7 @@ import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
 import type { TaskRepository } from "../../../application/ports/task.repository.ts";
 import { UPLOAD_SESSION_REPOSITORY } from "../../../application/ports/evidence.repository.ts";
 import type { UploadSessionRepository } from "../../../application/ports/evidence.repository.ts";
-import type { SubmissionType } from "../../../domain/evidence/upload-session.ts";
-import type { UploadingSession } from "../../../domain/evidence/upload-session.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** StartEvidenceUploadSessionUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface StartEvidenceUploadSessionInput {
-  /** 認証済みセッションから得た提出者 ID。@CurrentUser() で名目型として検証済み。 */
-  userId: UserId;
-  /** URL の :id パス値。コントローラが UUID 形式を検証し TaskId に変換して渡す。 */
-  taskId: string;
-  /** リクエスト本文の提出種別。initial または additional の許可値をコントローラで検証済み。 */
-  submissionType: SubmissionType;
-}
-
-/** 新しく保存した uploading 状態のセッション。後続の署名 URL 発行・完了 API が session ID を使う。 */
-export type StartEvidenceUploadSessionOutput = UploadingSession;
+import type { StartEvidenceUploadSessionInput } from "../../ports/usecases/start-evidence-upload-session.port.ts";
 
 /**
  * 責務: 所有者の初回または追加証拠提出について、期限内にアップロードセッションを開始して保存する。写真本体の転送は担当しない。
@@ -87,7 +73,7 @@ export class StartEvidenceUploadSessionUseCase {
    * 所有者の初回または追加証拠提出について、期限内にアップロードセッションを開始して保存する。写真本体の転送は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: StartEvidenceUploadSessionInput): Promise<StartEvidenceUploadSessionOutput> {
+  execute(_input: StartEvidenceUploadSessionInput): Promise<UploadingSession> {
     return todo("StartEvidenceUploadSessionUseCase");
   }
 }

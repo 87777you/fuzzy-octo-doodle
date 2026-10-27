@@ -6,16 +6,7 @@ import { CLOCK } from "../../../application/ports/clock.port.ts";
 import type { Clock } from "../../../application/ports/clock.port.ts";
 import { NOTIFICATION_REPOSITORY } from "../../../application/ports/notification.repository.ts";
 import type { NotificationRepository } from "../../../application/ports/notification.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** MarkAllNotificationsReadUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface MarkAllNotificationsReadInput {
-  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
-  userId: UserId;
-}
-
-/** 一括既読後の本文はなく、Controller は204を返す。 */
-export type MarkAllNotificationsReadOutput = null;
+import type { MarkAllNotificationsReadInput } from "../../ports/usecases/mark-all-notifications-read.port.ts";
 
 /**
  * 責務: 認証利用者本人の未読通知をすべて既読にする。他の利用者の通知は変更しない。
@@ -57,7 +48,7 @@ export class MarkAllNotificationsReadUseCase {
    * 認証利用者本人の未読通知をすべて既読にする。他の利用者の通知は変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: MarkAllNotificationsReadInput): Promise<MarkAllNotificationsReadOutput> {
+  execute(_input: MarkAllNotificationsReadInput): Promise<null> {
     return todo("MarkAllNotificationsReadUseCase");
   }
 }

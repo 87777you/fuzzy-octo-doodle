@@ -16,21 +16,8 @@ import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
 import { NOTIFICATION_REPOSITORY } from "../../../application/ports/notification.repository.ts";
 import type { NotificationRepository } from "../../../application/ports/notification.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-import type { FriendRequestView } from "../views.ts";
-
-/** CreateFriendRequestUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface CreateFriendRequestInput {
-  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
-  userId: UserId;
-  /** Idempotency-Key ヘッダの UUID 文字列。presentation で必須・形式を検証し、execute で名目型にする。 */
-  idempotencyKey: string;
-  /** 本文の招待 token。文字列として検証済みで、有効性と招待者は FriendInviteRepository で確認する。 */
-  inviteToken: string;
-}
-
-/** CreateFriendRequestUseCase.execute の戻り値。コントローラがそのまま HTTP のレスポンス本文にする。 */
-export type CreateFriendRequestOutput = FriendRequestView;
+import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
+import type { CreateFriendRequestInput } from "../../ports/usecases/create-friend-request.port.ts";
 
 /**
  * 責務: 有効な招待 token を使ったフレンド申請を作成し、招待者に通知する。招待リンクの閲覧だけで申請を承認したり、フレンド関係を成立させたりしない。
@@ -105,7 +92,7 @@ export class CreateFriendRequestUseCase {
    * 有効な招待 token を使ったフレンド申請を作成し、招待者に通知する。招待リンクの閲覧だけで申請を承認したり、フレンド関係を成立させたりしない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CreateFriendRequestInput): Promise<CreateFriendRequestOutput> {
+  execute(_input: CreateFriendRequestInput): Promise<FriendRequestView> {
     return todo("CreateFriendRequestUseCase");
   }
 }

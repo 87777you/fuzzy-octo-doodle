@@ -6,10 +6,7 @@ import { CLOCK } from "../../../application/ports/clock.port.ts";
 import type { Clock } from "../../../application/ports/clock.port.ts";
 import { UPLOAD_SESSION_REPOSITORY } from "../../../application/ports/evidence.repository.ts";
 import type { UploadSessionRepository } from "../../../application/ports/evidence.repository.ts";
-import type { JobResult } from "../views.ts";
-
-/** 更新したセッション件数を含む JobResult。HTTP レスポンスではない。 */
-export type ExpireStaleUploadSessionsOutput = JobResult;
+import type { JobResult } from "../../ports/usecases/job-result.ts";
 
 /**
  * 責務: 完了期限を過ぎたアップロードセッションを整理する。タスク状態や証拠データは変更しない。
@@ -54,7 +51,7 @@ export class ExpireStaleUploadSessionsUseCase {
    * 完了期限を過ぎたアップロードセッションを整理する。タスク状態や証拠データは変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(): Promise<ExpireStaleUploadSessionsOutput> {
+  execute(): Promise<JobResult> {
     return todo("ExpireStaleUploadSessionsUseCase");
   }
 }

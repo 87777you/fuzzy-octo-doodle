@@ -6,18 +6,7 @@ import { CLOCK } from "../../../application/ports/clock.port.ts";
 import type { Clock } from "../../../application/ports/clock.port.ts";
 import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** UnblockUserUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface UnblockUserInput {
-  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
-  userId: UserId;
-  /** URL の :userId から得るブロック対象 ID。controller で UUID 形式を検証した値である。 */
-  targetUserId: string;
-}
-
-/** 本文を持たない成功を示す null。controller は HTTP 204 を返す。 */
-export type UnblockUserOutput = null;
+import type { UnblockUserInput } from "../../ports/usecases/unblock-user.port.ts";
 
 /**
  * 責務: 呼び出し利用者本人が設定したブロックを解除し、関係を removed 状態にする。相手が設定したブロックは解除しない。
@@ -63,7 +52,7 @@ export class UnblockUserUseCase {
    * 呼び出し利用者本人が設定したブロックを解除し、関係を removed 状態にする。相手が設定したブロックは解除しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: UnblockUserInput): Promise<UnblockUserOutput> {
+  execute(_input: UnblockUserInput): Promise<null> {
     return todo("UnblockUserUseCase");
   }
 }

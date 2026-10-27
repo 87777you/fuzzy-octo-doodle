@@ -15,26 +15,8 @@ import type { ObjectionRepository } from "../../../application/ports/objection.r
 import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
-import type { ReasonType } from "../../../domain/objection/objection.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-import type { ObjectionSummary } from "../views.ts";
-
-/** CreateObjectionUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface CreateObjectionInput {
-  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
-  userId: UserId;
-  /** Idempotency-Key ヘッダの UUID 文字列。presentation で必須・形式を検証し、execute で名目型にする。 */
-  idempotencyKey: string;
-  /** URL の :id から得る対象タスク ID。controller で UUID 形式を検証した値である。 */
-  taskId: string;
-  /** 本文の異議理由区分。controller で ReasonType の候補に含まれることを検証済みである。 */
-  reasonType: ReasonType;
-  /** 本文の異議理由。文字列として検証済みだが、空白だけでないことは createObjection が検証する。 */
-  reasonDetail: string;
-}
-
-/** CreateObjectionUseCase.execute の戻り値。コントローラがそのまま HTTP のレスポンス本文にする。 */
-export type CreateObjectionOutput = ObjectionSummary;
+import type { ObjectionSummary } from "../../../domain/objection/objection-view.ts";
+import type { CreateObjectionInput } from "../../ports/usecases/create-objection.port.ts";
 
 /**
  * 責務: 審査中のタスクに対する異議を 1 件だけ登録し、成立した異議に応じてタスクを次の状態へ進める。HTTP 入力検証や DB のロック実装は所有しない。
@@ -112,7 +94,7 @@ export class CreateObjectionUseCase {
    * 審査中のタスクに対する異議を 1 件だけ登録し、成立した異議に応じてタスクを次の状態へ進める。HTTP 入力検証や DB のロック実装は所有しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CreateObjectionInput): Promise<CreateObjectionOutput> {
+  execute(_input: CreateObjectionInput): Promise<ObjectionSummary> {
     return todo("CreateObjectionUseCase");
   }
 }
