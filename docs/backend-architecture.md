@@ -105,6 +105,40 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 3. 遷移関数が返したイベントを、投稿と通知に変換して保存する。
 4. コミット後に、外部への依頼（請求）を行う。
 
+## NestJS の骨格
+
+| 場所 | 責務 | 担当 |
+|---|---|---|
+| `main.ts` | 起動。`PORT` で待ち受ける | 骨格（済み） |
+| `composition/create-app.ts` | アプリの組み立て。API を `/api` 配下に置く（`/healthz` を除く）。起動とテストの両方で使う | 骨格（済み） |
+| `composition/app.module.ts` | ルートのモジュール。機能のモジュールはここの `imports` に足す | 骨格（済み） |
+| `composition/persistence.module.ts` | DB 接続と、DB・システムに依存する port の束縛 | 骨格（済み） |
+| `composition/auth.module.ts` | 認証ガードと Origin ガードの全体適用 | 骨格（済み） |
+| `presentation/http/errors/` | `DomainError`、`ZodError`、Nest の例外を API のエラーレスポンスに変換する | 骨格（済み） |
+| `presentation/http/auth/` | `@Public()`、`@CurrentUser()`、セッション Cookie の属性、`SessionAuthGuard`、`OriginGuard` | ガードの本体は認証の担当 |
+| `infrastructure/auth/session-authenticator.ts` | `SessionAuthenticator` の実装 | 認証の担当 |
+| `infrastructure/system/system.ts` | `Clock` と `IdGenerator` の実装 | 骨格（済み） |
+
+### 開発の手順
+
+- `pnpm --filter @app/backend dev` — `tsx watch` で起動する（デコレータを使うため、Node の strip-types は使えない）。DB の接続設定は環境変数で渡す。
+- 本番は `tsc` でビルドし、`node dist/main.js` で起動する。
+- `emitDecoratorMetadata` は使わない。依存は必ず `@Inject(トークン)` で明示する。
+
+### 実装を引き継ぐ箇所の目印
+
+本体が未実装の関数は `todo("名前")`（`application/shared/todo.ts`）を返す。`todo` は `never` を返すので、型検査は通る。
+
+- 残りの数: `grep -r "todo(" backend/src | wc -l`
+- 実装したら `todo(` を消す。完了の条件は、`todo(` が残っていないことと、型検査・lint・ビルドが通ること。
+
+### 認証の方針
+
+- サーバー側セッション。Cookie にはランダムなセッション ID だけを入れ、リフレッシュトークンは使わない。
+- Cookie の属性: `HttpOnly; Secure; SameSite=Lax; Path=/api`（`session-cookie.ts`）。
+- CSRF 対策: `SameSite=Lax` に加え、状態を変えるリクエストで `Origin` を検証する（`OriginGuard`）。
+- 認証が不要なエンドポイントには `@Public()` を付ける。
+
 ## 型による保証
 
 テストコードは書かず、不正な状態や操作をコンパイルできない形にして担保する。`pnpm typecheck` が通ることが検証になる。
