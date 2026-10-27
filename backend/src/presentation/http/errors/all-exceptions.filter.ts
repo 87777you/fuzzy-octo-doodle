@@ -5,22 +5,30 @@ import { DomainError } from "../../../domain/shared/errors.ts";
 import type { ErrorResponseBody } from "./error-response.ts";
 import { HTTP_STATUS_BY_ERROR_CODE } from "./http-status.ts";
 
-/** Express の Response のうち、このフィルタが使う部分 */
+/** Express の Response のうち、このフィルタが使う部分だけを型にしたもの（Express の型に依存しないため） */
 interface JsonResponse {
   status(code: number): { json(body: ErrorResponseBody): void };
 }
 
 /**
- * すべての例外を API 設計書のエラーレスポンスに変換する。
- * - DomainError → code に対応するステータス
- * - ZodError（入力の検証）→ 400 VALIDATION_ERROR
- * - Nest 自身の HttpException（存在しない URL など）→ ステータスに対応する code
- * - それ以外 → 500。詳細はログにだけ出し、レスポンスには含めない
+ * 責務: アプリで投げられたすべての例外を、API 設計書のエラーレスポンス（ErrorResponseBody）に変換する。
+ * 業務の判断はしない。「どの例外を、どのステータスと code にするか」だけを決める。
+ *
+ * 全体の流れ: コントローラ → ユースケース → domain のどこかで例外が投げられる
+ * → Nest がこのフィルタの `catch` を呼ぶ → HTTP レスポンスを返して終わる。
+ * AppModule が `APP_FILTER` として登録しているので、全エンドポイントに適用される。
+ *
+ * 変換の規則（上から順に判定する）:
+ * - DomainError → code に対応するステータス（HTTP_STATUS_BY_ERROR_CODE）。業務上の失敗。
+ * - ZodError（入力の検証に失敗）→ 400 VALIDATION_ERROR。`details` に検証エラーの一覧を入れる。
+ * - Nest 自身の HttpException（存在しない URL など）→ ステータスに対応する code。5xx は 500 にまとめる。
+ * - それ以外（バグ、DB 障害、`todo()` の未実装）→ 500 INTERNAL_ERROR。詳細はログにだけ出し、レスポンスには含めない。
  */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
+  /** Nest が例外ごとに呼ぶ。レスポンスを返したら終わりで、例外は再送出しない */
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<JsonResponse>();
 

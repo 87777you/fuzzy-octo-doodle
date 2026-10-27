@@ -119,6 +119,21 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 | `infrastructure/auth/session-authenticator.ts` | `SessionAuthenticator` の実装 | 認証の担当 |
 | `infrastructure/system/system.ts` | `Clock` と `IdGenerator` の実装 | 骨格（済み） |
 
+### リクエストが処理される流れ
+
+1 つのリクエストは、次の順に通る。各ファイルの先頭のコメントに、同じ形式（責務、全体の流れ）でその箇所の役割を書いてある。
+
+1. `main.ts` が `createApp()` でアプリを組み立て、`PORT` で待ち受ける。
+2. `OriginGuard`（`presentation/http/auth/`）が、状態を変えるリクエストの `Origin` を確認する。CSRF 対策の 2 層目（1 層目は Cookie の `SameSite=Lax`）。
+3. `SessionAuthGuard` が、Cookie のセッション ID から利用者を確定し、`request.userId` に載せる。`@Public()` のエンドポイントは省く。
+4. コントローラ（`presentation/http/<領域>/`）が、パス・クエリ・ヘッダ・本文を Zod で検証し、`parse*` で名目型にして、ユースケースの `execute` を呼ぶ。利用者の ID は `@CurrentUser()` で受け取る。
+5. ユースケース（`application/usecases/<領域>/`）が、`UnitOfWork.run` の中で、domain の関数と port を呼ぶ。業務の手順を持つのはここ。
+6. domain の関数が、状態の遷移と権限の判定を行う。DB や HTTP は知らない。
+7. port の実装（`infrastructure/`）が DB などに読み書きする。
+8. 途中で例外が起きたら、`AllExceptionsFilter` が `DomainError`・`ZodError`・その他を API のエラーレスポンスに変換する。
+
+層の責務の境目は、「入力の形の誤り（400）はコントローラ」「業務のルール違反（403・404・409・422 など）はユースケースと domain」。
+
 ### 開発の手順
 
 - `pnpm --filter @app/backend dev` — `tsx watch` で起動する（デコレータを使うため、Node の strip-types は使えない）。DB の接続設定は環境変数で渡す。
