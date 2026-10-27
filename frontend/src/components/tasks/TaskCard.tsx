@@ -1,10 +1,11 @@
+
 "use client";
 
 import type { TaskStatus } from "../../types/task";
 import { TaskStatusBadge } from "./TaskStatusBadge";
 import styles from "./TaskCard.module.css";
 
-type TaskCardProps = {
+interface TaskCardProps {
   title: string;
   description?: string;
   deadline: string;
@@ -12,7 +13,7 @@ type TaskCardProps = {
   remainingText?: string;
   onClick?: () => void;
   onMenuClick?: () => void;
-};
+}
 
 const statusIcon: Record<TaskStatus, string> = {
   active: "○",
@@ -36,7 +37,7 @@ export function TaskCard({
   return (
     <article className={styles["card"]}>
       <span
-        className={`${styles["statusIcon"]} ${styles[status]}`}
+        className={`${styles["statusIcon"] ?? ""} ${styles[status] ?? ""}`}
         aria-hidden="true"
       >
         {statusIcon[status]}

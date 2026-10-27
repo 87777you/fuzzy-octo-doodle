@@ -1,20 +1,20 @@
 
 import styles from "./FriendRequestCard.module.css";
 
-export type FriendRequest = {
+export interface FriendRequest {
   id: string;
   name: string;
   avatarUrl?: string;
   requestedAtText: string;
   direction: "received" | "sent";
-};
+}
 
-type FriendRequestCardProps = {
+interface FriendRequestCardProps {
   request: FriendRequest;
   onAccept?: (id: string) => void;
   onReject?: (id: string) => void;
   disabled?: boolean;
-};
+}
 
 export function FriendRequestCard({
   request,
@@ -52,17 +52,22 @@ export function FriendRequestCard({
           <button
             type="button"
             className={styles["reject"]}
-            onClick={() => onReject?.(request.id)}
-            disabled={disabled}
+            onClick={() => {
+              onReject?.(request.id);
+            }}
+            disabled={disabled || !onReject}
             aria-label={`${request.name}の申請を拒否`}
           >
             拒否
           </button>
+
           <button
             type="button"
             className={styles["accept"]}
-            onClick={() => onAccept?.(request.id)}
-            disabled={disabled}
+            onClick={() => {
+              onAccept?.(request.id);
+            }}
+            disabled={disabled || !onAccept}
             aria-label={`${request.name}の申請を承認`}
           >
             承認

@@ -1,11 +1,11 @@
 
 import styles from "./TaskStatsCard.module.css";
 
-type TaskStatsCardProps = {
+interface TaskStatsCardProps {
   completionRate: number;
   completedCount: number;
   overdueCount: number;
-};
+}
 
 export function TaskStatsCard({
   completionRate,
@@ -21,7 +21,7 @@ export function TaskStatsCard({
   const radius = 46;
   const circumference = 2 * Math.PI * radius;
 
-  // 丸い線端の長さを考慮して、100%未S満では重なりを防ぐ
+  // 丸い線端の長さを考慮して、100%未満では重なりを防ぐ
   const capRatio = (10 / circumference) * 100;
 
   const adjustedRate =
@@ -99,7 +99,7 @@ export function TaskStatsCard({
       <div className={styles["stat"]}>
         <p className={styles["label"]}>期限切れ件数</p>
 
-        <p className={`${styles["number"]} ${styles["overdue"]}`}>
+        <p className={`${styles["number"] ?? ""} ${styles["overdue"] ?? ""}`}>
           {overdueCount}
           <span className={styles["unit"]}>件</span>
         </p>

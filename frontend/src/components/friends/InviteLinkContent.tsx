@@ -4,18 +4,19 @@
 import { useState } from "react";
 import styles from "./InviteLinkContent.module.css";
 
-type InviteLinkContentProps = {
+interface InviteLinkContentProps {
   inviteUrl: string | null;
-};
+}
 
 export function InviteLinkContent({
   inviteUrl,
 }: InviteLinkContentProps) {
   const [message, setMessage] = useState("");
 
-  const isAvailable = Boolean(inviteUrl);
+  const isAvailable =
+    inviteUrl !== null && inviteUrl !== "";
 
-  const copyLink = async () => {
+  const copyLink = async (): Promise<void> => {
     if (!inviteUrl) return;
 
     try {
@@ -26,16 +27,21 @@ export function InviteLinkContent({
     }
   };
 
-  const shareLink = async () => {
+  const shareLink = async (): Promise<void> => {
     if (!inviteUrl) return;
 
-    if (!navigator.share) {
+    // Web Share APIに対応しているか確認
+    const share = Reflect.get(navigator, "share") as
+      | typeof navigator.share
+      | undefined;
+
+    if (typeof share !== "function") {
       await copyLink();
       return;
     }
 
     try {
-      await navigator.share({
+      await share.call(navigator, {
         title: "Donee フレンド招待",
         text: "Doneeでフレンドになろう！",
         url: inviteUrl,
@@ -80,7 +86,9 @@ export function InviteLinkContent({
         <button
           type="button"
           className={styles["copyButton"]}
-          onClick={copyLink}
+          onClick={() => {
+            void copyLink();
+          }}
           disabled={!isAvailable}
         >
           コピー
@@ -89,7 +97,9 @@ export function InviteLinkContent({
         <button
           type="button"
           className={styles["shareButton"]}
-          onClick={shareLink}
+          onClick={() => {
+            void shareLink();
+          }}
           disabled={!isAvailable}
         >
           共有する

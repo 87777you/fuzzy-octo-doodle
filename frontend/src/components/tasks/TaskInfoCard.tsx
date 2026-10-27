@@ -1,7 +1,7 @@
 
 import styles from "./TaskInfoCard.module.css";
 
-type TaskInfoCardProps = {
+interface TaskInfoCardProps {
   title: string;
   deadline: string;
   condition?: string;
@@ -13,7 +13,7 @@ type TaskInfoCardProps = {
     name: string;
     avatarUrl?: string;
   };
-};
+}
 
 export function TaskInfoCard({
   title,

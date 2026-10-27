@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -14,13 +15,15 @@ const items = [
 
 type IconName = (typeof items)[number]["icon"];
 
-function NavIcon({ name }: { name: IconName }) {
+interface NavIconProps {
+  name: IconName;
+}
+
+function NavIcon({ name }: NavIconProps) {
   switch (name) {
     case "home":
       return (
-        <>
-          <path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3z" />
-        </>
+        <path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3z" />
       );
 
     case "tasks":
@@ -79,8 +82,8 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`${styles["item"]} ${
-                active ? styles["active"] : ""
+              className={`${styles["item"] ?? ""} ${
+                active ? (styles["active"] ?? "") : ""
               }`}
               aria-current={active ? "page" : undefined}
             >

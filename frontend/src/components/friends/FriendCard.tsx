@@ -2,17 +2,17 @@
 import Link from "next/link";
 import styles from "./FriendCard.module.css";
 
-export type Friend = {
+export interface Friend {
   id: string;
   name: string;
   avatarUrl?: string;
-};
+}
 
-type FriendCardProps = {
+interface FriendCardProps {
   friend: Friend;
   href?: string;
   onClick?: () => void;
-};
+}
 
 export function FriendCard({
   friend,
@@ -39,7 +39,7 @@ export function FriendCard({
         <p className={styles["name"]}>{friend.name}</p>
       </div>
 
-      {(href || onClick) && (
+      {(href ?? onClick) && (
         <svg
           className={styles["chevron"]}
           width="22"

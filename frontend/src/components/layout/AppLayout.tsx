@@ -5,12 +5,12 @@ import { Sidebar } from "./Sidebar";
 import { BottomNavigation } from "./BottomNavigation";
 import styles from "./AppLayout.module.css";
 
-type AppLayoutProps = {
+interface AppLayoutProps {
   children: ReactNode;
   title?: string;
   unreadCount?: number;
   showHeader?: boolean;
-};
+}
 
 export function AppLayout({
   children,
@@ -35,7 +35,7 @@ export function AppLayout({
                 className={styles["notification"]}
                 aria-label={
                   unreadCount > 0
-                    ? `通知 ${unreadCount}件未読`
+                    ? `通知 ${String(unreadCount)}件未読`
                     : "通知"
                 }
               >
@@ -64,15 +64,15 @@ export function AppLayout({
           </header>
         )}
 
-       <main
-        className={[
+        <main
+          className={[
             styles["main"],
             !showHeader ? styles["mainFullWidth"] : "",
-        ]
+          ]
             .filter(Boolean)
             .join(" ")}
         >
-        {children}
+          {children}
         </main>
       </div>
 

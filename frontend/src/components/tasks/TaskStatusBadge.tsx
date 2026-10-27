@@ -1,9 +1,10 @@
+
 import { Badge } from "../ui/Badge";
 import type { TaskStatus } from "../../types/task";
 
-type TaskStatusBadgeProps = {
+interface TaskStatusBadgeProps {
   status: TaskStatus;
-};
+}
 
 const statusConfig = {
   active: {

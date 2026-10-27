@@ -1,3 +1,4 @@
+
 import type { ReactNode } from "react";
 import styles from "./TaskSection.module.css";
 
@@ -7,11 +8,11 @@ type TaskSectionStatus =
   | "success"
   | "failed";
 
-type TaskSectionProps = {
+interface TaskSectionProps {
   status: TaskSectionStatus;
   count: number;
   children: ReactNode;
-};
+}
 
 const sectionConfig = {
   active: "進行中",
@@ -29,7 +30,7 @@ export function TaskSection({
     <section className={styles["section"]}>
       <div className={styles["header"]}>
         <span
-          className={`${styles["accent"]} ${styles[status]}`}
+          className={`${styles["accent"] ?? ""} ${styles[status] ?? ""}`}
           aria-hidden="true"
         />
 

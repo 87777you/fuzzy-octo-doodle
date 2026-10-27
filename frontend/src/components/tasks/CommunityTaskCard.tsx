@@ -5,13 +5,13 @@ import { Card } from "../ui/Card";
 import { ReportMenu } from "../ui/ReportMenu";
 import styles from "./CommunityTaskCard.module.css";
 
-type Reaction = {
+interface Reaction {
   emoji: string;
   count: number;
   reacted?: boolean;
-};
+}
 
-type CommunityTaskCardProps = {
+interface CommunityTaskCardProps {
   userName: string;
   avatarUrl?: string;
   timeAgo: string;
@@ -22,7 +22,7 @@ type CommunityTaskCardProps = {
   onReactionClick?: (emoji: string) => void;
   onDetailClick?: () => void;
   onReport?: () => void;
-};
+}
 
 export function CommunityTaskCard({
   userName,
@@ -66,9 +66,9 @@ export function CommunityTaskCard({
           </div>
 
           {/* 投稿メニュー */}
-         <ReportMenu
+          <ReportMenu
             {...(onReport !== undefined ? { onReport } : {})}
-            />
+          />
         </div>
 
         {/* タスク名 */}
@@ -102,12 +102,12 @@ export function CommunityTaskCard({
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                onClick={() =>
-                  onReactionClick?.(reaction.emoji)
-                }
+                onClick={() => {
+                  onReactionClick?.(reaction.emoji);
+                }}
                 disabled={!onReactionClick}
                 aria-pressed={reaction.reacted ?? false}
-                aria-label={`${reaction.emoji} リアクション ${reaction.count}件`}
+                aria-label={`${reaction.emoji} リアクション ${String(reaction.count)}件`}
               >
                 <span>{reaction.emoji}</span>
                 <span>{reaction.count}</span>

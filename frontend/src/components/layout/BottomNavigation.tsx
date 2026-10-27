@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -14,12 +15,17 @@ const items = [
 
 type IconName = (typeof items)[number]["icon"];
 
-function NavIcon({ name }: { name: IconName }) {
+interface NavIconProps {
+  name: IconName;
+}
+
+function NavIcon({ name }: NavIconProps) {
   switch (name) {
     case "home":
       return (
         <path d="M3 10.5 12 3l9 7.5V21h-6v-7H9v7H3z" />
       );
+
     case "tasks":
       return (
         <>
@@ -27,8 +33,10 @@ function NavIcon({ name }: { name: IconName }) {
           <path d="M9 4V2h6v2M8 12l2 2 5-5M8 18h8" />
         </>
       );
+
     case "plus":
       return <path d="M12 4v16M4 12h16" />;
+
     case "friends":
       return (
         <>
@@ -37,6 +45,7 @@ function NavIcon({ name }: { name: IconName }) {
           <path d="M17 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1" />
         </>
       );
+
     case "user":
       return (
         <>
@@ -72,8 +81,8 @@ export function BottomNavigation() {
           <Link
             key={item.href}
             href={item.href}
-            className={`${styles["item"]} ${
-              active ? styles["active"] : ""
+            className={`${styles["item"] ?? ""} ${
+              active ? (styles["active"] ?? "") : ""
             }`}
             aria-current={active ? "page" : undefined}
           >

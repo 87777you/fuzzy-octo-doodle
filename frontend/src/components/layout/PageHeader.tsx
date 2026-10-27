@@ -1,15 +1,16 @@
+
 "use client";
 
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import styles from "./PageHeader.module.css";
 
-type PageHeaderProps = {
+interface PageHeaderProps {
   title: string;
   backHref?: string;
   onBack?: () => void;
   rightContent?: ReactNode;
-};
+}
 
 export function PageHeader({
   title,
