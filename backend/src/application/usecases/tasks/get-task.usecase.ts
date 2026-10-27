@@ -1,3 +1,4 @@
+import type { TaskView } from "../../../domain/task/task-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -6,19 +7,7 @@ import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
 import type { TaskRepository } from "../../../application/ports/task.repository.ts";
 import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
-import type { TaskView } from "../../../domain/task/task-view.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** GetTaskUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface GetTaskInput {
-  /** 認証済みセッションから得た閲覧者 ID。@CurrentUser() で名目型として検証済み。 */
-  viewerId: UserId;
-  /** URL の :id パス値。コントローラが UUID 形式を検証し TaskId に変換して渡す。 */
-  taskId: string;
-}
-
-/** 閲覧権限を確認したタスク詳細。本人向けまたはフレンド向けの表示型となる。 */
-export type GetTaskOutput = TaskView;
+import type { GetTaskInput } from "../../ports/usecases/get-task.port.ts";
 
 /**
  * 責務: タスク詳細を読む利用者の関係に応じて閲覧権限を決め、安全な TaskView を返す。HTTP 応答への変換と保存は担当しない。
@@ -65,7 +54,7 @@ export class GetTaskUseCase {
    * タスク詳細を読む利用者の関係に応じて閲覧権限を決め、安全な TaskView を返す。HTTP 応答への変換と保存は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetTaskInput): Promise<GetTaskOutput> {
+  execute(_input: GetTaskInput): Promise<TaskView> {
     return todo("GetTaskUseCase");
   }
 }
