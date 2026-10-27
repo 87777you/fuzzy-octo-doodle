@@ -1,7 +1,13 @@
 import type { ErrorCode } from "../../../domain/shared/errors.ts";
 
 /**
- * DomainError の code ごとの HTTP ステータス。Record なので、ErrorCode を増やすとここも追加しないとコンパイルできない。
+ * 責務: domain / application が投げる `DomainError.code` を、HTTP ステータスに対応づける表。
+ *
+ * 全体の流れ: ユースケースや domain が `DomainError(code, ...)` を投げる
+ * → AllExceptionsFilter がこの表で HTTP ステータスを決める → レスポンスにする。
+ * domain と application は HTTP を知らないので、この対応は presentation 層（ここ）だけが持つ。
+ *
+ * 型による保証: `Record<ErrorCode, number>` なので、`ErrorCode` に値を足すと、ここにも足さない限りコンパイルできない。
  * 対応表は docs/backend-architecture.md の「エラーの扱い」と同じ。
  */
 export const HTTP_STATUS_BY_ERROR_CODE = {
