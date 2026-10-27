@@ -8,20 +8,44 @@ import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.rep
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
+/** RemoveFriendUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface RemoveFriendInput {
+  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
   userId: UserId;
+  /** URL の :userId から得る相手の ID。controller で UUID 形式を検証した値である。 */
   friendUserId: string;
 }
 
+/** 本文を持たない成功を示す null。controller は HTTP 204 を返す。 */
 export type RemoveFriendOutput = null;
 
 /**
- * DELETE /api/friends/{userId}。findByPair(forUpdate) → removeFriendship → save。204。
+ * 責務: 2 人の accepted なフレンド関係を removed 状態にする。ユーザーのブロックや申請の拒否は担当しない。
+ *
+ * 全体の流れ:
+ *   DELETE /api/friends/:userId
+ *     → 全体の Origin・セッションガード → FriendsController.remove（相手 ID を検証）
+ *     → この execute → FriendshipRepository.findByPair(forUpdate) → domain の expectFriendshipStatus / removeFriendship → save → 204。
+ *
+ * 処理:
+ *   1. UnitOfWork.run 内で FriendshipRepository.findByPair(tx, userId, friendUserId, { forUpdate: true }) を呼ぶ。ペア関係の同時変更を防ぐためロック付き取得を使う。
+ *   2. 関係がない場合は NOT_FOUND とし、expectFriendshipStatus(f, "accepted") で現在フレンドであることを確認する。別状態なら STATE_CONFLICT とする。
+ *   3. removeFriendship(accepted, userId) で removed 状態を作り、FriendshipRepository.save で保存する。
+ *   4. HTTP 204 に対応する null を返す。
+ *
+ * 失敗:
+ *   - DomainError("NOT_FOUND"): 指定した 2 人の関係がない。
+ *   - DomainError("STATE_CONFLICT"): 関係が accepted ではない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class RemoveFriendUseCase {
+  /** フレンド関係の状態変更をトランザクション内で保存する。 */
   protected readonly uow: UnitOfWork;
+  /** Clock port を注入するが、removeFriendship は日時を受け取らず、解除時刻を記録しない。 */
   protected readonly clock: Clock;
+  /** 利用者ペアの関係を排他取得し、解除後の状態を保存する。 */
   protected readonly friendships: FriendshipRepository;
 
   constructor(
@@ -34,6 +58,10 @@ export class RemoveFriendUseCase {
     this.friendships = friendships;
   }
 
+  /**
+   * 2 人の accepted なフレンド関係を removed 状態にする。ユーザーのブロックや申請の拒否は担当しない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: RemoveFriendInput): Promise<RemoveFriendOutput> {
     return todo("RemoveFriendUseCase");
   }

@@ -14,24 +14,59 @@ import type { SubmissionType } from "../../../domain/evidence/upload-session.ts"
 import type { UploadingSession } from "../../../domain/evidence/upload-session.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
+/** StartEvidenceUploadSessionUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface StartEvidenceUploadSessionInput {
+  /** 認証済みセッションから得た提出者 ID。@CurrentUser() で名目型として検証済み。 */
   userId: UserId;
+  /** URL の :id パス値。コントローラが UUID 形式を検証し TaskId に変換して渡す。 */
   taskId: string;
+  /** リクエスト本文の提出種別。initial または additional の許可値をコントローラで検証済み。 */
   submissionType: SubmissionType;
 }
 
+/** 新しく保存した uploading 状態のセッション。後続の署名 URL 発行・完了 API が session ID を使う。 */
 export type StartEvidenceUploadSessionOutput = UploadingSession;
 
 /**
- * POST /api/tasks/{id}/evidence-upload-sessions。findById → startInitialUpload または startAdditionalUpload
- * → UploadSessionRepository.insert。
+ * 責務: 所有者の初回または追加証拠提出について、期限内にアップロードセッションを開始して保存する。写真本体の転送は担当しない。
+ *
+ * 全体の流れ:
+ *   POST /api/tasks/{id}/evidence-upload-sessions
+ *     → EvidenceController.startSession（認証利用者、:id、本文の提出種別を検証）
+ *     → StartEvidenceUploadSessionUseCase.execute
+ *     → TaskRepository.findById
+ *     → domain: startInitialUpload または startAdditionalUpload
+ *     → UploadSessionRepository.insert
+ *   次に同じ sessionId で upload-urls を要求し、写真を Object Storage へ直接 PUT する。
+ *
+ * 処理:
+ *   1. parseTaskId 済みの taskId で UnitOfWork.run 内から TaskRepository.findById(tx, taskId) を呼ぶ。タスクがなければ NOT_FOUND を返す。
+ *   2. Clock.now() で開始時刻を得て、IdGenerator.uuid() の値を parseUploadSessionId に通して新しいセッション ID にする。
+ *   3. submissionType が initial なら active タスクを startInitialUpload(id, task, userId, now) に渡し、additional なら disputed タスクを startAdditionalUpload(id, task, userId, now) に渡す。domain 関数が所有者と開始期限を検証する。
+ *   4. UploadSessionRepository.insert(tx, session) で uploading セッションを保存し、セッション情報を返す。
+ *
+ * 失敗:
+ *   - DomainError("NOT_FOUND"): 指定したタスクが存在しない。
+ *   - DomainError("FORBIDDEN"): タスク所有者以外が証拠アップロードを開始した。
+ *   - DomainError("DEADLINE_EXPIRED"): 初回または追加証拠のアップロード開始期限を過ぎた。
+ *   - DomainError("STATE_CONFLICT"): 提出種別に対応する active / disputed 状態ではない。
+ *
+ * 注意:
+ *   - アップロード開始は TaskRepository.findById で行う。タスク状態を更新しないため、docs の手順では findByIdForUpdate を使わない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class StartEvidenceUploadSessionUseCase {
+  /** タスクの読み取りとアップロードセッションの保存をひとつのトランザクションで行う。 */
   protected readonly uow: UnitOfWork;
+  /** 提出期限内にセッションを開始できるかを判定する現在時刻を提供する。 */
   protected readonly clock: Clock;
+  /** アップロードセッションの ID を UUID で採番する。 */
   protected readonly ids: IdGenerator;
+  /** 提出対象のタスクを取得する。 */
   protected readonly tasks: TaskRepository;
+  /** domain が作った uploading セッションを保存する。 */
   protected readonly uploadSessions: UploadSessionRepository;
 
   constructor(
@@ -48,6 +83,10 @@ export class StartEvidenceUploadSessionUseCase {
     this.uploadSessions = uploadSessions;
   }
 
+  /**
+   * 所有者の初回または追加証拠提出について、期限内にアップロードセッションを開始して保存する。写真本体の転送は担当しない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: StartEvidenceUploadSessionInput): Promise<StartEvidenceUploadSessionOutput> {
     return todo("StartEvidenceUploadSessionUseCase");
   }

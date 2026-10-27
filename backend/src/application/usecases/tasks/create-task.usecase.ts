@@ -16,35 +16,83 @@ import { TaskEventPublisher } from "../../../application/shared/task-event-publi
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
+/** CreateTaskUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface CreateTaskInput {
+  /** 認証済みセッションから得た利用者 ID。@CurrentUser() で名目型として検証済み。 */
   userId: UserId;
-  /** Idempotency-Key ヘッダ。parseIdempotencyKey で検証する */
+  /** Idempotency-Key ヘッダの値。存在はコントローラで確認し、UUID 形式は parseIdempotencyKey で検証する。 */
   idempotencyKey: string;
+  /** リクエスト本文のタスク名。本文の形式を検証済みで、文字数と前後空白は parseTaskTitle が処理する。 */
   title: string;
+  /** リクエスト本文の達成条件。本文の形式を検証済みで、空でないことは parseNonEmptyText が処理する。 */
   achievementCondition: string;
+  /** リクエスト本文の証拠提出方法。本文の形式を検証済みで、空でないことは parseNonEmptyText が処理する。 */
   evidenceMethod: string;
+  /** リクエスト本文の期限。ISO 日時を Date に変換済みで、作成時点からの範囲は parseTaskDeadline が検証する。 */
   deadlineAt: Date;
+  /** リクエスト本文のペナルティ額。単位は円で、整数かつ許容範囲かを parsePenaltyAmount が検証する。 */
   penaltyAmount: number;
+  /** リクエスト本文の公開設定。JSON の真偽値としてコントローラで検証済み。 */
   isPenaltyPublic: boolean;
-  /** 再挑戦のとき、元のタスクの ID */
+  /** リクエスト本文の再挑戦元タスク ID。新規作成では null、指定時は UUID 形式を検証し TaskId に変換する。 */
   originalTaskId: string | null;
 }
 
+/** 作成したタスクの本人向け表示データ。コントローラが HTTP 201 の本文として返す。 */
 export type CreateTaskOutput = OwnerTaskView;
 
 /**
- * POST /api/tasks。冪等性の確認（create_task）→ PaymentGateway.assertCanCreateTask → lockUserForCreation
- * → countActiveInitial → authorizeTaskCreation → parseTaskDeadline → createTask → TaskRepository.insert
- * → TaskEventPublisher.publish。1 つのトランザクションで行う。
+ * 責務: 利用者のタスクを 1 件作成し、作成前の支払い条件・同時作成数・期限の確認と保存を調整する。HTTP 入力検証そのものは担当しない。
+ *
+ * 全体の流れ:
+ *   POST /api/tasks
+ *     → TasksController.create（認証利用者、Idempotency-Key、本文を検証して Input に詰める）
+ *     → CreateTaskUseCase.execute → Clock.now / parseIdempotencyKey
+ *     → UnitOfWork.run 内で IdempotencyRepository.reserve / PaymentGateway.assertCanCreateTask
+ *     → TaskRepository.lockUserForCreation / countActiveInitial
+ *     → domain: authorizeTaskCreation / parseTaskDeadline / createTask
+ *     → TaskRepository.insert / TaskEventPublisher.publish / IdempotencyRepository.complete
+ *   作成後は active となり、利用者が証拠アップロードセッションを開始する流れへ続く。
+ *
+ * 処理:
+ *   1. Clock.now() で要求処理に使う現在時刻を得て、parseIdempotencyKey でヘッダ値を IdempotencyKey にする。
+ *   2. UnitOfWork.run の中で IdempotencyRepository.reserve(tx, userId, "create_task", key, requestHash, now) を呼び、要求を予約する。
+ *   3. 既存記録のハッシュが異なる場合は IDEMPOTENCY_KEY_REUSED を返し、完了済みなら保存済みレスポンスを返して作成を繰り返さない。新規要求だけ次へ進む。
+ *   4. PaymentGateway.assertCanCreateTask(userId) で支払い条件を確認する。
+ *   5. TaskRepository.lockUserForCreation(tx, userId) を呼び、同じ利用者の作成処理を直列化する。
+ *   6. TaskRepository.countActiveInitial(tx, userId) の結果を authorizeTaskCreation に渡す。3 件以上なら作成を止める。
+ *   7. parseTaskDeadline(deadlineAt, now) で期限を作成時点から 10 分〜72 時間に絞る。
+ *   8. IdGenerator.uuid() の結果を parseTaskId に通して ID を名目型にし、入力と createTask に渡す。active 状態の next と TaskCreated イベントが返る。createTask はタイトル、達成条件、提出方法、金額も検証する。
+ *   9. TaskRepository.insert(tx, next) で新しいタスクを保存し、TaskEventPublisher.publish(tx, events) で作成イベントに対応する投稿を保存する。
+ *   10. toTaskView(next, "owner") で本人向け表示を作り、IdempotencyRepository.complete に成功ステータスとレスポンスを保存して UnitOfWork.run を完了する。
+ *
+ * 失敗:
+ *   - DomainError("VALIDATION_ERROR"): Idempotency-Key、タイトル、必須テキスト、期限、金額、または ID の形式・範囲が不正である。
+ *   - DomainError("IDEMPOTENCY_KEY_REUSED"): 同じキーが異なるリクエスト内容に使われた。
+ *   - DomainError("PAYMENT_REQUIRED"): 支払い方法などの作成条件を満たしていない。
+ *   - DomainError("TOO_MANY_ACTIVE_TASKS"): 初回証拠が未提出のタスクがすでに 3 件ある。
+ *
+ * 注意:
+ *   - lockUserForCreation の後に countActiveInitial を読む。順序を逆にすると並行要求が上限を超える。
+ *   - IdempotencyRepository.reserve と complete はタスク保存と同じトランザクションに置き、失敗した要求の予約や部分保存を残さない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class CreateTaskUseCase {
+  /** 冪等性予約、タスク作成、投稿保存をまとめて確定またはロールバックするトランザクション境界である。 */
   protected readonly uow: UnitOfWork;
+  /** 期限の範囲確認と作成日時に使う現在時刻を提供する。 */
   protected readonly clock: Clock;
+  /** 新しいタスクの ID を UUID で採番する。 */
   protected readonly ids: IdGenerator;
+  /** create_task の要求を予約し、成功レスポンスを保存して再送時に再利用する。 */
   protected readonly idempotency: IdempotencyRepository;
+  /** 利用者単位の作成ロック、初回未提出件数の取得、新しいタスクの保存を担う。 */
   protected readonly tasks: TaskRepository;
+  /** タスク作成前に利用者の支払い条件を確認する。 */
   protected readonly payment: PaymentGateway;
+  /** createTask が返した TaskEvent を作成投稿などに変換して保存する。 */
   protected readonly events: TaskEventPublisher;
 
   constructor(
@@ -65,6 +113,10 @@ export class CreateTaskUseCase {
     this.events = events;
   }
 
+  /**
+   * 利用者のタスクを 1 件作成し、作成前の支払い条件・同時作成数・期限の確認と保存を調整する。HTTP 入力検証そのものは担当しない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: CreateTaskInput): Promise<CreateTaskOutput> {
     return todo("CreateTaskUseCase");
   }

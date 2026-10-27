@@ -19,6 +19,14 @@ import { ListBlockedUsersUseCase } from "../application/usecases/friends/list-bl
 import { ObjectionsController } from "../presentation/http/objections/objections.controller.ts";
 import { FriendsController } from "../presentation/http/friends/friends.controller.ts";
 
+/**
+ * 責務: friends と objections の HTTP controller と application use case を Nest の DI に登録する composition 層の module である。業務ロジックや port 実装は持たない。
+ *
+ * composition 層。コントローラとユースケースを Nest の DI に登録し、AppModule から読み込まれる。
+ * ユースケースが @Inject する port（リポジトリなど）は、PersistenceModule が束縛して公開している。
+ * ユースケースを足したら、providers に追加する（追加し忘れると起動時に依存が解決できずに失敗する）。
+ * 新しい route を追加するときは対応 controller と use case の両方を controllers・providers に登録する。repository port、Clock、IdGenerator は PersistenceModule が実装を束縛して公開し、SharedApplicationModule は TaskEventPublisher を公開する。
+ */
 @Module({
   imports: [PersistenceModule, SharedApplicationModule],
   controllers: [ObjectionsController, FriendsController],
