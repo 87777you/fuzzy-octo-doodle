@@ -3,13 +3,13 @@
 import { Button } from "./Button";
 import styles from "./ErrorState.module.css";
 
-type ErrorStateProps = {
+interface ErrorStateProps {
   title?: string;
   description?: string;
   onRetry?: () => void;
   retryText?: string;
   isRetrying?: boolean;
-};
+}
 
 export function ErrorState({
   title = "読み込みに失敗しました",

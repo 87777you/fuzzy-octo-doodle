@@ -1,15 +1,17 @@
+
 "use client";
 
 import { useId } from "react";
 import type { TextareaHTMLAttributes } from "react";
 import styles from "./Textarea.module.css";
 
-type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+interface TextareaProps
+  extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
   error?: string;
   helperText?: string;
   showCount?: boolean;
-};
+}
 
 export function Textarea({
   label,
@@ -52,8 +54,8 @@ export function Textarea({
         maxLength={maxLength}
         value={value}
         defaultValue={defaultValue}
-        className={`${styles["textarea"]} ${
-          error ? styles["error"] : ""
+        className={`${styles["textarea"] ?? ""} ${
+          error ? (styles["error"] ?? "") : ""
         } ${className ?? ""}`}
         aria-invalid={Boolean(error)}
         aria-describedby={

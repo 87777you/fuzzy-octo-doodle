@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useEffect, useId, useRef } from "react";
 import type { ReactNode } from "react";
 import styles from "./Modal.module.css";
 
-type ModalProps = {
+interface ModalProps {
   isOpen: boolean;
   title: string;
   children: ReactNode;
@@ -14,7 +15,7 @@ type ModalProps = {
   onConfirm: () => void;
   onClose: () => void;
   isLoading?: boolean;
-};
+}
 
 export function Modal({
   isOpen,
@@ -47,13 +48,11 @@ export function Modal({
       className={styles["modal"]}
       aria-labelledby={titleId}
       onCancel={(event) => {
-        if (isLoading) {
-          event.preventDefault();
-          return;
-        }
-
         event.preventDefault();
-        onClose();
+
+        if (!isLoading) {
+          onClose();
+        }
       }}
       onClick={(event) => {
         if (
@@ -84,8 +83,8 @@ export function Modal({
 
           <button
             type="button"
-            className={`${styles["confirmButton"]} ${
-              styles[confirmVariant]
+            className={`${styles["confirmButton"] ?? ""} ${
+              styles[confirmVariant] ?? ""
             }`}
             onClick={onConfirm}
             disabled={isLoading}

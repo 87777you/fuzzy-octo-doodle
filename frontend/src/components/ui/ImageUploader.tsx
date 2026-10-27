@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import styles from "./ImageUploader.module.css";
 
-type ImageUploaderProps = {
+interface ImageUploaderProps {
   images: File[];
   onChange: (images: File[]) => void;
   maxImages?: number;
@@ -13,7 +14,7 @@ type ImageUploaderProps = {
   description?: string;
   error?: string;
   disabled?: boolean;
-};
+}
 
 export function ImageUploader({
   images,
@@ -36,7 +37,9 @@ export function ImageUploader({
     setPreviews(urls);
 
     return () => {
-      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
     };
   }, [images]);
 
@@ -57,7 +60,7 @@ export function ImageUploader({
 
     if (images.length + validFiles.length > maxImages) {
       setInternalError(
-        `写真は最大${maxImages}枚まで選択できます。`
+        `写真は最大${String(maxImages)}枚まで選択できます。`
       );
       event.target.value = "";
       return;
@@ -81,7 +84,7 @@ export function ImageUploader({
     inputRef.current?.click();
   };
 
-  const displayedError = error || internalError;
+  const displayedError = error ?? internalError;
 
   return (
     <div className={styles["container"]}>
@@ -123,24 +126,26 @@ export function ImageUploader({
           return (
             <div
               key={index}
-              className={`${styles["slot"]} ${
-                image ? styles["filled"] : ""
+              className={`${styles["slot"] ?? ""} ${
+                image ? (styles["filled"] ?? "") : ""
               }`}
             >
               {image && preview ? (
                 <>
                   <img
                     src={preview}
-                    alt={`選択した写真 ${index + 1}`}
+                    alt={`選択した写真 ${String(index + 1)}`}
                     className={styles["preview"]}
                   />
 
                   <button
                     type="button"
                     className={styles["removeButton"]}
-                    onClick={() => handleRemove(index)}
+                    onClick={() => {
+                      handleRemove(index);
+                    }}
                     disabled={disabled}
-                    aria-label={`写真${index + 1}を削除`}
+                    aria-label={`写真${String(index + 1)}を削除`}
                   >
                     ×
                   </button>

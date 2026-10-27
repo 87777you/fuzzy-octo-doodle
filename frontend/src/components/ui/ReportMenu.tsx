@@ -4,10 +4,10 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Modal } from "./Modal";
 import styles from "./ReportMenu.module.css";
 
-type ReportMenuProps = {
+interface ReportMenuProps {
   onReport?: () => void;
   disabled?: boolean;
-};
+}
 
 export function ReportMenu({
   onReport,
@@ -68,7 +68,7 @@ export function ReportMenu({
           aria-label="投稿メニューを開く"
           aria-expanded={isOpen}
           aria-controls={isOpen ? menuId : undefined}
-          onClick={() => setIsOpen((previous) => !previous)}
+          onClick={() => { setIsOpen((previous) => !previous); }}
           disabled={disabled}
         >
           <svg
@@ -118,7 +118,7 @@ export function ReportMenu({
         cancelText="キャンセル"
         confirmVariant="danger"
         onConfirm={handleConfirm}
-        onClose={() => setIsConfirmOpen(false)}
+        onClose={() => { setIsConfirmOpen(false); }}
       >
         <p className={styles["modalText"]}>
           この投稿を報告しますか？

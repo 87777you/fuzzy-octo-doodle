@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import styles from "./FormField.module.css";
 
-type FormFieldProps = {
+interface FormFieldProps {
   label: string;
   htmlFor?: string;
   required?: boolean;
@@ -9,7 +9,7 @@ type FormFieldProps = {
   description?: string;
   error?: string;
   children: ReactNode;
-};
+}
 
 export function FormField({
   label,

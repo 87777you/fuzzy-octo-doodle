@@ -2,14 +2,14 @@
 import type { ReactNode } from "react";
 import styles from "./StatusInfoCard.module.css";
 
-type StatusInfoCardProps = {
+interface StatusInfoCardProps {
   title: string;
   description?: string;
   icon?: "clock" | "hourglass" | "check" | "info";
   variant?: "outlined" | "tinted";
   label?: string;
   footer?: ReactNode;
-};
+}
 
 export function StatusInfoCard({
   title,

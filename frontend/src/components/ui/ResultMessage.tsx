@@ -1,11 +1,11 @@
 
 import styles from "./ResultMessage.module.css";
 
-type ResultMessageProps = {
+interface ResultMessageProps {
   title: string;
   description?: string;
   variant?: "success" | "error" | "warning";
-};
+}
 
 export function ResultMessage({
   title,
@@ -15,7 +15,7 @@ export function ResultMessage({
   return (
     <div className={styles["container"]}>
       <div
-        className={`${styles["iconWrapper"]} ${styles[variant]}`}
+        className={`${styles["iconWrapper"] ?? ""} ${styles[variant] ?? ""}`}
         aria-hidden="true"
       >
         {variant === "success" && (

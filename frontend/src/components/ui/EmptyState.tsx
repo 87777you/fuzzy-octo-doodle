@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import styles from "./EmptyState.module.css";
 
-type EmptyStateProps = {
+interface EmptyStateProps {
   icon?: ReactNode;
   title: string;
   description?: string;
   action?: ReactNode;
-};
+}
 
 export function EmptyState({
   icon,

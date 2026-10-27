@@ -1,31 +1,25 @@
 
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import styles from "./ImagePreview.module.css";
 
-export type PreviewImage = {
+export interface PreviewImage {
   src: string;
   alt?: string;
-};
+}
 
-type ImagePreviewProps = {
+interface ImagePreviewProps {
   images: PreviewImage[];
   title?: string;
-};
+}
 
 export function ImagePreview({
   images,
   title = "提出された証拠写真",
 }: ImagePreviewProps) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(
-    null
-  );
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -68,9 +62,7 @@ export function ImagePreview({
         event.preventDefault();
 
         setSelectedIndex((index) =>
-          index === null
-            ? null
-            : (index + 1) % images.length
+          index === null ? null : (index + 1) % images.length
         );
         return;
       }
@@ -105,12 +97,18 @@ export function ImagePreview({
         const active = document.activeElement;
 
         if (event.shiftKey) {
-          if (active === first || !dialogRef.current?.contains(active)) {
+          if (
+            active === first ||
+            !dialogRef.current?.contains(active)
+          ) {
             event.preventDefault();
             last.focus();
           }
         } else {
-          if (active === last || !dialogRef.current?.contains(active)) {
+          if (
+            active === last ||
+            !dialogRef.current?.contains(active)
+          ) {
             event.preventDefault();
             first.focus();
           }
@@ -131,10 +129,9 @@ export function ImagePreview({
     return null;
   }
 
-  const selectedImage =
-    isOpen && selectedIndex !== null
-      ? images[selectedIndex]
-      : undefined;
+  const selectedImage = isOpen
+    ? images[selectedIndex]
+    : undefined;
 
   const goPrevious = () => {
     setSelectedIndex((index) =>
@@ -146,9 +143,7 @@ export function ImagePreview({
 
   const goNext = () => {
     setSelectedIndex((index) =>
-      index === null
-        ? null
-        : (index + 1) % images.length
+      index === null ? null : (index + 1) % images.length
     );
   };
 
@@ -159,15 +154,17 @@ export function ImagePreview({
       <div className={styles["grid"]}>
         {images.map((image, index) => (
           <button
-            key={`${image.src}-${index}`}
+            key={`${image.src}-${String(index)}`}
             type="button"
             className={styles["thumbnailButton"]}
-            onClick={() => openPreview(index)}
-            aria-label={`写真${index + 1}を拡大`}
+            onClick={() => {
+              openPreview(index);
+            }}
+            aria-label={`写真${String(index + 1)}を拡大`}
           >
             <img
               src={image.src}
-              alt={image.alt ?? `証拠写真${index + 1}`}
+              alt={image.alt ?? `証拠写真${String(index + 1)}`}
               className={styles["thumbnail"]}
             />
           </button>
@@ -204,10 +201,7 @@ export function ImagePreview({
 
               <img
                 src={selectedImage.src}
-                alt={
-                  selectedImage.alt ??
-                  "拡大した証拠写真"
-                }
+                alt={selectedImage.alt ?? "拡大した証拠写真"}
                 className={styles["largeImage"]}
               />
 
@@ -221,7 +215,10 @@ export function ImagePreview({
                   </button>
 
                   <span aria-live="polite">
-                    {selectedIndex! + 1} / {images.length}
+                    {selectedIndex === null
+                      ? 0
+                      : selectedIndex + 1}{" "}
+                    / {images.length}
                   </span>
 
                   <button

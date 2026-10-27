@@ -1,25 +1,27 @@
+
 "use client";
 
 import { useId } from "react";
 import type { SelectHTMLAttributes } from "react";
 import styles from "./Select.module.css";
 
-export type SelectOption = {
+export interface SelectOption {
   label: string;
   value: string;
   disabled?: boolean;
-};
+}
 
-type SelectProps = Omit<
-  SelectHTMLAttributes<HTMLSelectElement>,
-  "children"
-> & {
+interface SelectProps
+  extends Omit<
+    SelectHTMLAttributes<HTMLSelectElement>,
+    "children"
+  > {
   label: string;
   options: SelectOption[];
   placeholder?: string;
   error?: string;
   helperText?: string;
-};
+}
 
 export function Select({
   label,
@@ -56,8 +58,8 @@ export function Select({
           {...props}
           id={selectId}
           required={required}
-          className={`${styles["select"]} ${
-            error ? styles["error"] : ""
+          className={`${styles["select"] ?? ""} ${
+            error ? (styles["error"] ?? "") : ""
           } ${className ?? ""}`}
           aria-invalid={Boolean(error)}
           aria-describedby={
