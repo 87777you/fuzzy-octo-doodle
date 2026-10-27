@@ -19,27 +19,66 @@ import type { NotificationRepository } from "../../../application/ports/notifica
 import type { UserId } from "../../../domain/shared/ids.ts";
 import type { FriendRequestView } from "../views.ts";
 
+/** CreateFriendRequestUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface CreateFriendRequestInput {
+  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
   userId: UserId;
+  /** Idempotency-Key ヘッダの UUID 文字列。presentation で必須・形式を検証し、execute で名目型にする。 */
   idempotencyKey: string;
+  /** 本文の招待 token。文字列として検証済みで、有効性と招待者は FriendInviteRepository で確認する。 */
   inviteToken: string;
 }
 
+/** CreateFriendRequestUseCase.execute の戻り値。コントローラがそのまま HTTP のレスポンス本文にする。 */
 export type CreateFriendRequestOutput = FriendRequestView;
 
 /**
- * POST /api/friend-requests。invite_token から findActiveByToken で招待者を特定（なければ NOT_FOUND）
- * → findByPair(forUpdate) → requestFriendship → save → 招待者へ通知。申請が作られるだけで、フレンドにはならない。
+ * 責務: 有効な招待 token を使ったフレンド申請を作成し、招待者に通知する。招待リンクの閲覧だけで申請を承認したり、フレンド関係を成立させたりしない。
+ *
+ * 全体の流れ:
+ *   POST /api/friend-requests
+ *     → 全体の Origin・セッションガード → FriendsController.createRequest（本文・ヘッダ検証）
+ *     → この execute → 招待者の特定 → FriendshipRepository.findByPair(forUpdate) → domain の requestFriendship
+ *     → 関係・通知・冪等性レスポンスを保存し、FriendRequestView を返す。
+ *
+ * 処理:
+ *   1. UnitOfWork.run 内で clock.now と parseIdempotencyKey を用意し、IdempotencyRepository.reserve に userId、create_friend_request、キー、要求内容の RequestHash を渡す。
+ *   2. 既存記録の hash 不一致は IDEMPOTENCY_KEY_REUSED、完了済み記録は保存された FriendRequestView を返す。新規要求だけを続ける。
+ *   3. FriendInviteRepository.findActiveByToken で inviteToken の有効性と inviterId を確認する。招待がなければ NOT_FOUND とする。
+ *   4. FriendshipRepository.findByPair(tx, userId, inviterId, { forUpdate: true }) でペアをロックする。同時申請を直列化するため、ロックなしの検索や事前 SELECT による競合判定を使わない。
+ *   5. requestFriendship に IdGenerator.uuid() で採番した新規行用 ID、申請者、招待者、既存関係、現在時刻を渡す。既存状態が rejected・cancelled・removed なら domain は同じ関係 ID を再利用する。自分自身への申請、ブロック、既存フレンド、保留中の重複申請は domain のエラーとして扱う。
+ *   6. FriendshipRepository.save で申請を保存する。UserRepository から両者を取得して FriendRequestView を組み立て、NotificationRepository.insertIfAbsent で招待者に friend_request 通知を保存する。
+ *   7. IdempotencyRepository.complete に成功ステータスと FriendRequestView を保存し、トランザクションをコミットする。招待 token は申請を送る用途だけであり、承認処理は呼ばない。
+ *
+ * 失敗:
+ *   - DomainError("NOT_FOUND"): token に一致する有効な招待がない。
+ *   - DomainError("VALIDATION_ERROR"): Idempotency-Key が UUID ではない、または自分自身に申請した。
+ *   - DomainError("IDEMPOTENCY_KEY_REUSED"): 同じキーを異なる要求内容で再利用した。
+ *   - DomainError("FORBIDDEN"): 相手との関係が blocked である。
+ *   - DomainError("ALREADY_EXISTS"): すでにフレンド、または保留中の申請がある。
+ *
+ * 注意:
+ *   - 招待 token は招待者の本人確認や承認を代替しない。申請を受け取った招待者が別途 acceptFriendship を実行して初めてフレンドになる。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class CreateFriendRequestUseCase {
+  /** 申請、通知、冪等性レスポンスを原子的に保存するトランザクション境界を提供する。 */
   protected readonly uow: UnitOfWork;
+  /** 申請日時と冪等性予約時刻に使う現在時刻を提供する。 */
   protected readonly clock: Clock;
+  /** 新しい Friendship と通知の ID を採番する。 */
   protected readonly ids: IdGenerator;
+  /** create_friend_request の要求を予約し、再送では成功レスポンスを再利用する。 */
   protected readonly idempotency: IdempotencyRepository;
+  /** 招待 token から招待者を特定する。 */
   protected readonly invites: FriendInviteRepository;
+  /** 申請対象の 2 人の関係をロック付きで読み、遷移後の関係を保存する。 */
   protected readonly friendships: FriendshipRepository;
+  /** 申請者・招待者の表示情報を取得して FriendRequestView を組み立てる。 */
   protected readonly users: UserRepository;
+  /** 招待者への friend_request 通知を重複排除付きで保存する。 */
   protected readonly notifications: NotificationRepository;
 
   constructor(
@@ -62,6 +101,10 @@ export class CreateFriendRequestUseCase {
     this.notifications = notifications;
   }
 
+  /**
+   * 有効な招待 token を使ったフレンド申請を作成し、招待者に通知する。招待リンクの閲覧だけで申請を承認したり、フレンド関係を成立させたりしない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: CreateFriendRequestInput): Promise<CreateFriendRequestOutput> {
     return todo("CreateFriendRequestUseCase");
   }

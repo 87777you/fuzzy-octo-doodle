@@ -9,19 +9,37 @@ import type { UserRepository } from "../../../application/ports/user.repository.
 import type { UserId } from "../../../domain/shared/ids.ts";
 import type { UserSummary } from "../views.ts";
 
+/** ListFriendsUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface ListFriendsInput {
+  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
   userId: UserId;
 }
 
+/** 現在の利用者のフレンドの userId と nickname の配列。 */
 export type ListFriendsOutput = readonly UserSummary[];
 
 /**
- * GET /api/friends。listFriendIds → UserRepository.findByIds。
+ * 責務: ログイン利用者の accepted なフレンドを UserSummary の配列で返す。申請中や blocked の関係は一覧に含めない。
+ *
+ * 全体の流れ:
+ *   GET /api/friends
+ *     → 全体のセッションガード → FriendsController.list
+ *     → この execute → FriendshipRepository.listFriendIds → UserRepository.findByIds → UserSummary[]。
+ *
+ * 処理:
+ *   1. UnitOfWork.run 内で FriendshipRepository.listFriendIds(tx, userId) を呼び、フレンド ID を取得する。
+ *   2. ID が空なら空配列を返す。空でなければ UserRepository.findByIds に渡す。
+ *   3. 取得したユーザーの userId と nickname を UserSummary に写して返す。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class ListFriendsUseCase {
+  /** フレンド ID とプロフィールの読み取りをトランザクション内で行う。 */
   protected readonly uow: UnitOfWork;
+  /** 現在の利用者の accepted な相手 ID を取得する。 */
   protected readonly friendships: FriendshipRepository;
+  /** 相手 ID 群の User を取得して UserSummary に変換する。 */
   protected readonly users: UserRepository;
 
   constructor(
@@ -34,6 +52,10 @@ export class ListFriendsUseCase {
     this.users = users;
   }
 
+  /**
+   * ログイン利用者の accepted なフレンドを UserSummary の配列で返す。申請中や blocked の関係は一覧に含めない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: ListFriendsInput): Promise<ListFriendsOutput> {
     return todo("ListFriendsUseCase");
   }

@@ -8,20 +8,45 @@ import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.rep
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
+/** UnblockUserUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface UnblockUserInput {
+  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
   userId: UserId;
+  /** URL の :userId から得るブロック対象 ID。controller で UUID 形式を検証した値である。 */
   targetUserId: string;
 }
 
+/** 本文を持たない成功を示す null。controller は HTTP 204 を返す。 */
 export type UnblockUserOutput = null;
 
 /**
- * DELETE /api/users/{userId}/block。findByPair(forUpdate) → unblockFriendship → save。204。
+ * 責務: 呼び出し利用者本人が設定したブロックを解除し、関係を removed 状態にする。相手が設定したブロックは解除しない。
+ *
+ * 全体の流れ:
+ *   DELETE /api/users/:userId/block
+ *     → 全体の Origin・セッションガード → FriendsController.unblock（対象 ID を検証）
+ *     → この execute → FriendshipRepository.findByPair(forUpdate) → domain の expectFriendshipStatus / unblockFriendship → save → 204。
+ *
+ * 処理:
+ *   1. UnitOfWork.run 内で FriendshipRepository.findByPair(tx, userId, targetUserId, { forUpdate: true }) を呼び、対象ペアをロックする。
+ *   2. 関係がない場合は NOT_FOUND とし、expectFriendshipStatus(f, "blocked") で blocked 状態に絞る。違う状態なら STATE_CONFLICT とする。
+ *   3. unblockFriendship(blocked, userId) を呼ぶ。ブロックした本人でなければ FORBIDDEN、成功時は removed 状態になる。
+ *   4. FriendshipRepository.save で解除後の状態を保存し、null を返す。
+ *
+ * 失敗:
+ *   - DomainError("NOT_FOUND"): 指定した 2 人の関係がない。
+ *   - DomainError("STATE_CONFLICT"): 関係が blocked ではない。
+ *   - DomainError("FORBIDDEN"): 呼び出し利用者がブロックした本人ではない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class UnblockUserUseCase {
+  /** ブロック状態の取得と解除後の保存をトランザクション内で行う。 */
   protected readonly uow: UnitOfWork;
+  /** Clock port を注入するが、unblockFriendship は日時を受け取らず、解除時刻を記録しない。 */
   protected readonly clock: Clock;
+  /** 利用者ペアの関係をロック付きで取得し、domain が作った解除状態を保存する。 */
   protected readonly friendships: FriendshipRepository;
 
   constructor(
@@ -34,6 +59,10 @@ export class UnblockUserUseCase {
     this.friendships = friendships;
   }
 
+  /**
+   * 呼び出し利用者本人が設定したブロックを解除し、関係を removed 状態にする。相手が設定したブロックは解除しない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: UnblockUserInput): Promise<UnblockUserOutput> {
     return todo("UnblockUserUseCase");
   }

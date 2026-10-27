@@ -19,30 +19,73 @@ import type { ReasonType } from "../../../domain/objection/objection.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import type { ObjectionSummary } from "../views.ts";
 
+/** CreateObjectionUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface CreateObjectionInput {
+  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
   userId: UserId;
+  /** Idempotency-Key ヘッダの UUID 文字列。presentation で必須・形式を検証し、execute で名目型にする。 */
   idempotencyKey: string;
+  /** URL の :id から得る対象タスク ID。controller で UUID 形式を検証した値である。 */
   taskId: string;
+  /** 本文の異議理由区分。controller で ReasonType の候補に含まれることを検証済みである。 */
   reasonType: ReasonType;
+  /** 本文の異議理由。文字列として検証済みだが、空白だけでないことは createObjection が検証する。 */
   reasonDetail: string;
 }
 
+/** CreateObjectionUseCase.execute の戻り値。コントローラがそのまま HTTP のレスポンス本文にする。 */
 export type CreateObjectionOutput = ObjectionSummary;
 
 /**
- * POST /api/tasks/{id}/objections。findByIdForUpdate → areFriends → authorizeObjection → createObjection
- * → ObjectionRepository.tryInsert（false なら STATE_CONFLICT）→ acceptFirstObjection または acceptSecondObjection
- * → save → TaskEventPublisher.publish。
+ * 責務: 審査中のタスクに対する異議を 1 件だけ登録し、成立した異議に応じてタスクを次の状態へ進める。HTTP 入力検証や DB のロック実装は所有しない。
+ *
+ * 全体の流れ:
+ *   POST /api/tasks/:id/objections
+ *     → 全体の Origin・セッションガード → ObjectionsController.create（形式検証と ID 変換）
+ *     → この execute → domain の authorizeObjection / createObjection / acceptFirstObjection・acceptSecondObjection
+ *     → TaskRepository・ObjectionRepository に保存し、TaskEventPublisher.publish でイベントを保存 → ObjectionSummary を返す。
+ *
+ * 処理:
+ *   1. UnitOfWork.run を開始し、clock.now と parseIdempotencyKey を使って要求時刻とキーを得る。
+ *   2. IdempotencyRepository.reserve に userId、create_objection、キー、要求内容の RequestHash を渡す。
+ *   3. 既存記録の hash が異なる場合は IDEMPOTENCY_KEY_REUSED を返し、完了済みなら保存済みレスポンスを返す。新規要求だけを続ける。
+ *   4. TaskRepository.findByIdForUpdate で taskId の行をロックして取得する。見つからなければ NOT_FOUND とする。状態変更と異議の同時処理を直列化するため、通常の findById ではなくロック付き取得を使う。
+ *   5. FriendshipRepository.areFriends で所有者との関係を確認し、viewerRole と authorizeObjection でフレンドかつ審査中であることを証明する。証明がない場合は、存在を隠す相手には NOT_FOUND、それ以外は FORBIDDEN とする。
+ *   6. createObjection に IdGenerator.uuid() で採番した ID、権限証明、理由を渡して初回または再審査の異議を作る。理由が空白だけなら VALIDATION_ERROR とする。
+ *   7. ObjectionRepository.tryInsert を呼ぶ。事前 SELECT では先着判定をせず、UNIQUE(task_id, review_round) による false は STATE_CONFLICT とする。取り下げ済みでも枠は戻らない。
+ *   8. 審査回に応じて acceptFirstObjection または acceptSecondObjection を呼び、TaskRepository.save で遷移後のタスクを保存する。審査期限切れなら DEADLINE_EXPIRED とする。
+ *   9. TaskEventPublisher.publish に遷移イベントを渡し、同じ tx 内で通知を保存する。最後に IdempotencyRepository.complete で 201 相当の成功レスポンスを記録してコミットする。
+ *
+ * 失敗:
+ *   - DomainError("NOT_FOUND"): タスクがない、または存在を知らせない対象である。
+ *   - DomainError("FORBIDDEN"): 異議を申し立てる権限がない。
+ *   - DomainError("VALIDATION_ERROR"): Idempotency-Key または異議理由が不正である。
+ *   - DomainError("IDEMPOTENCY_KEY_REUSED"): 同じキーを異なる要求内容で再利用した。
+ *   - DomainError("STATE_CONFLICT"): 同じ審査回の異議枠が先に使われた、または状態が操作と合わない。
+ *   - DomainError("DEADLINE_EXPIRED"): タスクの審査期間が終了している。
+ *
+ * 注意:
+ *   - ObjectionRepository.tryInsert の UNIQUE 制約が先着 1 件を保証する。先に一覧を読んで空きを判定してはならない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class CreateObjectionUseCase {
+  /** 異議の登録、タスク遷移、冪等性記録、イベント保存を 1 つの DB トランザクションにまとめる。 */
   protected readonly uow: UnitOfWork;
+  /** 審査期限の判定と異議の作成に使う現在時刻を提供する。 */
   protected readonly clock: Clock;
+  /** 新しい異議の ID を採番する。 */
   protected readonly ids: IdGenerator;
+  /** create_objection の要求を予約し、成功レスポンスを保存して再送時に再利用する。 */
   protected readonly idempotency: IdempotencyRepository;
+  /** 対象タスクを行ロック付きで取得し、遷移後の状態を保存する。 */
   protected readonly tasks: TaskRepository;
+  /** 異議を先着 1 件の制約付きで登録し、失敗時に競合を判定する。 */
   protected readonly objections: ObjectionRepository;
+  /** 申立人とタスク所有者がフレンドかを確認する。 */
   protected readonly friendships: FriendshipRepository;
+  /** タスク遷移が生んだ投稿・通知を同じトランザクション内で保存する。 */
   protected readonly events: TaskEventPublisher;
 
   constructor(
@@ -65,6 +108,10 @@ export class CreateObjectionUseCase {
     this.events = events;
   }
 
+  /**
+   * 審査中のタスクに対する異議を 1 件だけ登録し、成立した異議に応じてタスクを次の状態へ進める。HTTP 入力検証や DB のロック実装は所有しない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: CreateObjectionInput): Promise<CreateObjectionOutput> {
     return todo("CreateObjectionUseCase");
   }

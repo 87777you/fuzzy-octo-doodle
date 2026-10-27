@@ -29,8 +29,17 @@ import { UnblockUserUseCase } from "../../../application/usecases/friends/unbloc
 import type { UnblockUserOutput } from "../../../application/usecases/friends/unblock-user.usecase.ts";
 
 /**
- * フレンドの API（招待、申請、ブロックを含む）。招待リンクの公開情報だけは認証なし（`@Public()`）。
- * 各ハンドラの実装: Zod で入力を検証 → parse* で名目型にする → ユースケースの execute を呼ぶ。
+ * 責務: 招待、フレンド申請、フレンド一覧、ブロックの HTTP 入出力を受け持ち、検証済み入力を対応 use case に渡す。関係の権限・状態遷移や repository 操作は所有しない。
+ *
+ * 全体の流れ:
+ *   HTTP リクエスト → 全体のガード（Origin、セッション）→ このコントローラ → ユースケース → レスポンス
+ *   API 全体の /api prefix の下にルートを公開する。OriginGuard と SessionAuthGuard が先に適用されるが、招待情報を読む GET /friend-invites/:token だけは @Public() で認証を要求しない。handler は application/usecases/friends の use case を呼び、DomainError の HTTP 変換は共通例外 filter に委ねる。
+ *
+ * 各ハンドラの実装（presentation 層の仕事はここまで）:
+ *   1. Zod で、パス・クエリ・ヘッダ・本文を検証する（形式の誤りは ZodError → 400）。
+ *   2. parse*Id などで、文字列を名目型に変換する。
+ *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
+ * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
 @Controller("")
 export class FriendsController {
@@ -49,14 +58,29 @@ export class FriendsController {
     @Inject(UnblockUserUseCase) protected readonly unblockUser: UnblockUserUseCase,
   ) {}
 
-  /** 招待リンクを取得（なければ作成）する */
+  /**
+   * 有効な自分の招待リンクを再利用し、なければ作成して返す。
+   *
+   * HTTP: POST /api/friend-invites → 200
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId。body、query、header は受け取らない。
+   * 呼び出し先: CreateFriendInviteUseCase.execute
+   */
   @Post("friend-invites")
   @HttpCode(200)
   createInvite(@CurrentUser() _user: UserId): Promise<CreateFriendInviteOutput> {
     return todo("FriendsController.createInvite");
   }
 
-  /** 招待者の公開情報 */
+  /**
+   * 有効な招待 token に対応する招待者の公開プロフィールを返す。
+   *
+   * HTTP: GET /api/friend-invites/:token → 200
+   * 認証: 不要（@Public）
+   * 入力: path の :token。認証不要の公開 route であり、token の有効性は use case が確認する。
+   * 呼び出し先: GetFriendInviteUseCase.execute
+   * 主な失敗: NOT_FOUND
+   */
   @Public()
   @Get("friend-invites/:token")
   @HttpCode(200)
@@ -64,70 +88,147 @@ export class FriendsController {
     return todo("FriendsController.getInvite");
   }
 
-  /** 招待リンクからフレンド申請を送る */
+  /**
+   * 招待 token を使って招待者へフレンド申請を送るが、申請は承認しない。
+   *
+   * HTTP: POST /api/friend-requests → 201
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId、Idempotency-Key ヘッダ、body の inviteToken。ヘッダ形式と本文の文字列形式を検証する。
+   * 呼び出し先: CreateFriendRequestUseCase.execute
+   * 主な失敗: NOT_FOUND / VALIDATION_ERROR / IDEMPOTENCY_KEY_REUSED / FORBIDDEN / ALREADY_EXISTS
+   */
   @Post("friend-requests")
   @HttpCode(201)
   createRequest(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Body() _body: unknown): Promise<CreateFriendRequestOutput> {
     return todo("FriendsController.createRequest");
   }
 
-  /** フレンド申請の一覧 */
+  /**
+   * incoming または outgoing を指定して pending 申請を返す。
+   *
+   * HTTP: GET /api/friend-requests → 200
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId、query の direction。値を incoming または outgoing に限定して検証する。
+   * 呼び出し先: ListFriendRequestsUseCase.execute
+   */
   @Get("friend-requests")
   @HttpCode(200)
   listRequests(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<ListFriendRequestsOutput> {
     return todo("FriendsController.listRequests");
   }
 
-  /** 申請を承認する */
+  /**
+   * 受信者本人が pending 申請を承認する。
+   *
+   * HTTP: POST /api/friend-requests/:id/accept → 200
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId、path の :id。path ID を UUID 形式で検証する。
+   * 呼び出し先: AcceptFriendRequestUseCase.execute
+   * 主な失敗: NOT_FOUND / STATE_CONFLICT / FORBIDDEN
+   */
   @Post("friend-requests/:id/accept")
   @HttpCode(200)
   accept(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<AcceptFriendRequestOutput> {
     return todo("FriendsController.accept");
   }
 
-  /** 申請を拒否する */
+  /**
+   * 受信者本人が pending 申請を拒否する。
+   *
+   * HTTP: POST /api/friend-requests/:id/reject → 200
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId、path の :id。path ID を UUID 形式で検証する。
+   * 呼び出し先: RejectFriendRequestUseCase.execute
+   * 主な失敗: NOT_FOUND / STATE_CONFLICT / FORBIDDEN
+   */
   @Post("friend-requests/:id/reject")
   @HttpCode(200)
   reject(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<RejectFriendRequestOutput> {
     return todo("FriendsController.reject");
   }
 
-  /** 申請を取り消す */
+  /**
+   * 申請者本人が pending 申請を取り消す。
+   *
+   * HTTP: POST /api/friend-requests/:id/cancel → 200
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId、path の :id。path ID を UUID 形式で検証する。
+   * 呼び出し先: CancelFriendRequestUseCase.execute
+   * 主な失敗: NOT_FOUND / STATE_CONFLICT / FORBIDDEN
+   */
   @Post("friend-requests/:id/cancel")
   @HttpCode(200)
   cancel(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<CancelFriendRequestOutput> {
     return todo("FriendsController.cancel");
   }
 
-  /** フレンドの一覧 */
+  /**
+   * ログイン利用者の accepted なフレンド一覧を返す。
+   *
+   * HTTP: GET /api/friends → 200
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId。body、query、header は受け取らない。
+   * 呼び出し先: ListFriendsUseCase.execute
+   */
   @Get("friends")
   @HttpCode(200)
   list(@CurrentUser() _user: UserId): Promise<ListFriendsOutput> {
     return todo("FriendsController.list");
   }
 
-  /** フレンドを解除する */
+  /**
+   * 相手との accepted なフレンド関係を解除する。
+   *
+   * HTTP: DELETE /api/friends/:userId → 204
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId、path の :userId。相手 ID を UUID 形式で検証する。
+   * 呼び出し先: RemoveFriendUseCase.execute
+   * 主な失敗: NOT_FOUND / STATE_CONFLICT
+   */
   @Delete("friends/:userId")
   @HttpCode(204)
   remove(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<RemoveFriendOutput> {
     return todo("FriendsController.remove");
   }
 
-  /** ブロック中のユーザー */
+  /**
+   * ログイン利用者がブロックした相手の一覧を返す。
+   *
+   * HTTP: GET /api/blocked-users → 200
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId。body、query、header は受け取らない。
+   * 呼び出し先: ListBlockedUsersUseCase.execute
+   */
   @Get("blocked-users")
   @HttpCode(200)
   listBlocked(@CurrentUser() _user: UserId): Promise<ListBlockedUsersOutput> {
     return todo("FriendsController.listBlocked");
   }
 
-  /** ユーザーをブロックする */
+  /**
+   * 指定した相手をブロックし、関係の有無を応答で区別しない。
+   *
+   * HTTP: POST /api/users/:userId/block → 204
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId、path の :userId。対象 ID を UUID 形式で検証する。
+   * 呼び出し先: BlockUserUseCase.execute
+   * 主な失敗: VALIDATION_ERROR / STATE_CONFLICT
+   */
   @Post("users/:userId/block")
   @HttpCode(204)
   block(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<BlockUserOutput> {
     return todo("FriendsController.block");
   }
 
-  /** ブロックを解除する */
+  /**
+   * 自分が設定した相手へのブロックを解除する。
+   *
+   * HTTP: DELETE /api/users/:userId/block → 204
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: CurrentUser の userId、path の :userId。対象 ID を UUID 形式で検証する。
+   * 呼び出し先: UnblockUserUseCase.execute
+   * 主な失敗: NOT_FOUND / STATE_CONFLICT / FORBIDDEN
+   */
   @Delete("users/:userId/block")
   @HttpCode(204)
   unblock(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<UnblockUserOutput> {

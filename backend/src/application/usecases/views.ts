@@ -1,6 +1,13 @@
 import type { FriendshipId, ObjectionId, TaskId, UserId } from "../../domain/shared/ids.ts";
 import type { ReasonType } from "../../domain/objection/objection.ts";
 
+/**
+ * 責務: 複数のユースケースが返す「画面に出す形」の型を置く。domain の型（User など）をそのまま返さず、
+ * 画面に必要な情報だけに絞った型を application が定める。コントローラはこの型をそのままレスポンスにする。
+ *
+ * 全体の流れ: ユースケースの `Output` → コントローラ → JSON。1 つのユースケースだけが使う型は、そのユースケースのファイルに置く。
+ */
+
 /** 友だち関連の画面に出す相手の情報 */
 export interface UserSummary {
   userId: UserId;
