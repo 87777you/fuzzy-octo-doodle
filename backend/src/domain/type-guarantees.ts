@@ -12,6 +12,10 @@ import type { Objection } from "./objection/objection.ts";
 import { withdrawFirstObjection } from "./task/task.ts";
 import { startAdditionalUpload } from "./evidence/upload-session.ts";
 import type { PhotoPaths } from "./evidence/evidence.ts";
+import type { StoragePath } from "./shared/storage-path.ts";
+import type { TaskDeadline } from "./task/task-policy.ts";
+import type { PhotoAccessGrant } from "./task/visibility-policy.ts";
+import type { IdempotentOperation } from "../application/ports/idempotency.repository.ts";
 import type { ObjectStorage } from "../application/ports/object-storage.port.ts";
 
 function use(...values: unknown[]): number {
@@ -29,6 +33,8 @@ export function typeGuarantees(
   openSecond: Objection<2, "open">,
   storage: ObjectStorage,
   friendView: FriendTaskView,
+  grant: PhotoAccessGrant,
+  path: StoragePath,
   u: UserId,
   s: UploadSessionId,
 ): void {
@@ -61,16 +67,26 @@ export function typeGuarantees(
   toTaskView(success, "none");
 
   // 署名 URL は権限の証明なしには発行できない
+  void storage.createSignedReadUrl(grant, path, 60);
   // @ts-expect-error PhotoAccessGrant が必要
-  void storage.createSignedReadUrl("evidence/x/1.jpg", 60);
+  void storage.createSignedReadUrl(path, 60);
+  // @ts-expect-error 検証済みのストレージパス（StoragePath）が必要。生の文字列は渡せない
+  void storage.createSignedReadUrl(grant, "evidence/x/1.jpg", 60);
 
   // 写真は 1〜3 枚のタプル
-  const ok: PhotoPaths = ["a", "b"];
+  const ok: PhotoPaths = [path, path];
   // @ts-expect-error 0 枚は表現できない
   const none: PhotoPaths = [];
   // @ts-expect-error 4 枚は表現できない
-  const four: PhotoPaths = ["a", "b", "c", "d"];
+  const four: PhotoPaths = [path, path, path, path];
   use(ok, none, four);
+
+  // 検証していない値は、検証済みの型に入れられない
+  // @ts-expect-error parseTaskDeadline を通した期限（TaskDeadline）が必要
+  const deadline: TaskDeadline = now;
+  // @ts-expect-error 冪等性の対象として登録していない操作名は使えない
+  const operation: IdempotentOperation = "typo";
+  use(deadline, operation);
 
   // ID を取り違えるとコンパイルできない
   const taskId = "t" as TaskId;

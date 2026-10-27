@@ -7,8 +7,8 @@ import {
   ADDITIONAL_EVIDENCE_PERIOD_MS,
   REVIEW_PERIOD_MS,
   UPLOAD_GRACE_MS,
-  assertDeadlineInRange,
 } from "./task-policy.ts";
+import type { TaskCreationPermit, TaskDeadline } from "./task-policy.ts";
 import type { NonEmptyText, PenaltyAmount, TaskTitle } from "./task-values.ts";
 import { parseNonEmptyText, parsePenaltyAmount, parseTaskTitle } from "./task-values.ts";
 import type { Objection } from "../objection/objection.ts";
@@ -93,15 +93,22 @@ export interface NewTaskInput {
   title: string;
   achievementCondition: string;
   evidenceMethod: string;
-  deadlineAt: Date;
+  /** parseTaskDeadline で範囲を確認した期限 */
+  deadlineAt: TaskDeadline;
   penaltyAmount: number;
   isPenaltyPublic: boolean;
+  /** authorizeTaskCreation の結果。同時に作成できる件数の上限を確認済みであることを示す */
+  permit: TaskCreationPermit;
 }
 
-type T<S extends Task> = Transition<S, TaskEvent>;
+/**
+ * タスクの遷移関数の戻り値。`next` が遷移後のタスク、`events` が今回の遷移で起きた出来事。
+ * 遷移関数はタスクを書き換えない。呼び出し側（application のユースケース）が `next` を保存し、
+ * `events` を投稿・通知・請求依頼に変換する。S には、その遷移で到達しうる状態の型を指定する。
+ */
+export type TaskTransition<S extends Task> = Transition<S, TaskEvent>;
 
-export function createTask(input: NewTaskInput, now: Date): T<ActiveTask> {
-  assertDeadlineInRange(input.deadlineAt, now);
+export function createTask(input: NewTaskInput, now: Date): TaskTransition<ActiveTask> {
   const next: ActiveTask = {
     id: input.id,
     ownerId: input.ownerId,
@@ -129,7 +136,7 @@ export function submitInitialEvidence(
   task: ActiveTask,
   friendCount: number,
   now: Date,
-): T<ReviewingTask<1> | SuccessTask> {
+): TaskTransition<ReviewingTask<1> | SuccessTask> {
   // アップロード開始の期限検証は UploadSession 側。ここは最終防衛線（期限 + 猶予）
   if (now.getTime() > task.deadlineAt.getTime() + UPLOAD_GRACE_MS) {
     throw new DomainError("DEADLINE_EXPIRED", "提出期限を過ぎています");
@@ -166,7 +173,7 @@ export function submitInitialEvidence(
 }
 
 /** 追加証拠の提出確定 → 再審査（round 2） */
-export function submitAdditionalEvidence(task: DisputedTask, now: Date): T<ReviewingTask<2>> {
+export function submitAdditionalEvidence(task: DisputedTask, now: Date): TaskTransition<ReviewingTask<2>> {
   if (now.getTime() > task.additionalEvidenceDeadlineAt.getTime() + UPLOAD_GRACE_MS) {
     throw new DomainError("DEADLINE_EXPIRED", "追加証拠の提出期限を過ぎています");
   }
@@ -190,7 +197,7 @@ function assertReviewOpen(task: ReviewingTask, now: Date): void {
 }
 
 /** 初回審査中の異議が受理された → 追加証拠待ち（先着1件の保証は ObjectionRepository.tryInsert が担う） */
-export function acceptFirstObjection(task: ReviewingTask<1>, now: Date): T<DisputedTask> {
+export function acceptFirstObjection(task: ReviewingTask<1>, now: Date): TaskTransition<DisputedTask> {
   assertReviewOpen(task, now);
   const next: DisputedTask = {
     ...baseOf(task),
@@ -206,7 +213,7 @@ export function acceptFirstObjection(task: ReviewingTask<1>, now: Date): T<Dispu
 }
 
 /** 再審査中の異議が受理された → 判定不能（請求なし） */
-export function acceptSecondObjection(task: ReviewingTask<2>, now: Date): T<IndeterminateTask> {
+export function acceptSecondObjection(task: ReviewingTask<2>, now: Date): TaskTransition<IndeterminateTask> {
   assertReviewOpen(task, now);
   const next: IndeterminateTask = {
     ...baseOf(task),
@@ -232,7 +239,7 @@ export function withdrawFirstObjection(
   task: DisputedTask,
   objection: Objection<1, "open">,
   now: Date,
-): T<SuccessTask> {
+): TaskTransition<SuccessTask> {
   if (objection.taskId !== task.id) throw new DomainError("STATE_CONFLICT", "対象のタスクが一致しません");
   if (now.getTime() > task.additionalEvidenceDeadlineAt.getTime()) {
     throw new DomainError("DEADLINE_EXPIRED", "追加証拠の期限を過ぎています");
@@ -263,7 +270,7 @@ export function expireInitial(
   task: ActiveTask,
   now: Date,
   hasLiveUploadSession: boolean,
-): T<FailedTask> | null {
+): TaskTransition<FailedTask> | null {
   if (now.getTime() <= task.deadlineAt.getTime() || hasLiveUploadSession) return null;
   const next: FailedTask = {
     ...baseOf(task),
@@ -279,7 +286,7 @@ export function expireInitial(
 }
 
 /** 審査期間終了（異議なし）→ 達成 */
-export function closeReviewPeriod(task: ReviewingTask, now: Date): T<SuccessTask> | null {
+export function closeReviewPeriod(task: ReviewingTask, now: Date): TaskTransition<SuccessTask> | null {
   if (now.getTime() < task.reviewDeadlineAt.getTime()) return null;
   const next: SuccessTask = {
     ...baseOf(task),
@@ -300,7 +307,7 @@ export function expireAdditional(
   task: DisputedTask,
   now: Date,
   hasLiveUploadSession: boolean,
-): T<IndeterminateTask> | null {
+): TaskTransition<IndeterminateTask> | null {
   if (now.getTime() <= task.additionalEvidenceDeadlineAt.getTime() || hasLiveUploadSession) return null;
   const next: IndeterminateTask = {
     ...baseOf(task),

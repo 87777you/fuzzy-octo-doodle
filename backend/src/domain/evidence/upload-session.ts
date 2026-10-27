@@ -2,6 +2,8 @@ import { DomainError } from "../shared/errors.ts";
 import type { TaskId, UploadSessionId, UserId } from "../shared/ids.ts";
 import type { ActiveTask, DisputedTask } from "../task/task.ts";
 import { canStartUploadBy, uploadCompleteBy } from "../task/task-policy.ts";
+import { parseStoragePath } from "../shared/storage-path.ts";
+import type { StoragePath } from "../shared/storage-path.ts";
 import type { PhotoPaths } from "./evidence.ts";
 
 export type SubmissionType = "initial" | "additional";
@@ -25,8 +27,15 @@ export type ClosedSession = SessionBase<SubmissionType> & Readonly<{ status: "ex
 export type UploadSession = UploadingSession | CompletedSession | ClosedSession;
 
 /** 写真パスはセッション配下に限定する（他人のオブジェクトを流用させない） */
-export const photoPathPrefix = (taskId: TaskId, sessionId: UploadSessionId): string =>
-  `evidence/${taskId}/${sessionId}/`;
+const photoPathPrefix = (taskId: TaskId, sessionId: UploadSessionId): string => `evidence/${taskId}/${sessionId}/`;
+
+export type PhotoSlot = 1 | 2 | 3;
+export type PhotoExtension = "jpg" | "png" | "webp";
+
+/** アップロード用の署名 URL を発行するときのパスを、サーバー側で決める。例: evidence/{taskId}/{sessionId}/1.jpg */
+export function issuePhotoPath(session: UploadingSession, slot: PhotoSlot, extension: PhotoExtension): StoragePath {
+  return parseStoragePath(`${photoPathPrefix(session.taskId, session.id)}${String(slot)}.${extension}`);
+}
 
 function start<T extends SubmissionType>(
   id: UploadSessionId,
@@ -71,16 +80,19 @@ export function startAdditionalUpload(
   return start(id, task, userId, "additional", task.additionalEvidenceDeadlineAt, now);
 }
 
-/** 入力の配列を 1〜3 枚のタプルに絞り、セッション配下のパスだけを許可する */
+/** 入力の配列を、ストレージのパスとして検証したうえで 1〜3 枚のタプルに絞り、セッション配下のパスだけを許可する */
 export function parsePhotoPaths(session: UploadingSession, paths: readonly string[]): PhotoPaths {
   if (paths.length < 1 || paths.length > 3 || new Set(paths).size !== paths.length) {
     throw new DomainError("INVALID_EVIDENCE_COUNT", "証拠写真は1〜3枚で指定してください");
   }
   const prefix = photoPathPrefix(session.taskId, session.id);
-  if (!paths.every((p) => p.startsWith(prefix))) {
+  const [first, second, third] = paths.map(parseStoragePath);
+  if (!paths.every((p) => p.startsWith(prefix)) || first === undefined) {
     throw new DomainError("VALIDATION_ERROR", "不正な写真パスが含まれています");
   }
-  return paths as unknown as PhotoPaths;
+  if (second === undefined) return [first];
+  if (third === undefined) return [first, second];
+  return [first, second, third];
 }
 
 /** 完了。uploading 状態のセッションだけを受け取る */

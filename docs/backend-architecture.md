@@ -118,6 +118,9 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 | 権限のない証拠写真 URL の発行 | `ObjectStorage.createSignedReadUrl` が `authorizePhotoAccess` の結果（`PhotoAccessGrant`）を要求する |
 | 権限のない異議申し立て | `createObjection` が `authorizeObjection` の結果（`ObjectionRight`）と審査中のタスクを要求する |
 | 写真は1〜3枚 | `PhotoPaths` は1〜3要素のタプル型 |
+| ストレージのパスの検証 | `ObjectStorage` の各メソッドは、`parseStoragePath` を通した `StoragePath` だけを受け付ける。`PhotoPaths` の要素も `StoragePath` |
+| 期限の範囲と作成数の上限の確認 | `createTask` の入力は `parseTaskDeadline` の結果（`TaskDeadline`）と `authorizeTaskCreation` の結果（`TaskCreationPermit`）を要求する |
+| 冪等性の対象 | `IdempotencyRepository` は、列挙した `IdempotentOperation`、`parseIdempotencyKey` を通した `IdempotencyKey`、`RequestHash` だけを受け付ける |
 | 検証前の値の混入 | タイトル、金額、ニックネームは `parse*` を通した名目型（`Brand`）だけを受け付ける |
 | ID の取り違え | `TaskId` や `UserId` を名目型にする |
 | フレンド関係の状態の網羅 | `switch` の `default` で `assertNever` を呼ぶ。状態を増やすとコンパイルエラーになる |
@@ -128,7 +131,7 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 
 ## タスクの状態遷移
 
-遷移は `domain/task/task.ts` の純粋関数で行い、`{ next, events }`（`Transition`）を返す。元の値は変更しない。
+遷移は `domain/task/task.ts` の純粋関数で行い、`{ next, events }`（`TaskTransition`。共通の定義は `shared/transition.ts` の `Transition`）を返す。元の値は変更しない。
 
 | 契機 | 関数（引数の状態） | 結果 |
 |---|---|---|
@@ -152,7 +155,7 @@ API 設計書のエンドポイントごとに、使う関数と port を示す�
 
 | 操作 | 処理の流れ |
 |---|---|
-| `POST /api/tasks` | `PaymentGateway.assertCanCreateTask` → `lockUserForCreation` → `countActiveInitial` → `assertCanCreateTask` → `assertDeadlineInRange` → `createTask` → `TaskRepository.insert` → 「作成」の投稿 |
+| `POST /api/tasks` | `PaymentGateway.assertCanCreateTask` → `lockUserForCreation` → `countActiveInitial` → `authorizeTaskCreation` → `parseTaskDeadline` → `createTask` → `TaskRepository.insert` → 「作成」の投稿 |
 | `GET /api/tasks` | `TaskRepository.listByOwner` → `toTaskView(task, "owner")` |
 | `GET /api/tasks/{id}` | `findById` → `viewerRole`（本人・フレンド・その他）→ 「その他」は `NOT_FOUND`。それ以外は `toTaskView` |
 | `GET /api/tasks/{id}/retry-template` | 本人のタスクを取得し、入力値だけを返す。保存はしない |
@@ -162,7 +165,7 @@ API 設計書のエンドポイントごとに、使う関数と port を示す�
 | 操作 | 処理の流れ |
 |---|---|
 | `POST /api/tasks/{id}/evidence-upload-sessions` | `findById` → `startInitialUpload` または `startAdditionalUpload` → `UploadSessionRepository.insert` |
-| `POST .../upload-urls` | `findByIdForUpdate` → `expectUploading` → `photoPathPrefix` に沿ったパスで `ObjectStorage.createSignedUploadUrl` |
+| `POST .../upload-urls` | `findByIdForUpdate` → `expectUploading` → `issuePhotoPath` で決めたパスに `ObjectStorage.createSignedUploadUrl` |
 | `POST .../complete` | 下記の手順 |
 | `GET /api/tasks/{id}/evidences` | `viewerRole` → `authorizePhotoAccess`（null なら `FORBIDDEN`）→ `listByTask` → 写真ごとに `createSignedReadUrl` |
 
@@ -189,10 +192,10 @@ API 設計書のエンドポイントごとに、使う関数と port を示す�
 |---|---|
 | `POST /api/friend-invites` | `FriendInviteRepository.findActiveByInviter`。なければ `IdGenerator.inviteToken` で作って `insert` する |
 | `GET /api/friend-invites/{token}` | `findActiveByToken` → 招待者のニックネームを返す |
-| `POST /api/friend-requests` | `findByPair(forUpdate)` → `requestFriendship` → `save` → 通知 |
+| `POST /api/friend-requests` | `invite_token` から `findActiveByToken` で招待者を特定（なければ `NOT_FOUND`）→ `findByPair(forUpdate)` → `requestFriendship` → `save` → 招待者へ通知。申請が作られるだけで、フレンドにはならない |
 | `.../accept`, `/reject`, `/cancel` | `findById` → `acceptFriendship`、`rejectFriendship`、`cancelFriendship` → `save` |
 | `DELETE /api/friends/{userId}` | `findByPair(forUpdate)` → `removeFriendship` → `save` |
-| `POST`、`DELETE /api/users/{userId}/block` | `blockFriendship` または `blockStranger`、`unblockFriendship` |
+| `POST`、`DELETE /api/users/{userId}/block` | `findByPair(forUpdate)` → `blockUser`（関係の有無を区別しない）→ `save`。解除は `unblockFriendship` |
 | `GET /api/friends`, `/friend-requests`, `/blocked-users` | `listFriendIds`、`listIncomingPending`、`listOutgoingPending`、`listBlockedBy` |
 
 ### タイムライン・通知・ユーザー
@@ -218,6 +221,122 @@ API 設計書のエンドポイントごとに、使う関数と port を示す�
 | アップロードセッションの整理 | `UploadSessionRepository.expireStale` |
 
 `lock*` は `FOR UPDATE SKIP LOCKED` で取得するため、ジョブを複数同時に動かしても同じ行を二重に処理しない。
+
+## 実装に影響する関数の使い方
+
+実装者が直接呼ぶ関数と、型を扱うときの約束事をまとめる。いずれも `backend/src/domain/` にある。
+
+### `assertNever`：状態の網羅を型で保証する
+
+`shared/exhaustive.ts` の関数で、`switch` の `default` に置く。全ての状態を `case` で扱い終えると、`default` に届く値の型は `never` になり、コンパイルが通る。状態を増やして `case` を書き忘れると、`never` ではなくなり、コンパイルエラーで漏れを検出できる。実行時に到達した場合は例外を投げる。
+
+```ts
+switch (existing.status) {
+  case "blocked":
+    throw new DomainError("FORBIDDEN", "この相手には申請できません");
+  case "accepted":
+    throw new DomainError("ALREADY_EXISTS", "すでにフレンドです");
+  case "pending":
+    throw new DomainError("ALREADY_EXISTS", "すでに申請中です");
+  case "rejected":
+  case "cancelled":
+  case "removed":
+    return fresh(existing.id);
+  default:
+    return assertNever(existing); // 状態が増えて case が足りなければ、ここでコンパイルエラー
+}
+```
+
+使う場面は次のとおり。
+
+- 共用体（`Task`、`Friendship`、`UploadSession`、`Objection`）の `status` で分岐するとき。ユースケースやマッパーでも同じ書き方をする。
+- `default` に `break` や空の処理を書かない。書くと網羅の検査が働かなくなる。
+- `if` / `else if` の連鎖で分岐する場合は、最後の `else` で `return assertNever(x)` とする。
+
+### 状態を絞る関数（`expect*`）
+
+DB から読んだ値の型は `Task` や `Friendship` などの共用体で、特定の状態とは限らない。遷移関数に渡す前に、次の関数で状態を絞る。状態が違えば `STATE_CONFLICT` を投げる。
+
+| 関数 | 用途 |
+|---|---|
+| `expectStatus(task, "reviewing")` | `Task` を指定した状態に絞る（`task/task.ts`） |
+| `expectFriendshipStatus(f, "pending")` | `Friendship` を指定した状態に絞る |
+| `expectUploading(session)` | `UploadSession` を `uploading` に絞る |
+| `expectOpenFirst(objection)` | `Objection` を、初回で未取り下げのものに絞る |
+
+```ts
+const task = await tasks.findByIdForUpdate(tx, id);
+if (task === null) throw new DomainError("NOT_FOUND", "タスクが見つかりません");
+const reviewing = expectStatus(task, "reviewing"); // ReviewingTask（1回目か2回目）
+if (reviewing.reviewRound !== 1) {
+  throw new DomainError("STATE_CONFLICT", "初回の審査中ではありません"); // ここを通れば 1回目に絞られる
+}
+const { next, events } = acceptFirstObjection(reviewing, now);
+```
+
+引数の型を絞るだけで済む場合（`if (task.status === "active")` の中など）は、`expect*` を使わず、通常の絞り込みで構わない。
+
+### 値を作る関数（`parse*`）
+
+外部から来た文字列や数値は、`parse*` を通して名目型にする。検証に失敗すると `VALIDATION_ERROR` を投げる。名目型の値は `parse*` の外では作れないため、検証を通っていない値は、型の上で遷移関数に渡せない。
+
+| 関数 | 結果の型 | 検証 |
+|---|---|---|
+| `parseTaskTitle` | `TaskTitle` | 前後の空白を除いて1〜100文字 |
+| `parseNonEmptyText(raw, label)` | `NonEmptyText` | 空でないこと。`label` はエラーメッセージに使う |
+| `parsePenaltyAmount` | `PenaltyAmount` | 100〜10,000の整数 |
+| `parseNickname` | `Nickname` | 前後の空白を除いて1〜20文字 |
+| `parsePhotoPaths(session, paths)` | `PhotoPaths` | 1〜3枚、重複なし、セッション配下のパスだけ。各要素を `parseStoragePath` で検証する |
+| `parseStoragePath` | `StoragePath` | S3 のキーとして安全な文字だけ、1024バイト以内、`//` や `..` を含まない |
+| `parseTaskDeadline(deadline, now)` | `TaskDeadline` | 作成時点から10分〜72時間 |
+| `authorizeTaskCreation(count)` | `TaskCreationPermit` | 初回未提出のタスクが3件未満（権限の証明と同じ扱い） |
+| `parseIdempotencyKey` | `IdempotencyKey` | UUID |
+| `parseRequestHash` | `RequestHash` | SHA-256 の16進64文字 |
+
+`createTask` と `registerUser` は、タイトルなどの文字列を受け取って内部で `parse*` を呼ぶので、ユースケースから個別に呼ぶ必要はない。ただし期限と作成数の上限は、`createTask` の前に `parseTaskDeadline` と `authorizeTaskCreation` を呼び、その結果を入力に渡す。
+
+写真のパスは、アップロード用の署名 URL を発行するとき `issuePhotoPath(session, slot, extension)` でサーバーが決める。クライアントが返してきたパスは、`parsePhotoPaths` で検証してから使う。
+
+ID は、リクエストやDBの文字列を名目型にして使う。変換は、presentation（リクエストの ID）と infrastructure のマッパー（DB の ID）の境界で行い、それ以外の場所では行わない。新しい ID は `IdGenerator.uuid()` の結果を変換する。
+
+### 権限を確かめる関数（`authorize*`）
+
+権限の判定は、結果が「許可の証明」の型になる。証明は、この関数だけが作る。
+
+| 関数 | 結果 | 渡す先 |
+|---|---|---|
+| `viewerRole(ownerId, viewerId, isFriend)` | `"owner"`、`"friend"`、`"none"` | `toTaskView`、`authorize*` |
+| `authorizePhotoAccess(task, role)` | `PhotoAccessGrant` または `null` | `ObjectStorage.createSignedReadUrl` |
+| `authorizeObjection(task, role, viewerId)` | `{ task, right }` または `null` | `createObjection` |
+
+`null` が返ったら、`FORBIDDEN` を投げる。ただし、本人でもフレンドでもない人（`role` が `"none"`）に対しては、対象の存在を隠すため `NOT_FOUND` を返す。
+
+```ts
+const role = viewerRole(task.ownerId, viewerId, await friends.areFriends(tx, task.ownerId, viewerId));
+const authorized = authorizeObjection(task, role, viewerId);
+if (authorized === null) throw new DomainError("FORBIDDEN", "異議を申し立てられません");
+const objection = createObjection(
+  { id, task: authorized.task, right: authorized.right, reasonType, reasonDetail },
+  now,
+);
+```
+
+`as` で `PhotoAccessGrant` や `ObjectionRight` を作ってはいけない。
+
+### 状態を変える関数（遷移関数）
+
+`task.ts` の遷移関数は、新しい状態とイベントを `{ next, events }` で返す。呼び出し側は、次の順に処理する。
+
+1. 引数の型に合う状態に絞る（`expectStatus` など）。
+2. 遷移関数を呼ぶ。
+3. `next` を `TaskRepository.save` で保存する。
+4. `events` を投稿と通知に変換して保存する。
+
+遷移関数は、渡された値を書き換えない。保存を忘れても、元の値は変わらない。ジョブ用の関数（`expireInitial`、`closeReviewPeriod`、`expireAdditional`）は、まだ確定しない場合に `null` を返す。`null` のときは何も保存せず、次の対象に進む。
+
+### 時刻の関数
+
+`shared/time.ts` に、`MINUTE_MS`、`HOUR_MS`、`addMs(date, ms)` がある。時刻の計算に `Date.now()` や `new Date()` は使わず、`Clock.now()` の結果と `addMs` で計算する。
 
 ## 実装時の規約
 
@@ -277,7 +396,8 @@ domain と application は `DomainError`（`code`、`message`、`details`）を�
 
 ## 要件に対する判断
 
-- 招待リンクは恒久的に再取得できる必要があるため、`friend_invites` にはトークンの平文を保存する（`FriendInvite.token`）。ハッシュだけの保存とは両立しない。
+- 招待リンクは恒久的に再利用でき、`POST /api/friend-invites` でいつでも再取得できる。このため、`friend_invites` にはトークンの平文を保存する（`FriendInvite.token`）。ハッシュだけの保存とは両立しない。
+- 招待リンクでできるのは、招待者のプロフィールの閲覧と、フレンド申請の送信だけである。リンクを開いても、招待者の承認は済んだことにならない。フレンドになるには、招待者が申請を `accept` する必要がある。トークンはこの範囲の権限しか持たないので、URL が外部に漏れても、承認なしにフレンドにはなれない。
 - 初回期限を過ぎても、期限内に開始したアップロードは期限の5分後まで完了できる。このため、期限切れのジョブは、有効なアップロードセッションが残っている間は `failed` にしない。
 - フレンドが証拠写真を見られるのは、`reviewing` と `disputed` の間だけである。判定の確定後は、写真の URL を発行しない。
 - 決済は MVP ではモックとし、`PaymentGateway` を差し替えられるようにしておく。

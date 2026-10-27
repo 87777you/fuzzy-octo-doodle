@@ -97,30 +97,32 @@ export function removeFriendship(f: AcceptedFriendship, by: UserId): RemovedFrie
   };
 }
 
-/** どの状態からでもブロックできる。相手がブロック済みなら不可 */
-export function blockFriendship(f: Friendship, by: UserId): BlockedFriendship {
-  requireParty(f, by);
-  if (f.status === "blocked" && f.blockedBy !== by) {
+/**
+ * ユーザーをブロックする。相手との関係の有無や状態にかかわらず、同じ関数で扱う。
+ * existing は by と target のペアの既存行（なければ null）。
+ * 相手が先にブロックしている場合は、ブロックし直せない。
+ */
+export function blockUser(
+  newId: FriendshipId,
+  by: UserId,
+  target: UserId,
+  existing: Friendship | null,
+  now: Date,
+): BlockedFriendship {
+  if (by === target) throw new DomainError("VALIDATION_ERROR", "自分自身はブロックできません");
+  if (existing === null) {
+    return { id: newId, requesterId: by, receiverId: target, requestedAt: now, status: "blocked", blockedBy: by };
+  }
+  requireParty(existing, by);
+  requireParty(existing, target);
+  if (existing.status === "blocked" && existing.blockedBy !== by) {
     throw new DomainError("STATE_CONFLICT", "相手によるブロックが存在します");
   }
   return {
-    id: f.id,
-    requesterId: f.requesterId,
-    receiverId: f.receiverId,
-    requestedAt: f.requestedAt,
-    status: "blocked",
-    blockedBy: by,
-  };
-}
-
-/** 関係行がない相手を新規にブロックする */
-export function blockStranger(newId: FriendshipId, by: UserId, target: UserId, now: Date): BlockedFriendship {
-  if (by === target) throw new DomainError("VALIDATION_ERROR", "自分自身はブロックできません");
-  return {
-    id: newId,
-    requesterId: by,
-    receiverId: target,
-    requestedAt: now,
+    id: existing.id,
+    requesterId: existing.requesterId,
+    receiverId: existing.receiverId,
+    requestedAt: existing.requestedAt,
     status: "blocked",
     blockedBy: by,
   };

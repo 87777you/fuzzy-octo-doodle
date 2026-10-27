@@ -3,6 +3,7 @@ export type * from "./shared/ids.ts";
 export type * from "./shared/brand.ts";
 export type * from "./shared/transition.ts";
 export * from "./shared/time.ts";
+export * from "./shared/storage-path.ts";
 export * from "./shared/exhaustive.ts";
 export * from "./user/user.ts";
 export * from "./task/task.ts";

@@ -17,16 +17,19 @@ type ViewBase = Readonly<{
 /** 本人向け。金額は常に含む */
 export type OwnerTaskView = ViewBase & Readonly<{ viewer: "owner"; penaltyAmount: number }>;
 
+/** フレンド向け。金額が公開のタスク */
+export type FriendTaskViewWithPenalty = ViewBase &
+  Readonly<{ viewer: "friend"; isPenaltyPublic: true; penaltyAmount: number }>;
+
+/** フレンド向け。金額が非公開のタスク。penaltyAmount は型の上で存在しない（`never` で封じている） */
+export type FriendTaskViewWithoutPenalty = ViewBase &
+  Readonly<{ viewer: "friend"; isPenaltyPublic: false; penaltyAmount?: never }>;
+
 /**
- * フレンド向け。金額が非公開のときは penaltyAmount プロパティが型上存在しない（`never` で封じている）。
- * このため、非公開タスクの金額をレスポンスへ載せるコードはコンパイルできない。
+ * フレンド向け。金額が非公開のときは penaltyAmount を持てないため、
+ * 非公開タスクの金額をレスポンスへ載せるコードはコンパイルできない。
  */
-export type FriendTaskView = ViewBase &
-  Readonly<{ viewer: "friend" }> &
-  (
-    | Readonly<{ isPenaltyPublic: true; penaltyAmount: number }>
-    | Readonly<{ isPenaltyPublic: false; penaltyAmount?: never }>
-  );
+export type FriendTaskView = FriendTaskViewWithPenalty | FriendTaskViewWithoutPenalty;
 
 export type TaskView = OwnerTaskView | FriendTaskView;
 
