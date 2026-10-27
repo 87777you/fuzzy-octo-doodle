@@ -34,7 +34,16 @@ import { SignedUrlObjectStorage } from "../infrastructure/storage/object-storage
 const POSTGRES_HANDLE = Symbol("PostgresHandle");
 const DATABASE = Symbol("Database");
 
-/** DB 接続と、DB・システムに依存する port の束縛。他の port（Storage、決済）はそれぞれの担当が追加する */
+/**
+ * 責務: DB 接続と、DB・システム・外部サービスに依存する port の束縛。application が定義した port（インターフェース）に、
+ * infrastructure の実装を結びつける唯一の場所。ユースケースは実装クラスを知らず、トークン（Symbol）だけで注入を受ける。
+ *
+ * 全体の流れ: 起動時に環境変数から接続設定を読み（loadPostgresConfig）→ Kysely を作り → 各 repository を束縛する。
+ * 終了時（SIGTERM など）は `onApplicationShutdown` で接続を閉じる。
+ * 機能モジュールは、これを imports して `exports` の port を使う。
+ *
+ * 実装を差し替える箇所: ObjectStorage（保存先の製品が未決定）、PaymentGateway（モックから Stripe へ）、認証は AuthModule。
+ */
 @Module({
   providers: [
     { provide: POSTGRES_HANDLE, useFactory: (): PostgresHandle => createPostgresDialect(loadPostgresConfig(process.env)) },
