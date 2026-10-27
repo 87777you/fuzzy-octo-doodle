@@ -1,6 +1,7 @@
 import type { Brand } from "../shared/brand.ts";
 import { DomainError } from "../shared/errors.ts";
 import { HOUR_MS, MINUTE_MS } from "../shared/time.ts";
+import { brandAs } from "../shared/brand.ts";
 
 export const TASK_MIN_LEAD_MS = 10 * MINUTE_MS;
 export const TASK_MAX_LEAD_MS = 72 * HOUR_MS;
@@ -21,7 +22,7 @@ export function parseTaskDeadline(deadline: Date, now: Date): TaskDeadline {
   if (Number.isNaN(lead) || lead < TASK_MIN_LEAD_MS || lead > TASK_MAX_LEAD_MS) {
     throw new DomainError("VALIDATION_ERROR", "期限は作成時点から10分〜72時間の範囲で指定してください");
   }
-  return deadline as TaskDeadline;
+  return brandAs<"TaskDeadline">()(deadline);
 }
 
 /** 初回証拠が未提出のタスクが上限未満であることの証明。authorizeTaskCreation だけが作る */
@@ -32,7 +33,7 @@ export function authorizeTaskCreation(activeInitialCount: number): TaskCreationP
   if (activeInitialCount >= MAX_PENDING_INITIAL_TASKS) {
     throw new DomainError("TOO_MANY_ACTIVE_TASKS", "初回証拠が未提出のタスクは同時に3件までです");
   }
-  return { activeInitialCount } as TaskCreationPermit;
+  return brandAs<"TaskCreationPermit">()({ activeInitialCount });
 }
 
 /** アップロード「開始」が許されるか。期限ちょうどは有効 */

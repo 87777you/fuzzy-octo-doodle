@@ -1,5 +1,6 @@
 import type { Brand } from "./brand.ts";
 import { DomainError } from "./errors.ts";
+import { brandAs } from "./brand.ts";
 
 /** Idempotency-Key を必須とする操作。操作を増やすときはここに追加する */
 export const IDEMPOTENT_OPERATIONS = [
@@ -18,7 +19,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 export function parseIdempotencyKey(raw: string): IdempotencyKey {
   if (!UUID_PATTERN.test(raw)) throw new DomainError("VALIDATION_ERROR", "Idempotency-Key は UUID で指定してください");
-  return raw.toLowerCase() as IdempotencyKey;
+  return brandAs<"IdempotencyKey">()(raw.toLowerCase());
 }
 
 /** リクエスト内容の SHA-256（16進64文字）。同じキーで別の内容が送られたことの検出に使う */
@@ -26,7 +27,7 @@ export type RequestHash = Brand<string, "RequestHash">;
 
 export function parseRequestHash(raw: string): RequestHash {
   if (!/^[0-9a-f]{64}$/.test(raw)) throw new DomainError("VALIDATION_ERROR", "リクエストのハッシュが不正です");
-  return raw as RequestHash;
+  return brandAs<"RequestHash">()(raw);
 }
 
 /**

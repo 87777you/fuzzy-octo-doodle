@@ -1,6 +1,7 @@
 import { DomainError } from "../shared/errors.ts";
 import type { Brand } from "../shared/brand.ts";
 import type { UserId } from "../shared/ids.ts";
+import { brandAs } from "../shared/brand.ts";
 
 export const NICKNAME_MAX = 20;
 
@@ -21,7 +22,7 @@ export function parseNickname(raw: string): Nickname {
       `ニックネームは1〜${String(NICKNAME_MAX)}文字で入力してください`,
     );
   }
-  return v as Nickname;
+  return brandAs<"Nickname">()(v);
 }
 
 export function registerUser(id: UserId, nickname: string, now: Date): User {

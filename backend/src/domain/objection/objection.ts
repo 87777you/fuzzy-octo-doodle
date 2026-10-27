@@ -46,12 +46,14 @@ export function createObjection<R extends 1 | 2>(
     id: input.id,
     taskId: input.task.id,
     objectorId: input.right.objectorId,
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- task.reviewRound は R と同じ値。ジェネリクスでは型が絞り込まれない
     reviewRound: input.task.reviewRound as R,
     reasonType: input.reasonType,
     reasonDetail: detail,
     createdAt: now,
     withdrawnAt: null,
   };
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- 生成した異議は open 状態で、R は上で入力から導いた値と同じ
   return o as Objection<R, "open">;
 }
 

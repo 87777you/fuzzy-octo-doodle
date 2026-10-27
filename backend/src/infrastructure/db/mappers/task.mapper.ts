@@ -113,6 +113,7 @@ export function taskToRow(task: Task): NewRow<TasksTable> {
 export function onlyStatus<S extends Task["status"]>(rows: TaskRow[], status: S): Extract<Task, { status: S }>[] {
   return rows.flatMap((r) => {
     const t = rowToTask(r);
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- 直前の比較で status === S を確認済み。ジェネリクスでは型が絞り込まれない
     return t.status === status ? [t as Extract<Task, { status: S }>] : [];
   });
 }

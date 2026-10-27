@@ -3,7 +3,7 @@
  * 型が緩んでコンパイルできてしまうと、未使用の `@ts-expect-error` として `pnpm typecheck` が失敗する。
  * 実行されない（どこからも import されない）。
  */
-import type { ObjectionId, TaskId, UploadSessionId, UserId } from "./shared/ids.ts";
+import type { ObjectionId, UploadSessionId, UserId } from "./shared/ids.ts";
 import type { ActiveTask, DisputedTask, ReviewingTask, SuccessTask } from "./task/task.ts";
 import { acceptFirstObjection, submitAdditionalEvidence, submitInitialEvidence } from "./task/task.ts";
 import type { FriendTaskView } from "./task/task-view.ts";
@@ -17,6 +17,7 @@ import type { TaskDeadline } from "./task/task-policy.ts";
 import type { PhotoAccessGrant } from "./task/visibility-policy.ts";
 import type { IdempotentOperation, IdempotentResponseStatus } from "./shared/idempotency.ts";
 import type { ObjectStorage } from "../application/ports/object-storage.port.ts";
+import { brandAs } from "./shared/brand.ts";
 
 function use(...values: unknown[]): number {
   return values.length;
@@ -91,7 +92,7 @@ export function typeGuarantees(
   use(deadline, operation, status);
 
   // ID を取り違えるとコンパイルできない
-  const taskId = "t" as TaskId;
+  const taskId = brandAs<"TaskId">()("t");
   // @ts-expect-error TaskId は ObjectionId ではない
   const wrong: ObjectionId = taskId;
   use(wrong);

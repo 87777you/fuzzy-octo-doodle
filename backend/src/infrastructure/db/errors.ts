@@ -5,7 +5,9 @@ import type { Database } from "./schema.ts";
 import { dbOf } from "./tx.ts";
 
 function field(e: unknown, key: string): unknown {
-  return typeof e === "object" && e !== null ? (e as Record<string, unknown>)[key] : undefined;
+  if (typeof e !== "object" || e === null) return undefined;
+  const value: unknown = Reflect.get(e, key);
+  return value;
 }
 
 /** 一意制約違反の判定。ドライバごとのエラー形式の差をここで吸収する */

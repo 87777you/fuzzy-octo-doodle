@@ -1,5 +1,6 @@
 import type { Brand } from "./brand.ts";
 import { DomainError } from "./errors.ts";
+import { brandAs } from "./brand.ts";
 
 /**
  * オブジェクトストレージ（S3 互換）のキーとして使える文字列。parseStoragePath だけが作る。
@@ -20,5 +21,5 @@ export function parseStoragePath(raw: string): StoragePath {
   if (!SAFE_KEY.test(raw)) return invalid("使えない文字を含む");
   if (raw.startsWith("/") || raw.endsWith("/") || raw.includes("//")) return invalid("区切りの位置が不正");
   if (raw.split("/").some((segment) => segment === "." || segment === "..")) return invalid("相対パスを含む");
-  return raw as StoragePath;
+  return brandAs<"StoragePath">()(raw);
 }
