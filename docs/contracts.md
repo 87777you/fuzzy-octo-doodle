@@ -16,9 +16,9 @@
 
 ## frontend の契約
 
-- `pnpm --filter @app/frontend build` が `frontend/dist/` に静的ファイルを出力する（`output: "export"`）。
-- サーバー側ランタイム（Route Handlers、SSR、Server Actions など）は使わない。
-- バックエンドの URL は `NEXT_PUBLIC_` 接頭辞の環境変数でビルド時に注入する。
+- `pnpm --filter @app/frontend build` が Next.js のサーバー実行用ビルドを作成する。
+- SSR や Route Handlers などのサーバー側ランタイムを利用できる。配信には Next.js サーバーの実行環境が必要。
+- バックエンドの URL は環境変数で設定する。ブラウザから直接参照する値には `NEXT_PUBLIC_` 接頭辞を付ける。
 
 ## backend の契約
 
