@@ -447,7 +447,7 @@ domain と application は `DomainError`（`code`、`message`、`details`）を�
 
 ## 未決定
 
-- 認証基盤。API 設計書は Supabase Auth のアクセストークンを前提としている。採用する場合は、presentation の認証ガードでトークンを検証し、`UserId` に変換する。
-- NestJS の導入。導入時に追加するのは、presentation と DI のモジュールだけである。
-- DTO の定義と、リクエストの検証方式。
+- 認証基盤。サーバー側セッションの方針は決まっているが、ログイン方式（OAuth かメールとパスワードか）は未決定。
+- 定期ジョブの起動方法。`JobsModule` にユースケースだけを用意してある。Cloud Scheduler などから呼ぶ HTTP の入口にするか、別プロセスにするかは未決定で、HTTP にする場合は呼び出し元の認証方式も決める。
+- 通知・自分の情報の API の経路（`/api/notifications`、`/api/me` 以下）は暫定。API 設計書と食い違う場合は設計書に合わせる。
 - 通知の種別（現在の5種は暫定）。
