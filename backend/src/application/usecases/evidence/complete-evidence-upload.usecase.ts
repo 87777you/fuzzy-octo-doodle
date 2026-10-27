@@ -34,7 +34,11 @@ export interface CompleteEvidenceUploadInput {
   photoPaths: readonly string[];
 }
 
-/** 証拠提出後の本人向けタスク表示。成功レスポンスとして冪等性記録にも保存する。 */
+/**
+ * 証拠提出後の本人向けタスク表示。型の実体は domain の OwnerTaskView で、ここは use case の出力として名前を付ける別名のみ
+ * （全 use case で `<Name>Output` を揃え、controller が参照する入口にするため。型を重複定義していない）。
+ * 成功レスポンスとして冪等性記録にも保存する。
+ */
 export type CompleteEvidenceUploadOutput = OwnerTaskView;
 
 /**

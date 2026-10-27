@@ -12,20 +12,8 @@ import { OBJECT_STORAGE } from "../../../application/ports/object-storage.port.t
 import type { ObjectStorage } from "../../../application/ports/object-storage.port.ts";
 import type { PhotoExtension } from "../../../domain/evidence/upload-session.ts";
 import type { PhotoSlot } from "../../../domain/evidence/upload-session.ts";
+import type { UploadUrlsResult } from "../../../domain/evidence/upload-session.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** 写真ごとに発行したサーバー生成パスとアップロード用 URL の一覧。 */
-export interface UploadUrlsResult {
-  /** 入力の photos と同じ枠ごとのアップロード情報。 */
-  uploads: readonly {
-    /** 対象写真の枠番号（1〜3）。 */
-    slot: PhotoSlot;
-    /** 対象セッション配下にサーバーが決めたストレージパス。 */
-    path: string;
-    /** path へクライアントが直接 PUT するための短期署名付き URL。 */
-    uploadUrl: string;
-  }[];
-}
 
 /** IssueUploadUrlsUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface IssueUploadUrlsInput {

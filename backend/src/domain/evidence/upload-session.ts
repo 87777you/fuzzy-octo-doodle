@@ -32,6 +32,22 @@ const photoPathPrefix = (taskId: TaskId, sessionId: UploadSessionId): string => 
 export type PhotoSlot = 1 | 2 | 3;
 export type PhotoExtension = "jpg" | "png" | "webp";
 
+/**
+ * 写真ごとに発行した、サーバー生成パスとアップロード用 URL の一覧。
+ * 「どの枠にどのパスを使うか」は domain の規則（issuePhotoPath）で決まる値なので、use case ではなく domain に置く。
+ */
+export interface UploadUrlsResult {
+  /** 入力の photos と同じ枠ごとのアップロード情報。 */
+  uploads: readonly {
+    /** 対象写真の枠番号（1〜3）。 */
+    slot: PhotoSlot;
+    /** 対象セッション配下にサーバーが決めたストレージパス。 */
+    path: string;
+    /** path へクライアントが直接 PUT するための短期署名付き URL。 */
+    uploadUrl: string;
+  }[];
+}
+
 /** アップロード用の署名 URL を発行するときのパスを、サーバー側で決める。例: evidence/{taskId}/{sessionId}/1.jpg */
 export function issuePhotoPath(session: UploadingSession, slot: PhotoSlot, extension: PhotoExtension): StoragePath {
   return parseStoragePath(`${photoPathPrefix(session.taskId, session.id)}${String(slot)}.${extension}`);
