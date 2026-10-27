@@ -1,0 +1,210 @@
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  color: #101a33;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.thumbnailButton {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background-secondary);
+  cursor: pointer;
+}
+
+.thumbnailButton:hover {
+  border-color: var(--color-primary);
+}
+
+.thumbnailButton:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.thumbnail {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+  box-sizing: border-box;
+
+  background: rgb(0 0 0 / 88%);
+  overscroll-behavior: contain;
+}
+
+.viewer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+
+  width: 100%;
+  max-width: 900px;
+  max-height: 100%;
+
+  outline: none;
+}
+
+.closeButton {
+  align-self: flex-end;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+  padding: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: white;
+  color: #333;
+  font-size: 26px;
+
+  cursor: pointer;
+}
+
+.closeButton:focus-visible,
+.controls button:focus-visible {
+  outline: 3px solid #bba5ff;
+  outline-offset: 3px;
+}
+
+.largeImage {
+  display: block;
+  max-width: 100%;
+  max-height: min(70vh, 70dvh);
+  min-height: 0;
+
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+
+  width: 100%;
+  color: white;
+  font-size: 14px;
+}
+
+.controls button {
+  min-height: 44px;
+  padding: 10px 16px;
+
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 8px;
+
+  background: rgb(255 255 255 / 15%);
+  color: white;
+  font: inherit;
+
+  cursor: pointer;
+}
+
+.controls button:hover {
+  background: rgb(255 255 255 / 25%);
+}
+
+/* タブレット・スマホ */
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .overlay {
+    padding: 16px;
+  }
+
+  .viewer {
+    gap: 12px;
+  }
+
+  .largeImage {
+    max-height: 65dvh;
+  }
+
+  .controls {
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .controls button {
+    padding: 10px 12px;
+    white-space: nowrap;
+  }
+}
+
+/* 幅の狭いスマホ */
+@media (max-width: 360px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .overlay {
+    padding: 10px;
+  }
+
+  .controls button {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}
+
+/* 画面の高さが小さい端末 */
+@media (max-height: 500px) {
+  .overlay {
+    padding: 8px;
+  }
+
+  .viewer {
+    gap: 8px;
+  }
+
+  .largeImage {
+    max-height: 55dvh;
+  }
+}

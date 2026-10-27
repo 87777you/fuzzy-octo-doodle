@@ -1,0 +1,138 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.header,
+.userInfo,
+.statusRow,
+.footer,
+.reactions {
+  display: flex;
+  align-items: center;
+}
+
+.header,
+.footer {
+  justify-content: space-between;
+}
+
+.userInfo {
+  gap: 10px;
+}
+
+.avatar,
+.avatarPlaceholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.userName {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.time {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.menuButton {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.taskTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.statusRow {
+  gap: 8px;
+}
+
+.status {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.remaining {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: #fff0e4;
+  color: #e87816;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.footer {
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+  gap: 8px;
+}
+
+.reactions {
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.detailButton {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.reactionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.reactionButton:hover:not(:disabled) {
+  background: var(--color-primary-light);
+}
+
+.reactionButton.reacted {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.reactionButton:disabled {
+  cursor: default;
+}

@@ -1,0 +1,102 @@
+.layout {
+  min-height: 100vh;
+  background: var(--color-background-secondary);
+}
+
+.contentArea {
+  min-height: 100vh;
+  margin-left: 240px;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.headerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 960px;
+  min-height: 76px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.title {
+  margin: 0;
+  color: #101a33;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.notification {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-background-secondary);
+  color: #101a33;
+  text-decoration: none;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #ff5555;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+@media (max-width: 767px) {
+  .contentArea {
+    margin-left: 0;
+  }
+
+  .headerInner {
+    min-height: 72px;
+    padding: 0 20px;
+  }
+
+  .title {
+    font-size: 25px;
+  }
+
+  .main {
+    padding: 20px 16px 120px;
+  }
+}
+/* ヘッダー非表示の詳細画面 */
+.mainFullWidth {
+  max-width: none;
+  padding: 0;
+}
+
+/* スマホ */
+@media (max-width: 767px) {
+  .mainFullWidth {
+    padding: 0 0 100px;
+  }
+}

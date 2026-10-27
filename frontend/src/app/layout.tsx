@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 
+import "../styles/globals.css";
+import "../styles/variables.css";
+
 export const metadata = {
-  title: "fuzzy-octo-doodle",
+  title: "Donee",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

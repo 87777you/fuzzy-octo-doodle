@@ -1,0 +1,94 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.required {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fff0f0;
+  color: var(--color-danger);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.optional {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.textarea::placeholder {
+  color: #aaa;
+}
+
+.textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(121 85 199 / 10%);
+}
+
+.textarea.error {
+  border-color: var(--color-danger);
+}
+
+.textarea:disabled {
+  background: var(--color-background-secondary);
+  cursor: not-allowed;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 16px;
+}
+
+.helperText,
+.errorText {
+  margin: 0;
+  font-size: 12px;
+}
+
+.helperText,
+.count {
+  color: var(--color-text-secondary);
+}
+
+.errorText {
+  color: var(--color-danger);
+}
+
+.count {
+  flex-shrink: 0;
+  font-size: 12px;
+}
