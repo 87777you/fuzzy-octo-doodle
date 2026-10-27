@@ -6,17 +6,8 @@ import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.rep
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-import type { UserSummary } from "../views.ts";
-
-/** ListFriendsUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface ListFriendsInput {
-  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
-  userId: UserId;
-}
-
-/** 現在の利用者のフレンドの userId と nickname の配列。 */
-export type ListFriendsOutput = readonly UserSummary[];
+import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
+import type { ListFriendsInput } from "../../ports/usecases/list-friends.port.ts";
 
 /**
  * 責務: ログイン利用者の accepted なフレンドを UserSummary の配列で返す。申請中や blocked の関係は一覧に含めない。
@@ -56,7 +47,7 @@ export class ListFriendsUseCase {
    * ログイン利用者の accepted なフレンドを UserSummary の配列で返す。申請中や blocked の関係は一覧に含めない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListFriendsInput): Promise<ListFriendsOutput> {
+  execute(_input: ListFriendsInput): Promise<readonly UserSummary[]> {
     return todo("ListFriendsUseCase");
   }
 }

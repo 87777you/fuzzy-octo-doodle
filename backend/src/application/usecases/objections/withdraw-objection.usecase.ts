@@ -1,3 +1,4 @@
+import type { ObjectionSummary } from "../../../domain/objection/objection-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -11,21 +12,7 @@ import type { TaskRepository } from "../../../application/ports/task.repository.
 import { OBJECTION_REPOSITORY } from "../../../application/ports/objection.repository.ts";
 import type { ObjectionRepository } from "../../../application/ports/objection.repository.ts";
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-import type { ObjectionSummary } from "../views.ts";
-
-/** WithdrawObjectionUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface WithdrawObjectionInput {
-  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
-  userId: UserId;
-  /** Idempotency-Key ヘッダの UUID 文字列。presentation で必須・形式を検証し、execute で名目型にする。 */
-  idempotencyKey: string;
-  /** URL の :objectionId から得る異議 ID。controller で UUID 形式を検証した値である。 */
-  objectionId: string;
-}
-
-/** WithdrawObjectionUseCase.execute の戻り値。コントローラがそのまま HTTP のレスポンス本文にする。 */
-export type WithdrawObjectionOutput = ObjectionSummary;
+import type { WithdrawObjectionInput } from "../../ports/usecases/withdraw-objection.port.ts";
 
 /**
  * 責務: 申立人本人による初回異議の取り下げを受け付け、対象タスクを達成へ遷移させる。再審査の異議や別人の異議は取り下げない。
@@ -94,7 +81,7 @@ export class WithdrawObjectionUseCase {
    * 申立人本人による初回異議の取り下げを受け付け、対象タスクを達成へ遷移させる。再審査の異議や別人の異議は取り下げない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: WithdrawObjectionInput): Promise<WithdrawObjectionOutput> {
+  execute(_input: WithdrawObjectionInput): Promise<ObjectionSummary> {
     return todo("WithdrawObjectionUseCase");
   }
 }

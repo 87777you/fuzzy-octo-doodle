@@ -1,3 +1,4 @@
+import type { FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -8,24 +9,7 @@ import { ID_GENERATOR } from "../../../application/ports/id-generator.port.ts";
 import type { IdGenerator } from "../../../application/ports/id-generator.port.ts";
 import { FRIEND_INVITE_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
 import type { FriendInviteRepository } from "../../../application/ports/friendship.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** 招待リンクの作成・再取得 API が返す、URL 組み立て用の情報である。 */
-export interface FriendInviteView {
-  /** 招待 URL に埋め込む再利用可能な平文 token である。 */
-  token: string;
-  /** 招待を最初に作成した時刻。既存招待を再利用した場合はその作成時刻である。 */
-  createdAt: Date;
-}
-
-/** CreateFriendInviteUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface CreateFriendInviteInput {
-  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
-  userId: UserId;
-}
-
-/** CreateFriendInviteUseCase.execute の戻り値。コントローラがそのまま HTTP のレスポンス本文にする。 */
-export type CreateFriendInviteOutput = FriendInviteView;
+import type { CreateFriendInviteInput } from "../../ports/usecases/create-friend-invite.port.ts";
 
 /**
  * 責務: ログイン利用者が招待リンクを取得できるようにし、有効な招待がなければ 1 件作成する。招待の承認やフレンド関係の作成は担当しない。
@@ -73,7 +57,7 @@ export class CreateFriendInviteUseCase {
    * ログイン利用者が招待リンクを取得できるようにし、有効な招待がなければ 1 件作成する。招待の承認やフレンド関係の作成は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CreateFriendInviteInput): Promise<CreateFriendInviteOutput> {
+  execute(_input: CreateFriendInviteInput): Promise<FriendInviteView> {
     return todo("CreateFriendInviteUseCase");
   }
 }

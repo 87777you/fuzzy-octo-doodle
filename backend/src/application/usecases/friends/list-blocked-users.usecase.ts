@@ -6,17 +6,8 @@ import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.rep
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-import type { UserSummary } from "../views.ts";
-
-/** ListBlockedUsersUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface ListBlockedUsersInput {
-  /** 認証済みセッションの利用者 ID。CurrentUser から渡り、UserId として検証済みである。 */
-  userId: UserId;
-}
-
-/** 呼び出し利用者がブロックした相手の userId と nickname の配列。 */
-export type ListBlockedUsersOutput = readonly UserSummary[];
+import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
+import type { ListBlockedUsersInput } from "../../ports/usecases/list-blocked-users.port.ts";
 
 /**
  * 責務: ログイン利用者自身がブロックした相手を一覧で返す。相手から自分へのブロックや申請状態の一覧は担当しない。
@@ -56,7 +47,7 @@ export class ListBlockedUsersUseCase {
    * ログイン利用者自身がブロックした相手を一覧で返す。相手から自分へのブロックや申請状態の一覧は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListBlockedUsersInput): Promise<ListBlockedUsersOutput> {
+  execute(_input: ListBlockedUsersInput): Promise<readonly UserSummary[]> {
     return todo("ListBlockedUsersUseCase");
   }
 }
