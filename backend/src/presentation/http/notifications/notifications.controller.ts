@@ -12,8 +12,18 @@ import { MarkNotificationReadUseCase } from "../../../application/usecases/notif
 import type { MarkNotificationReadOutput } from "../../../application/usecases/notifications/mark-notification-read.usecase.ts";
 
 /**
- * 通知の API。
- * 各ハンドラの実装: Zod で入力を検証 → parse* で名目型にする → ユースケースの execute を呼ぶ。
+ * 責務: 通知 API の HTTP 入出力を受け持つ。認証利用者と入力を UseCase に渡し、通知の検索・既読化は UseCase に委ねる。
+ *
+ * 全体の流れ:
+ *   HTTP リクエスト → 全体のガード（Origin、セッション）→ このコントローラ → ユースケース → レスポンス
+ *   /api/notifications を route prefix とし、全体ガードの後にリクエストを受ける。
+ *   一覧・件数・既読更新を各 Notifications use case に振り分ける。
+ *
+ * 各ハンドラの実装（presentation 層の仕事はここまで）:
+ *   1. Zod で、パス・クエリ・ヘッダ・本文を検証する（形式の誤りは ZodError → 400）。
+ *   2. parse*Id などで、文字列を名目型に変換する。
+ *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
+ * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
 @Controller("notifications")
 export class NotificationsController {
@@ -24,28 +34,56 @@ export class NotificationsController {
     @Inject(MarkNotificationReadUseCase) protected readonly markNotificationRead: MarkNotificationReadUseCase,
   ) {}
 
-  /** 通知の一覧 */
+  /**
+   * 本人の通知を条件付きでページ取得する。
+   *
+   * HTTP: GET /api/notifications → 200
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: @CurrentUser() のセッション利用者 ID と query の filter・cursor・limit。
+   * 呼び出し先: ListNotificationsUseCase.execute
+   */
   @Get("")
   @HttpCode(200)
   listAll(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<ListNotificationsOutput> {
     return todo("NotificationsController.listAll");
   }
 
-  /** 未読の件数 */
+  /**
+   * 本人の未読通知数を返す。
+   *
+   * HTTP: GET /api/notifications/unread-count → 200
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: @CurrentUser() のセッション利用者 ID。
+   * 呼び出し先: CountUnreadNotificationsUseCase.execute
+   */
   @Get("unread-count")
   @HttpCode(200)
   unreadCount(@CurrentUser() _user: UserId): Promise<CountUnreadNotificationsOutput> {
     return todo("NotificationsController.unreadCount");
   }
 
-  /** すべて既読にする */
+  /**
+   * 本人の未読通知をすべて既読にする。
+   *
+   * HTTP: POST /api/notifications/read-all → 204
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: @CurrentUser() のセッション利用者 ID。
+   * 呼び出し先: MarkAllNotificationsReadUseCase.execute
+   */
   @Post("read-all")
   @HttpCode(204)
   readAll(@CurrentUser() _user: UserId): Promise<MarkAllNotificationsReadOutput> {
     return todo("NotificationsController.readAll");
   }
 
-  /** 既読にする */
+  /**
+   * 本人の指定通知を既読にする。
+   *
+   * HTTP: POST /api/notifications/:id/read → 204
+   * 認証: 必要（セッション。@CurrentUser で利用者の ID を受け取る）
+   * 入力: @CurrentUser() のセッション利用者 ID と path parameter id。
+   * 呼び出し先: MarkNotificationReadUseCase.execute
+   */
   @Post(":id/read")
   @HttpCode(204)
   read(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<MarkNotificationReadOutput> {

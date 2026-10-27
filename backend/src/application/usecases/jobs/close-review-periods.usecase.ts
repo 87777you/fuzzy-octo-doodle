@@ -9,21 +9,46 @@ import type { TaskRepository } from "../../../application/ports/task.repository.
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
 import type { JobResult } from "../views.ts";
 
+/** CloseReviewPeriodsUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface CloseReviewPeriodsInput {
+  /** ジョブ起動側が指定する1回の処理上限。単位はタスク件数であり、外部入力かどうかは起動方式の決定後に検証する。 */
   batchSize: number;
 }
 
+/** ジョブの実行結果を表す JobResult。processed は処理した対象件数であり、HTTP レスポンスではない。 */
 export type CloseReviewPeriodsOutput = JobResult;
 
 /**
- * 定期ジョブ。1 回に処理する件数を batchSize で制限し、1 件ごとに別のトランザクションで処理する。
- * lockReviewEnded → closeReviewPeriod → 保存 → 通知。
+ * 責務: 審査期限を過ぎた reviewing タスクを success に確定し、確定通知につなぐ。ジョブの起動方法や認証は担わない。
+ *
+ * 全体の流れ:
+ *   定期ジョブの起動元（方式は未決定）
+ *     → CloseReviewPeriodsUseCase.execute
+ *     → TaskRepository.lockReviewEnded
+ *     → domain の closeReviewPeriod
+ *     → TaskRepository.save / TaskEventPublisher.publish
+ *     → JobResult。
+ *
+ * 処理:
+ *   1. Clock.now() を取得し、batchSize を上限として対象を処理する。各タスクの処理は UnitOfWork.run の別トランザクションに分ける。
+ *   2. TaskRepository.lockReviewEnded(tx, now, limit) で審査期限が終了した ReviewingTask をロックする。FOR UPDATE SKIP LOCKED が並行ジョブの二重取得を防ぐ。
+ *   3. 各 ReviewingTask に closeReviewPeriod(task, now) を呼ぶ。期限がまだ来ていなければ null となり、保存や通知を行わない。
+ *   4. 遷移があれば TaskRepository.save(tx, transition.next) と TaskEventPublisher.publish(tx, transition.events) を同じトランザクションで行う。
+ *
+ * 注意:
+ *   - 1件の処理失敗はその1件のトランザクションだけをロールバックし、残りの対象を続ける。ジョブは HTTP クライアントへ DomainError を返さない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class CloseReviewPeriodsUseCase {
+  /** 審査期限が終了したタスクを1件ごとのトランザクションで処理する。 */
   protected readonly uow: UnitOfWork;
+  /** 審査期限の判定に使う現在時刻を取得する。 */
   protected readonly clock: Clock;
+  /** 審査終了候補をロックし、遷移後のタスクを保存する。 */
   protected readonly tasks: TaskRepository;
+  /** 確定イベントから通知を作り同じトランザクションで保存する。 */
   protected readonly events: TaskEventPublisher;
 
   constructor(
@@ -38,6 +63,10 @@ export class CloseReviewPeriodsUseCase {
     this.events = events;
   }
 
+  /**
+   * 審査期限を過ぎた reviewing タスクを success に確定し、確定通知につなぐ。ジョブの起動方法や認証は担わない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: CloseReviewPeriodsInput): Promise<CloseReviewPeriodsOutput> {
     return todo("CloseReviewPeriodsUseCase");
   }

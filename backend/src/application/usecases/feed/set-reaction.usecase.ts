@@ -11,22 +11,48 @@ import type { ReactionRepository } from "../../../application/ports/feed.reposit
 import type { ReactionType } from "../../../domain/feed/post.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
+/** SetReactionUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface SetReactionInput {
+  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
   userId: UserId;
+  /** /api/posts/:id/reaction の path parameter。Controller が Zod で ID 形式を検証した文字列である。 */
   postId: string;
+  /** リクエスト body の type。Controller が Zod で ReactionType のいずれかに検証する。 */
   type: ReactionType;
 }
 
+/** リアクション更新後の本文はなく、Controller は204を返す。 */
 export type SetReactionOutput = null;
 
 /**
- * PUT /api/posts/{id}/reaction。findFeedItem で見られる投稿か確認 → ReactionRepository.upsert。204。
+ * 責務: 閲覧可能な投稿への利用者のリアクションを1種類に設定する。投稿の可視性判定は PostRepository に委ね、投稿自体は変更しない。
+ *
+ * 全体の流れ:
+ *   PUT /api/posts/{id}/reaction
+ *     → FeedController.react（認証、投稿 ID、body を検証）
+ *     → この execute
+ *     → PostRepository.findFeedItem で閲覧可否を確認
+ *     → ReactionRepository.upsert。成功時は204を返す。
+ *
+ * 処理:
+ *   1. UnitOfWork.run の中で PostRepository.findFeedItem(tx, postId, userId) を呼び、リアクション対象を閲覧できることを確認する。
+ *   2. 投稿が見つからない場合は DomainError("NOT_FOUND") を投げ、対象の存在を隠す。
+ *   3. Clock.now() を取得し、ReactionRepository.upsert(tx, postId, userId, type, now) を呼ぶ。同じ投稿への再設定は種類の更新となる。
+ *
+ * 失敗:
+ *   - DomainError("NOT_FOUND"): 投稿が存在しない、または本人・フレンドとして閲覧できない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class SetReactionUseCase {
+  /** 投稿の閲覧確認とリアクション更新を同じトランザクションで行う。 */
   protected readonly uow: UnitOfWork;
+  /** リアクションの作成・更新時刻を取得する。 */
   protected readonly clock: Clock;
+  /** 対象投稿を閲覧者が見られるか確認する。 */
   protected readonly posts: PostRepository;
+  /** 利用者のリアクションを作成または選択した種類に更新する。 */
   protected readonly reactions: ReactionRepository;
 
   constructor(
@@ -41,6 +67,10 @@ export class SetReactionUseCase {
     this.reactions = reactions;
   }
 
+  /**
+   * 閲覧可能な投稿への利用者のリアクションを1種類に設定する。投稿の可視性判定は PostRepository に委ね、投稿自体は変更しない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: SetReactionInput): Promise<SetReactionOutput> {
     return todo("SetReactionUseCase");
   }

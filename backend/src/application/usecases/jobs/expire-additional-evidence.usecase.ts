@@ -11,22 +11,48 @@ import type { UploadSessionRepository } from "../../../application/ports/evidenc
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
 import type { JobResult } from "../views.ts";
 
+/** ExpireAdditionalEvidenceUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface ExpireAdditionalEvidenceInput {
+  /** ジョブ起動側が指定する1回の処理上限。単位はタスク件数であり、外部入力かどうかは起動方式の決定後に検証する。 */
   batchSize: number;
 }
 
+/** ジョブの実行結果を表す JobResult。processed は処理した対象件数であり、HTTP レスポンスではない。 */
 export type ExpireAdditionalEvidenceOutput = JobResult;
 
 /**
- * 定期ジョブ。1 回に処理する件数を batchSize で制限し、1 件ごとに別のトランザクションで処理する。
- * lockExpiredAdditional → hasLiveSession → expireAdditional → 保存 → 通知。
+ * 責務: 期限を過ぎた追加証拠待ちタスクを indeterminate に確定し、通知につなぐ。請求は行わず、ジョブの起動方法や認証も担わない。
+ *
+ * 全体の流れ:
+ *   定期ジョブの起動元（方式は未決定）
+ *     → ExpireAdditionalEvidenceUseCase.execute
+ *     → TaskRepository.lockExpiredAdditional / UploadSessionRepository.hasLiveSession
+ *     → domain の expireAdditional
+ *     → TaskRepository.save / TaskEventPublisher.publish
+ *     → JobResult。
+ *
+ * 処理:
+ *   1. Clock.now() を取得し、batchSize を上限として対象を処理する。各タスクの処理は UnitOfWork.run の別トランザクションに分ける。
+ *   2. TaskRepository.lockExpiredAdditional(tx, now, limit) で追加証拠期限切れ候補をロックする。FOR UPDATE SKIP LOCKED が並行ジョブの二重取得を防ぐ。
+ *   3. 各 DisputedTask について UploadSessionRepository.hasLiveSession(tx, task.id, "additional", now) を確認し、expireAdditional(task, now, hasLiveSession) を呼ぶ。有効なアップロードが残る場合は null となり、確定しない。
+ *   4. 遷移が null でなければ TaskRepository.save(tx, transition.next) と TaskEventPublisher.publish(tx, transition.events) を同じトランザクションで実行する。indeterminate は請求対象ではない。
+ *
+ * 注意:
+ *   - 1件の処理失敗はその1件のトランザクションだけをロールバックし、残りの対象を続ける。ジョブは HTTP クライアントへ DomainError を返さない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class ExpireAdditionalEvidenceUseCase {
+  /** 追加証拠期限切れタスクを1件ごとのトランザクションで処理する。 */
   protected readonly uow: UnitOfWork;
+  /** 追加証拠期限の判定に使う現在時刻を取得する。 */
   protected readonly clock: Clock;
+  /** 期限切れ候補をロックし、遷移後のタスクを保存する。 */
   protected readonly tasks: TaskRepository;
+  /** 期限内に開始した有効な追加アップロードが残るか確認する。 */
   protected readonly uploadSessions: UploadSessionRepository;
+  /** 判定不能イベントから通知を作り同じトランザクションで保存する。 */
   protected readonly events: TaskEventPublisher;
 
   constructor(
@@ -43,6 +69,10 @@ export class ExpireAdditionalEvidenceUseCase {
     this.events = events;
   }
 
+  /**
+   * 期限を過ぎた追加証拠待ちタスクを indeterminate に確定し、通知につなぐ。請求は行わず、ジョブの起動方法や認証も担わない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: ExpireAdditionalEvidenceInput): Promise<ExpireAdditionalEvidenceOutput> {
     return todo("ExpireAdditionalEvidenceUseCase");
   }

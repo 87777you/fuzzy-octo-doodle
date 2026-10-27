@@ -8,20 +8,44 @@ import { NOTIFICATION_REPOSITORY } from "../../../application/ports/notification
 import type { NotificationRepository } from "../../../application/ports/notification.repository.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
+/** MarkNotificationReadUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface MarkNotificationReadInput {
+  /** @CurrentUser() から受け取る認証済み利用者の ID。セッション認証済みの UserId である。 */
   userId: UserId;
+  /** /api/notifications/:id/read の path parameter。Controller が Zod で ID 形式を検証した文字列である。 */
   notificationId: string;
 }
 
+/** 既読更新後の本文はなく、Controller は204を返す。 */
 export type MarkNotificationReadOutput = null;
 
 /**
- * POST /api/notifications/{id}/read。markRead。204。
+ * 責務: 利用者本人の指定通知を未読から既読に更新する。他人の通知や存在しない通知の有無は知らせない。
+ *
+ * 全体の流れ:
+ *   POST /api/notifications/{id}/read
+ *     → NotificationsController.read（セッション利用者と path parameter を検証）
+ *     → この execute
+ *     → NotificationRepository.markRead
+ *     → 本文なしで204を返す。
+ *
+ * 処理:
+ *   1. UnitOfWork.run の中で Clock.now() を取得する。
+ *   2. NotificationRepository.markRead(tx, userId, notificationId, now) を呼ぶ。Repository は userId と未読状態も条件にして更新する。
+ *   3. 更新対象が0件でも追加の DomainError は投げず、null を返す。
+ *
+ * 注意:
+ *   - 通知が存在しない、他人の通知である、または既読済みの場合も更新は0件となり、操作結果から存在を推測できない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class MarkNotificationReadUseCase {
+  /** 既読更新をトランザクション内で行う。 */
   protected readonly uow: UnitOfWork;
+  /** 既読にした時刻を取得する。 */
   protected readonly clock: Clock;
+  /** 利用者本人の未読通知だけを既読に更新する。 */
   protected readonly notifications: NotificationRepository;
 
   constructor(
@@ -34,6 +58,10 @@ export class MarkNotificationReadUseCase {
     this.notifications = notifications;
   }
 
+  /**
+   * 利用者本人の指定通知を未読から既読に更新する。他人の通知や存在しない通知の有無は知らせない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: MarkNotificationReadInput): Promise<MarkNotificationReadOutput> {
     return todo("MarkNotificationReadUseCase");
   }
