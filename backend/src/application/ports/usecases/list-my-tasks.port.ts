@@ -1,5 +1,3 @@
-import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
-import type { Page } from "../../../application/ports/task.repository.ts";
 import type { TaskStatus } from "../../../domain/task/task-status.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
@@ -18,6 +16,3 @@ export interface ListMyTasksInput {
   /** クエリ limit。返却件数の上限を表す整数で、許容範囲をコントローラで検証済み。 */
   limit: number;
 }
-
-/** 本人向けタスク表示のページ。items と次ページがある場合の nextCursor を含む。 */
-export type ListMyTasksOutput = Page<OwnerTaskView>;

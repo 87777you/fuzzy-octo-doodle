@@ -24,6 +24,3 @@ export interface GetRetryTemplateInput {
   /** URL の :id パス値。コントローラが UUID 形式を検証し TaskId に変換して渡す。 */
   taskId: TaskId;
 }
-
-/** 再挑戦フォームの初期値。保存処理は行わず、送信後の新規作成は CreateTaskUseCase が担う。 */
-export type GetRetryTemplateOutput = RetryTemplate;

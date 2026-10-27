@@ -25,6 +25,3 @@ export interface ListEvidencesInput {
   /** URL の :id パス値。コントローラが UUID 形式を検証し TaskId に変換して渡す。 */
   taskId: TaskId;
 }
-
-/** 権限を確認した証拠一覧。各写真 URL は短期署名付きで、判定確定後のフレンドには発行しない。 */
-export type ListEvidencesOutput = EvidenceListResult;

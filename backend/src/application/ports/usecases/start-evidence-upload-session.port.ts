@@ -1,6 +1,5 @@
 import type { SubmissionType } from "../../../domain/evidence/upload-session.ts";
 import type { TaskId } from "../../../domain/shared/ids.ts";
-import type { UploadingSession } from "../../../domain/evidence/upload-session.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
 /** StartEvidenceUploadSessionUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
@@ -12,6 +11,3 @@ export interface StartEvidenceUploadSessionInput {
   /** リクエスト本文の提出種別。initial または additional の許可値をコントローラで検証済み。 */
   submissionType: SubmissionType;
 }
-
-/** 新しく保存した uploading 状態のセッション。後続の署名 URL 発行・完了 API が session ID を使う。 */
-export type StartEvidenceUploadSessionOutput = UploadingSession;

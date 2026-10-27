@@ -1,3 +1,4 @@
+import type { UploadingSession } from "../../../domain/evidence/upload-session.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -10,7 +11,7 @@ import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
 import type { TaskRepository } from "../../../application/ports/task.repository.ts";
 import { UPLOAD_SESSION_REPOSITORY } from "../../../application/ports/evidence.repository.ts";
 import type { UploadSessionRepository } from "../../../application/ports/evidence.repository.ts";
-import type { StartEvidenceUploadSessionInput, StartEvidenceUploadSessionOutput } from "../../ports/usecases/start-evidence-upload-session.port.ts";
+import type { StartEvidenceUploadSessionInput } from "../../ports/usecases/start-evidence-upload-session.port.ts";
 
 /**
  * 責務: 所有者の初回または追加証拠提出について、期限内にアップロードセッションを開始して保存する。写真本体の転送は担当しない。
@@ -72,7 +73,7 @@ export class StartEvidenceUploadSessionUseCase {
    * 所有者の初回または追加証拠提出について、期限内にアップロードセッションを開始して保存する。写真本体の転送は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: StartEvidenceUploadSessionInput): Promise<StartEvidenceUploadSessionOutput> {
+  execute(_input: StartEvidenceUploadSessionInput): Promise<UploadingSession> {
     return todo("StartEvidenceUploadSessionUseCase");
   }
 }

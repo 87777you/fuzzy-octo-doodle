@@ -1,3 +1,4 @@
+import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -17,7 +18,7 @@ import type { FriendshipRepository } from "../../../application/ports/friendship
 import { OBJECT_STORAGE } from "../../../application/ports/object-storage.port.ts";
 import type { ObjectStorage } from "../../../application/ports/object-storage.port.ts";
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
-import type { CompleteEvidenceUploadInput, CompleteEvidenceUploadOutput } from "../../ports/usecases/complete-evidence-upload.port.ts";
+import type { CompleteEvidenceUploadInput } from "../../ports/usecases/complete-evidence-upload.port.ts";
 
 /**
  * 責務: アップロード済み写真を検証して証拠を確定し、タスク状態・イベント・冪等レスポンスを同じトランザクションで更新する。写真のアップロード自体は担当しない。
@@ -106,7 +107,7 @@ export class CompleteEvidenceUploadUseCase {
    * アップロード済み写真を検証して証拠を確定し、タスク状態・イベント・冪等レスポンスを同じトランザクションで更新する。写真のアップロード自体は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CompleteEvidenceUploadInput): Promise<CompleteEvidenceUploadOutput> {
+  execute(_input: CompleteEvidenceUploadInput): Promise<OwnerTaskView> {
     return todo("CompleteEvidenceUploadUseCase");
   }
 }

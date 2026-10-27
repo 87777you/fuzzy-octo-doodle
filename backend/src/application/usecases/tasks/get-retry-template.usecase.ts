@@ -1,10 +1,11 @@
+import type { RetryTemplate } from "../../ports/usecases/get-retry-template.port.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
 import type { TaskRepository } from "../../../application/ports/task.repository.ts";
-import type { GetRetryTemplateInput, GetRetryTemplateOutput } from "../../ports/usecases/get-retry-template.port.ts";
+import type { GetRetryTemplateInput } from "../../ports/usecases/get-retry-template.port.ts";
 
 /**
  * 責務: 本人が所有するタスクから再挑戦フォーム用の初期値を返す。新しいタスクの作成や元タスクの変更は行わない。
@@ -46,7 +47,7 @@ export class GetRetryTemplateUseCase {
    * 本人が所有するタスクから再挑戦フォーム用の初期値を返す。新しいタスクの作成や元タスクの変更は行わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetRetryTemplateInput): Promise<GetRetryTemplateOutput> {
+  execute(_input: GetRetryTemplateInput): Promise<RetryTemplate> {
     return todo("GetRetryTemplateUseCase");
   }
 }

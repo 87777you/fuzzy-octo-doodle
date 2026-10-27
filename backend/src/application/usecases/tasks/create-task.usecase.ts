@@ -1,3 +1,4 @@
+import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
@@ -13,7 +14,7 @@ import type { TaskRepository } from "../../../application/ports/task.repository.
 import { PAYMENT_GATEWAY } from "../../../application/ports/payment-gateway.port.ts";
 import type { PaymentGateway } from "../../../application/ports/payment-gateway.port.ts";
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
-import type { CreateTaskInput, CreateTaskOutput } from "../../ports/usecases/create-task.port.ts";
+import type { CreateTaskInput } from "../../ports/usecases/create-task.port.ts";
 
 /**
  * 責務: 利用者のタスクを 1 件作成し、作成前の支払い条件・同時作成数・期限の確認と保存を調整する。HTTP 入力検証そのものは担当しない。
@@ -91,7 +92,7 @@ export class CreateTaskUseCase {
    * 利用者のタスクを 1 件作成し、作成前の支払い条件・同時作成数・期限の確認と保存を調整する。HTTP 入力検証そのものは担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CreateTaskInput): Promise<CreateTaskOutput> {
+  execute(_input: CreateTaskInput): Promise<OwnerTaskView> {
     return todo("CreateTaskUseCase");
   }
 }

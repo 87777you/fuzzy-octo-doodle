@@ -34,6 +34,3 @@ export interface IssueUploadUrlsInput {
     extension: PhotoExtension;
   }[];
 }
-
-/** 写真枠ごとのサーバー生成パスと短期署名付きアップロード URL。クライアントは URL へ写真を直接送る。 */
-export type IssueUploadUrlsOutput = UploadUrlsResult;

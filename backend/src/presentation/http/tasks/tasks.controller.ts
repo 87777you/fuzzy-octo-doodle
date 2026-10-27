@@ -1,15 +1,15 @@
+import type { TaskView } from "../../../domain/task/task-view.ts";
+import type { RetryTemplate } from "../../../application/ports/usecases/get-retry-template.port.ts";
+import type { Page } from "../../../application/ports/task.repository.ts";
+import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CreateTaskUseCase } from "../../../application/usecases/tasks/create-task.usecase.ts";
-import type { CreateTaskOutput } from "../../../application/ports/usecases/create-task.port.ts";
 import { GetRetryTemplateUseCase } from "../../../application/usecases/tasks/get-retry-template.usecase.ts";
-import type { GetRetryTemplateOutput } from "../../../application/ports/usecases/get-retry-template.port.ts";
 import { GetTaskUseCase } from "../../../application/usecases/tasks/get-task.usecase.ts";
-import type { GetTaskOutput } from "../../../application/ports/usecases/get-task.port.ts";
 import { ListMyTasksUseCase } from "../../../application/usecases/tasks/list-my-tasks.usecase.ts";
-import type { ListMyTasksOutput } from "../../../application/ports/usecases/list-my-tasks.port.ts";
 
 /**
  * 責務: /api/tasks のタスク作成・本人一覧・詳細・再挑戦テンプレートについて、HTTP 入力の検証と対応するユースケースの呼び出しを担う。業務ルールや永続化は担わない。
@@ -47,7 +47,7 @@ export class TasksController {
    */
   @Post("")
   @HttpCode(201)
-  create(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Body() _body: unknown): Promise<CreateTaskOutput> {
+  create(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Body() _body: unknown): Promise<OwnerTaskView> {
     return todo("TasksController.create");
   }
 
@@ -61,7 +61,7 @@ export class TasksController {
    */
   @Get("")
   @HttpCode(200)
-  list(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<ListMyTasksOutput> {
+  list(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<OwnerTaskView>> {
     return todo("TasksController.list");
   }
 
@@ -76,7 +76,7 @@ export class TasksController {
    */
   @Get(":id/retry-template")
   @HttpCode(200)
-  retryTemplate(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<GetRetryTemplateOutput> {
+  retryTemplate(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<RetryTemplate> {
     return todo("TasksController.retryTemplate");
   }
 
@@ -91,7 +91,7 @@ export class TasksController {
    */
   @Get(":id")
   @HttpCode(200)
-  get(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<GetTaskOutput> {
+  get(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<TaskView> {
     return todo("TasksController.get");
   }
 }

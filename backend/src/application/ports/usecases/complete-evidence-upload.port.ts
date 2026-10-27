@@ -1,5 +1,4 @@
 import type { IdempotencyKey } from "../../../domain/shared/idempotency.ts";
-import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import type { TaskId } from "../../../domain/shared/ids.ts";
 import type { UploadSessionId } from "../../../domain/shared/ids.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
@@ -17,10 +16,3 @@ export interface CompleteEvidenceUploadInput {
   /** リクエスト本文の写真パス一覧。各パスの安全性・件数・セッション配下かは parsePhotoPaths が検証する。 */
   photoPaths: readonly string[];
 }
-
-/**
- * 証拠提出後の本人向けタスク表示。型の実体は domain の OwnerTaskView で、ここは use case の出力として名前を付ける別名のみ
- * （全 use case で `<Name>Output` を揃え、controller が参照する入口にするため。型を重複定義していない）。
- * 成功レスポンスとして冪等性記録にも保存する。
- */
-export type CompleteEvidenceUploadOutput = OwnerTaskView;

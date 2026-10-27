@@ -1,5 +1,4 @@
 import type { IdempotencyKey } from "../../../domain/shared/idempotency.ts";
-import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import type { TaskId } from "../../../domain/shared/ids.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
@@ -24,6 +23,3 @@ export interface CreateTaskInput {
   /** リクエスト本文の再挑戦元タスク ID。新規作成では null、指定時は UUID 形式を検証し TaskId に変換する。 */
   originalTaskId: TaskId | null;
 }
-
-/** 作成したタスクの本人向け表示データ。コントローラが HTTP 201 の本文として返す。 */
-export type CreateTaskOutput = OwnerTaskView;

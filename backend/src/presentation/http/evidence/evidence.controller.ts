@@ -1,15 +1,15 @@
+import type { UploadingSession } from "../../../domain/evidence/upload-session.ts";
+import type { UploadUrlsResult } from "../../../application/ports/usecases/issue-upload-urls.port.ts";
+import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
+import type { EvidenceListResult } from "../../../application/ports/usecases/list-evidences.port.ts";
 import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CompleteEvidenceUploadUseCase } from "../../../application/usecases/evidence/complete-evidence-upload.usecase.ts";
-import type { CompleteEvidenceUploadOutput } from "../../../application/ports/usecases/complete-evidence-upload.port.ts";
 import { IssueUploadUrlsUseCase } from "../../../application/usecases/evidence/issue-upload-urls.usecase.ts";
-import type { IssueUploadUrlsOutput } from "../../../application/ports/usecases/issue-upload-urls.port.ts";
 import { ListEvidencesUseCase } from "../../../application/usecases/evidence/list-evidences.usecase.ts";
-import type { ListEvidencesOutput } from "../../../application/ports/usecases/list-evidences.port.ts";
 import { StartEvidenceUploadSessionUseCase } from "../../../application/usecases/evidence/start-evidence-upload-session.usecase.ts";
-import type { StartEvidenceUploadSessionOutput } from "../../../application/ports/usecases/start-evidence-upload-session.port.ts";
 
 /**
  * 責務: /api/tasks/:id 配下で証拠アップロードセッションの開始・URL 発行・完了と証拠一覧取得を受け付け、入力を検証して対応するユースケースへ渡す。写真データの転送と業務判定は担わない。
@@ -47,7 +47,7 @@ export class EvidenceController {
    */
   @Post("evidence-upload-sessions")
   @HttpCode(201)
-  startSession(@CurrentUser() _user: UserId, @Param("id") _id: string, @Body() _body: unknown): Promise<StartEvidenceUploadSessionOutput> {
+  startSession(@CurrentUser() _user: UserId, @Param("id") _id: string, @Body() _body: unknown): Promise<UploadingSession> {
     return todo("EvidenceController.startSession");
   }
 
@@ -62,7 +62,7 @@ export class EvidenceController {
    */
   @Post("evidence-upload-sessions/:sessionId/upload-urls")
   @HttpCode(200)
-  issueUrls(@CurrentUser() _user: UserId, @Param("id") _id: string, @Param("sessionId") _sessionId: string, @Body() _body: unknown): Promise<IssueUploadUrlsOutput> {
+  issueUrls(@CurrentUser() _user: UserId, @Param("id") _id: string, @Param("sessionId") _sessionId: string, @Body() _body: unknown): Promise<UploadUrlsResult> {
     return todo("EvidenceController.issueUrls");
   }
 
@@ -77,7 +77,7 @@ export class EvidenceController {
    */
   @Post("evidence-upload-sessions/:sessionId/complete")
   @HttpCode(200)
-  complete(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("id") _id: string, @Param("sessionId") _sessionId: string, @Body() _body: unknown): Promise<CompleteEvidenceUploadOutput> {
+  complete(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("id") _id: string, @Param("sessionId") _sessionId: string, @Body() _body: unknown): Promise<OwnerTaskView> {
     return todo("EvidenceController.complete");
   }
 
@@ -92,7 +92,7 @@ export class EvidenceController {
    */
   @Get("evidences")
   @HttpCode(200)
-  list(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<ListEvidencesOutput> {
+  list(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<EvidenceListResult> {
     return todo("EvidenceController.list");
   }
 }
