@@ -3,13 +3,13 @@ import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CompleteEvidenceUploadUseCase } from "../../../application/usecases/evidence/complete-evidence-upload.usecase.ts";
-import type { CompleteEvidenceUploadOutput } from "../../../application/usecases/evidence/complete-evidence-upload.usecase.ts";
+import type { CompleteEvidenceUploadOutput } from "../../../application/ports/usecases/complete-evidence-upload.port.ts";
 import { IssueUploadUrlsUseCase } from "../../../application/usecases/evidence/issue-upload-urls.usecase.ts";
-import type { IssueUploadUrlsOutput } from "../../../application/usecases/evidence/issue-upload-urls.usecase.ts";
+import type { IssueUploadUrlsOutput } from "../../../application/ports/usecases/issue-upload-urls.port.ts";
 import { ListEvidencesUseCase } from "../../../application/usecases/evidence/list-evidences.usecase.ts";
-import type { ListEvidencesOutput } from "../../../application/usecases/evidence/list-evidences.usecase.ts";
+import type { ListEvidencesOutput } from "../../../application/ports/usecases/list-evidences.port.ts";
 import { StartEvidenceUploadSessionUseCase } from "../../../application/usecases/evidence/start-evidence-upload-session.usecase.ts";
-import type { StartEvidenceUploadSessionOutput } from "../../../application/usecases/evidence/start-evidence-upload-session.usecase.ts";
+import type { StartEvidenceUploadSessionOutput } from "../../../application/ports/usecases/start-evidence-upload-session.port.ts";
 
 /**
  * 責務: /api/tasks/:id 配下で証拠アップロードセッションの開始・URL 発行・完了と証拠一覧取得を受け付け、入力を検証して対応するユースケースへ渡す。写真データの転送と業務判定は担わない。

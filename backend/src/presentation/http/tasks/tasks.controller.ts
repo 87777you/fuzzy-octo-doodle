@@ -3,13 +3,13 @@ import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CreateTaskUseCase } from "../../../application/usecases/tasks/create-task.usecase.ts";
-import type { CreateTaskOutput } from "../../../application/usecases/tasks/create-task.usecase.ts";
+import type { CreateTaskOutput } from "../../../application/ports/usecases/create-task.port.ts";
 import { GetRetryTemplateUseCase } from "../../../application/usecases/tasks/get-retry-template.usecase.ts";
-import type { GetRetryTemplateOutput } from "../../../application/usecases/tasks/get-retry-template.usecase.ts";
+import type { GetRetryTemplateOutput } from "../../../application/ports/usecases/get-retry-template.port.ts";
 import { GetTaskUseCase } from "../../../application/usecases/tasks/get-task.usecase.ts";
-import type { GetTaskOutput } from "../../../application/usecases/tasks/get-task.usecase.ts";
+import type { GetTaskOutput } from "../../../application/ports/usecases/get-task.port.ts";
 import { ListMyTasksUseCase } from "../../../application/usecases/tasks/list-my-tasks.usecase.ts";
-import type { ListMyTasksOutput } from "../../../application/usecases/tasks/list-my-tasks.usecase.ts";
+import type { ListMyTasksOutput } from "../../../application/ports/usecases/list-my-tasks.port.ts";
 
 /**
  * 責務: /api/tasks のタスク作成・本人一覧・詳細・再挑戦テンプレートについて、HTTP 入力の検証と対応するユースケースの呼び出しを担う。業務ルールや永続化は担わない。

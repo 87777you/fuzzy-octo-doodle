@@ -4,35 +4,7 @@ import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
 import type { TaskRepository } from "../../../application/ports/task.repository.ts";
-import type { TaskId } from "../../../domain/shared/ids.ts";
-import type { UserId } from "../../../domain/shared/ids.ts";
-
-/** 再挑戦フォームへ入れる元タスクの値。保存や状態遷移を表す型ではない。 */
-export interface RetryTemplate {
-  /** 元タスクから引き継ぐタイトル。 */
-  title: string;
-  /** 元タスクから引き継ぐ達成条件。 */
-  achievementCondition: string;
-  /** 元タスクから引き継ぐ証拠提出方法。 */
-  evidenceMethod: string;
-  /** 元タスクから引き継ぐペナルティ額。単位は円。 */
-  penaltyAmount: number;
-  /** 元タスクから引き継ぐペナルティ額の公開設定。 */
-  isPenaltyPublic: boolean;
-  /** 再挑戦元のタスク ID。新しいタスク作成時に originalTaskId として送る値。 */
-  originalTaskId: TaskId;
-}
-
-/** GetRetryTemplateUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
-export interface GetRetryTemplateInput {
-  /** 認証済みセッションから得た利用者 ID。@CurrentUser() で名目型として検証済み。 */
-  userId: UserId;
-  /** URL の :id パス値。コントローラが UUID 形式を検証し TaskId に変換して渡す。 */
-  taskId: string;
-}
-
-/** 再挑戦フォームの初期値。保存処理は行わず、送信後の新規作成は CreateTaskUseCase が担う。 */
-export type GetRetryTemplateOutput = RetryTemplate;
+import type { GetRetryTemplateInput, GetRetryTemplateOutput } from "../../ports/usecases/get-retry-template.port.ts";
 
 /**
  * 責務: 本人が所有するタスクから再挑戦フォーム用の初期値を返す。新しいタスクの作成や元タスクの変更は行わない。
