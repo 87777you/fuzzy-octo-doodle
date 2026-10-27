@@ -31,9 +31,16 @@ export function parseRequestHash(raw: string): RequestHash {
   return raw as RequestHash;
 }
 
+/**
+ * 保存するレスポンスのステータス。失敗した要求はトランザクションごと取り消され、記録に残らないため、
+ * 成功のステータスだけを持つ。200=成功、201=作成成功、204=本文なしの成功（API 設計書のHTTPステータスに対応）。
+ */
+export const IDEMPOTENT_RESPONSE_STATUSES = [200, 201, 204] as const;
+export type IdempotentResponseStatus = (typeof IDEMPOTENT_RESPONSE_STATUSES)[number];
+
 export interface IdempotencyRecord {
   requestHash: RequestHash;
-  responseStatus: number | null;
+  responseStatus: IdempotentResponseStatus | null;
   responseBody: unknown; // null = 処理中 or 未完了
 }
 
@@ -55,7 +62,7 @@ export interface IdempotencyRepository {
     user: UserId,
     operation: IdempotentOperation,
     key: IdempotencyKey,
-    status: number,
+    status: IdempotentResponseStatus,
     body: unknown,
   ): Promise<void>;
 }

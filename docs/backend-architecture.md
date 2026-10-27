@@ -120,7 +120,7 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 | 写真は1〜3枚 | `PhotoPaths` は1〜3要素のタプル型 |
 | ストレージのパスの検証 | `ObjectStorage` の各メソッドは、`parseStoragePath` を通した `StoragePath` だけを受け付ける。`PhotoPaths` の要素も `StoragePath` |
 | 期限の範囲と作成数の上限の確認 | `createTask` の入力は `parseTaskDeadline` の結果（`TaskDeadline`）と `authorizeTaskCreation` の結果（`TaskCreationPermit`）を要求する |
-| 冪等性の対象 | `IdempotencyRepository` は、列挙した `IdempotentOperation`、`parseIdempotencyKey` を通した `IdempotencyKey`、`RequestHash` だけを受け付ける |
+| 冪等性の対象 | `IdempotencyRepository` は、列挙した `IdempotentOperation`、`parseIdempotencyKey` を通した `IdempotencyKey`、`RequestHash`、成功のステータスに限った `IdempotentResponseStatus`（200、201、204）だけを受け付ける |
 | 検証前の値の混入 | タイトル、金額、ニックネームは `parse*` を通した名目型（`Brand`）だけを受け付ける |
 | ID の取り違え | `TaskId` や `UserId` を名目型にする |
 | フレンド関係の状態の網羅 | `switch` の `default` で `assertNever` を呼ぶ。状態を増やすとコンパイルエラーになる |

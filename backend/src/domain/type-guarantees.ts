@@ -15,7 +15,7 @@ import type { PhotoPaths } from "./evidence/evidence.ts";
 import type { StoragePath } from "./shared/storage-path.ts";
 import type { TaskDeadline } from "./task/task-policy.ts";
 import type { PhotoAccessGrant } from "./task/visibility-policy.ts";
-import type { IdempotentOperation } from "../application/ports/idempotency.repository.ts";
+import type { IdempotentOperation, IdempotentResponseStatus } from "../application/ports/idempotency.repository.ts";
 import type { ObjectStorage } from "../application/ports/object-storage.port.ts";
 
 function use(...values: unknown[]): number {
@@ -86,7 +86,9 @@ export function typeGuarantees(
   const deadline: TaskDeadline = now;
   // @ts-expect-error 冪等性の対象として登録していない操作名は使えない
   const operation: IdempotentOperation = "typo";
-  use(deadline, operation);
+  // @ts-expect-error 保存するのは成功のレスポンスだけ。登録していないステータスは使えない
+  const status: IdempotentResponseStatus = 500;
+  use(deadline, operation, status);
 
   // ID を取り違えるとコンパイルできない
   const taskId = "t" as TaskId;
