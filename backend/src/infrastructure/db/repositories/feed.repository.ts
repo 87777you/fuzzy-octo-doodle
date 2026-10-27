@@ -37,6 +37,7 @@ async function hydrate(tx: Tx, posts: Row<PostsTable>[], viewer: UserId): Promis
     .execute();
   const [counts, mine] = await Promise.all([countsQuery, mineQuery]);
   return posts.map((p) => {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Object.fromEntries は Record<string, number> を返す。キーは REACTION_TYPES の全要素で、Record<ReactionType, number> と一致する
     const reactionCounts = Object.fromEntries(REACTION_TYPES.map((t) => [t, 0])) as Record<ReactionType, number>;
     for (const c of counts) if (c.post_id === p.id) reactionCounts[asReactionType(c.reaction_type)] = toNumber(c.c);
     const m = mine.find((r) => r.post_id === p.id);

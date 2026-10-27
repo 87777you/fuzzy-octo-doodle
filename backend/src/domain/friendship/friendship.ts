@@ -146,6 +146,7 @@ export function expectFriendshipStatus<S extends FriendshipStatus>(
   status: S,
 ): Extract<Friendship, { status: S }> {
   if (f.status !== status) throw new DomainError("STATE_CONFLICT", "現在の関係ではこの操作はできません");
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- 直前の実行時検査で status === S を確認済み。ジェネリクスでは型が絞り込まれない
   return f as Extract<Friendship, { status: S }>;
 }
 

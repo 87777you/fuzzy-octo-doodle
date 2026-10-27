@@ -1,6 +1,7 @@
 import type { Brand } from "../shared/brand.ts";
 import type { TaskId, UserId } from "../shared/ids.ts";
 import type { Task } from "./task.ts";
+import { brandAs } from "../shared/brand.ts";
 
 export type ViewerRole = "owner" | "friend" | "none";
 
@@ -19,7 +20,7 @@ export type PhotoAccessGrant = Brand<{ readonly taskId: TaskId }, "PhotoAccessGr
 export function authorizePhotoAccess(task: Task, role: ViewerRole): PhotoAccessGrant | null {
   const allowed =
     role === "owner" || (role === "friend" && (task.status === "reviewing" || task.status === "disputed"));
-  return allowed ? ({ taskId: task.id } as PhotoAccessGrant) : null;
+  return allowed ? brandAs<"PhotoAccessGrant">()({ taskId: task.id }) : null;
 }
 
 /** 異議の申し立て権限の証明（フレンドであり、審査中のタスクであること） */
@@ -34,7 +35,7 @@ export function authorizeObjection(
   viewerId: UserId,
 ): { task: Extract<Task, { status: "reviewing" }>; right: ObjectionRight } | null {
   if (role !== "friend" || task.status !== "reviewing") return null;
-  return { task, right: { taskId: task.id, objectorId: viewerId } as ObjectionRight };
+  return { task, right: brandAs<"ObjectionRight">()({ taskId: task.id, objectorId: viewerId }) };
 }
 
 /** 異議理由: 本人と申立人のみ */

@@ -18,6 +18,7 @@ class KyselyTx {
  * Tx のブランドはポート側で非公開のため、型の上では変換が必要になる。変換するのはここだけ。
  */
 export function wrapTx(trx: DbTransaction): Tx {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Tx のブランドはポート側で非公開のため、実装クラスから Tx への変換が必要。変換はここだけで、取り出す側は instanceof で検証する
   return new KyselyTx(trx) as unknown as Tx;
 }
 

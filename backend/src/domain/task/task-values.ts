@@ -1,6 +1,7 @@
 import { DomainError } from "../shared/errors.ts";
 import type { Brand } from "../shared/brand.ts";
 import { TITLE_MAX, PENALTY_MAX, PENALTY_MIN } from "./task-policy.ts";
+import { brandAs } from "../shared/brand.ts";
 
 export type TaskTitle = Brand<string, "TaskTitle">;
 export type NonEmptyText = Brand<string, "NonEmptyText">;
@@ -11,13 +12,13 @@ export function parseTaskTitle(raw: string): TaskTitle {
   if (v.length < 1 || v.length > TITLE_MAX) {
     throw new DomainError("VALIDATION_ERROR", `タイトルは1〜${String(TITLE_MAX)}文字で入力してください`);
   }
-  return v as TaskTitle;
+  return brandAs<"TaskTitle">()(v);
 }
 
 export function parseNonEmptyText(raw: string, label: string): NonEmptyText {
   const v = raw.trim();
   if (v.length === 0) throw new DomainError("VALIDATION_ERROR", `${label}は必須です`);
-  return v as NonEmptyText;
+  return brandAs<"NonEmptyText">()(v);
 }
 
 export function parsePenaltyAmount(n: number): PenaltyAmount {
@@ -27,5 +28,5 @@ export function parsePenaltyAmount(n: number): PenaltyAmount {
       `ペナルティ金額は${String(PENALTY_MIN)}〜${String(PENALTY_MAX)}円の整数で指定してください`,
     );
   }
-  return n as PenaltyAmount;
+  return brandAs<"PenaltyAmount">()(n);
 }

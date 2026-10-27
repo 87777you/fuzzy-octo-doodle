@@ -67,6 +67,7 @@ export function expectStatus<S extends TaskStatus>(
   message = "現在の状態ではこの操作はできません",
 ): Extract<Task, { status: S }> {
   if (task.status !== status) throw new DomainError("STATE_CONFLICT", message);
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- 直前の実行時検査で status === S を確認済み。ジェネリクスでは型が絞り込まれない
   return task as Extract<Task, { status: S }>;
 }
 

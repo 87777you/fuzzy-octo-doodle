@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import type { AddressInfo } from "node:net";
 import { after, before, test } from "node:test";
 import { createApp } from "./app.ts";
 
@@ -8,7 +7,9 @@ let base = "";
 
 before(async () => {
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  base = `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`;
+  const address = server.address();
+  if (address === null || typeof address === "string") throw new Error("サーバーのアドレスを取得できません");
+  base = `http://127.0.0.1:${String(address.port)}`;
 });
 
 after(() => server.close());

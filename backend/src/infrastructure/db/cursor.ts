@@ -14,7 +14,8 @@ export function decodeCursor(raw: string): KeysetCursor {
   try {
     const v: unknown = JSON.parse(Buffer.from(raw, "base64url").toString("utf8"));
     if (typeof v === "object" && v !== null) {
-      const { t, id } = v as Record<string, unknown>;
+      const t: unknown = Reflect.get(v, "t");
+      const id: unknown = Reflect.get(v, "id");
       if (typeof t === "string" && typeof id === "string" && !Number.isNaN(Date.parse(t))) {
         return { at: new Date(t), id };
       }

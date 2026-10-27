@@ -57,6 +57,7 @@ function start<T extends SubmissionType>(
     uploadExpiresAt: uploadCompleteBy(baseDeadline),
     status: "uploading",
   };
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- T で絞り込んだ状態型への変換。T は呼び出し側の型引数で、実行時の値と一致する
   return s as UploadingSession<T>;
 }
 
