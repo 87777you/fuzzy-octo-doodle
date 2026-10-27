@@ -37,6 +37,10 @@ export default tseslint.config(
       // 型アサーション（as / <T>）を禁止する。`as const` は許可される。
       // 型の変換が避けられない箇所だけ、理由を書いた eslint-disable-next-line で明示的に許可する。
       "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
+      // NestJS のモジュールは、デコレータだけを持つ空のクラスで定義する。
+      "@typescript-eslint/no-extraneous-class": ["error", { allowWithDecorator: true }],
+      // 実装を引き継ぐ skeleton の未使用の引数は、先頭に _ を付けて残す。
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
 );

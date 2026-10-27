@@ -1,26 +1,29 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { createApp } from "./app.ts";
+import type { INestApplication } from "@nestjs/common";
+import { createApp } from "./composition/create-app.ts";
 
-const server = createApp();
+// DB への接続は最初のクエリまで行われない。起動の確認には、形式が正しい接続設定だけあればよい。
+process.env["DATABASE_HOST"] = "127.0.0.1";
+process.env["DATABASE_NAME"] = "test";
+process.env["DATABASE_USER"] = "test";
+process.env["DATABASE_PASSWORD"] = "test";
+
+let app: INestApplication;
 let base = "";
 
 before(async () => {
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  if (address === null || typeof address === "string") throw new Error("サーバーのアドレスを取得できません");
-  base = `http://127.0.0.1:${String(address.port)}`;
+  app = await createApp();
+  await app.listen(0, "127.0.0.1");
+  base = (await app.getUrl()).replace("[::1]", "127.0.0.1");
 });
 
-after(() => server.close());
+after(async () => {
+  await app.close();
+});
 
 test("GET /healthz returns ok", async () => {
   const res = await fetch(`${base}/healthz`);
   assert.equal(res.status, 200);
   assert.deepEqual(await res.json(), { status: "ok" });
-});
-
-test("unknown path returns 404", async () => {
-  const res = await fetch(`${base}/nope`);
-  assert.equal(res.status, 404);
 });

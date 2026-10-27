@@ -11,3 +11,4 @@ export * from "./notification.repository.ts";
 export * from "./idempotency.repository.ts";
 export * from "./object-storage.port.ts";
 export * from "./payment-gateway.port.ts";
+export * from "./session.port.ts";
