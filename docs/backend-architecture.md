@@ -98,7 +98,9 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 
 ### application のユースケース（実装先）
 
-`application/usecases/<領域>/<操作>.ts` に、1ファイル1ユースケースで置く。ユースケースは、次の流れで書く。
+`application/usecases/<領域>/<操作>.usecase.ts` に、1ファイル1ユースケースで置く。入力 `<名前>Input`、出力 `<名前>Output` と、それに付随する型は、型の定義を port 側に置く規則に従い、`application/ports/usecases/<操作>.port.ts` に定義する（ID は `TaskId` などの名目型で持つ）。Output は新しい型を作らず、domain の型（`OwnerTaskView`、`FeedItemView` など）をそのまま返す（実体のある型への別名は作らない）。複数のユースケースが共有する表示形は `domain/` に置く。ユースケースのファイルには、`@Injectable()` のクラス `<名前>UseCase` がある。実装するのは `execute` の本体（`todo()` を置き換える）で、入出力の型とコンストラクタ（依存）は先に決めてある。依存を増やすときは、コンストラクタに `@Inject(トークン)` を足す。
+
+コントローラ（`presentation/http/<領域>/`）の各ハンドラも `todo()` で、Zod で入力を検証 → `parse*` で名目型にする → `execute` を呼ぶ、の順に実装する。モジュール（`composition/<領域>.module.ts`）に登録済み。ユースケースは、次の流れで書く。
 
 1. 入力を検証する。値は `parse*` を通して名目型にする。
 2. `UnitOfWork.run` の中で、port と domain の関数を呼ぶ。
@@ -270,6 +272,19 @@ API 設計書のエンドポイントごとに、使う関数と port を示す�
 | アップロードセッションの整理 | `UploadSessionRepository.expireStale` |
 
 `lock*` は `FOR UPDATE SKIP LOCKED` で取得するため、ジョブを複数同時に動かしても同じ行を二重に処理しない。
+
+#### ジョブの起動
+
+ジョブは API とは別のプロセスで、**同じ Docker イメージ**のコマンドだけを変えて動かす。HTTP の入口は作らない（認証の仕組みが要らず、外から呼べる面も増えない）。
+
+- エントリーポイントは `backend/src/jobs-main.ts`。`node dist/jobs-main.js <ジョブ名>` で 1 回実行して終了する。
+- ジョブ名は `expire-initial-tasks`、`close-review-periods`、`expire-additional-evidence`、`expire-stale-upload-sessions` の 4 つ。未知の名前は Zod の検証で失敗する。
+- 環境変数 `JOB_BATCH_SIZE` で 1 回の処理件数を指定する（正の整数、省略時は 100）。DB の接続設定は API と同じ。
+- `AppModule` は使わず `JobsModule` だけで DI コンテナを作るため、ガードや HTTP は載らない。
+- 成功時は 0 で終了し、結果（処理件数）を JSON で標準出力に出す。失敗は例外のまま伝わり、終了コード 1 になる。
+- 手元では `pnpm --filter @app/backend dev:job <ジョブ名>` で動かせる。
+
+Kubernetes の CronJob では、API と同じイメージを使い、`command` だけを差し替える。`concurrencyPolicy: Forbid` を推奨する（前回の実行が終わる前に、次を始めない）。CronJob の manifest は `k8s-deploys` リポジトリで管理する。
 
 ## 実装に影響する関数の使い方
 
@@ -460,7 +475,6 @@ domain と application は `DomainError`（`code`、`message`、`details`）を�
 
 ## 未決定
 
-- 認証基盤。API 設計書は Supabase Auth のアクセストークンを前提としている。採用する場合は、presentation の認証ガードでトークンを検証し、`UserId` に変換する。
-- NestJS の導入。導入時に追加するのは、presentation と DI のモジュールだけである。
-- DTO の定義と、リクエストの検証方式。
+- 認証基盤。サーバー側セッションの方針は決まっているが、ログイン方式（OAuth かメールとパスワードか）は未決定。
+- 通知・自分の情報の API の経路（`/api/notifications`、`/api/me` 以下）は暫定。API 設計書と食い違う場合は設計書に合わせる。
 - 通知の種別（現在の5種は暫定）。
