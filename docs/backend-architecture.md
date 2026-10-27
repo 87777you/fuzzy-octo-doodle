@@ -403,7 +403,7 @@ const objection = createObjection(
 
 ### 型の使い方
 
-13. `any` を使わない。型アサーション（`as`、`<T>`）は lint（`consistent-type-assertions`）で禁止している。`as const` は使ってよい。
+13. `any` を使わない。backend では、型アサーション（`as`、`<T>`）を lint（`consistent-type-assertions`）で禁止している。`as const` は使ってよい。frontend には適用しない。
 14. 名目型を付けるときは `domain/shared/brand.ts` の `brandAs<"名前">()(値)` を使う。検証を済ませた `parse*` / `authorize*` の内部と、DB から読んだ値を信頼できる mapper に限る。
 15. 型の変換が避けられない箇所（ジェネリクスの絞り込みなど）は、`// eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- 理由` で、理由を書いて明示的に許可する。理由が書けない変換は、設計を見直す。
 
