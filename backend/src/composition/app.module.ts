@@ -3,13 +3,14 @@ import { APP_FILTER } from "@nestjs/core";
 import { AllExceptionsFilter } from "../presentation/http/errors/all-exceptions.filter.ts";
 import { HealthController } from "../presentation/http/health.controller.ts";
 import { AuthModule } from "./auth.module.ts";
+import { TasksModule } from "./tasks.module.ts";
 import { PersistenceModule } from "./persistence.module.ts";
 
 /**
  * ルートのモジュール。機能ごとのモジュール（tasks、friends など）は、ここに imports を足して登録する。
  */
 @Module({
-  imports: [PersistenceModule, AuthModule],
+  imports: [PersistenceModule, AuthModule, TasksModule],
   controllers: [HealthController],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })

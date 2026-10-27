@@ -98,7 +98,9 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 
 ### application のユースケース（実装先）
 
-`application/usecases/<領域>/<操作>.ts` に、1ファイル1ユースケースで置く。ユースケースは、次の流れで書く。
+`application/usecases/<領域>/<操作>.usecase.ts` に、1ファイル1ユースケースで置く。各ファイルには、入力 `<名前>Input`、出力 `<名前>Output`、`@Injectable()` のクラス `<名前>UseCase` がある。実装するのは `execute` の本体（`todo()` を置き換える）で、入出力の型とコンストラクタ（依存）は先に決めてある。依存を増やすときは、コンストラクタに `@Inject(トークン)` を足す。
+
+コントローラ（`presentation/http/<領域>/`）の各ハンドラも `todo()` で、Zod で入力を検証 → `parse*` で名目型にする → `execute` を呼ぶ、の順に実装する。モジュール（`composition/<領域>.module.ts`）に登録済み。ユースケースは、次の流れで書く。
 
 1. 入力を検証する。値は `parse*` を通して名目型にする。
 2. `UnitOfWork.run` の中で、port と domain の関数を呼ぶ。

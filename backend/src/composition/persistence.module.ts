@@ -26,6 +26,10 @@ import { KyselyUserRepository } from "../infrastructure/db/repositories/user.rep
 import type { Database } from "../infrastructure/db/schema.ts";
 import { KyselyUnitOfWork } from "../infrastructure/db/unit-of-work.ts";
 import { RandomIdGenerator, SystemClock } from "../infrastructure/system/system.ts";
+import { OBJECT_STORAGE } from "../application/ports/object-storage.port.ts";
+import { PAYMENT_GATEWAY } from "../application/ports/payment-gateway.port.ts";
+import { MockPaymentGateway } from "../infrastructure/payment/mock-payment-gateway.ts";
+import { SignedUrlObjectStorage } from "../infrastructure/storage/object-storage.ts";
 
 const POSTGRES_HANDLE = Symbol("PostgresHandle");
 const DATABASE = Symbol("Database");
@@ -49,6 +53,8 @@ const DATABASE = Symbol("Database");
     { provide: IDEMPOTENCY_REPOSITORY, useClass: KyselyIdempotencyRepository },
     { provide: CLOCK, useClass: SystemClock },
     { provide: ID_GENERATOR, useClass: RandomIdGenerator },
+    { provide: OBJECT_STORAGE, useClass: SignedUrlObjectStorage },
+    { provide: PAYMENT_GATEWAY, useClass: MockPaymentGateway },
   ],
   exports: [
     UNIT_OF_WORK,
@@ -65,6 +71,8 @@ const DATABASE = Symbol("Database");
     IDEMPOTENCY_REPOSITORY,
     CLOCK,
     ID_GENERATOR,
+    OBJECT_STORAGE,
+    PAYMENT_GATEWAY,
   ],
 })
 export class PersistenceModule implements OnApplicationShutdown {
