@@ -9,21 +9,46 @@ import type { FriendshipRepository } from "../../../application/ports/friendship
 import type { TaskView } from "../../../domain/task/task-view.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 
+/** GetTaskUseCase.execute の入力。コントローラが検証し、必要な値を名目型に変換して渡す。 */
 export interface GetTaskInput {
+  /** 認証済みセッションから得た閲覧者 ID。@CurrentUser() で名目型として検証済み。 */
   viewerId: UserId;
+  /** URL の :id パス値。コントローラが UUID 形式を検証し TaskId に変換して渡す。 */
   taskId: string;
 }
 
+/** 閲覧権限を確認したタスク詳細。本人向けまたはフレンド向けの表示型となる。 */
 export type GetTaskOutput = TaskView;
 
 /**
- * GET /api/tasks/{id}。findById → areFriends → viewerRole。
- * role が none のときは、存在を知らせないために NOT_FOUND にする。それ以外は toTaskView。
+ * 責務: タスク詳細を読む利用者の関係に応じて閲覧権限を決め、安全な TaskView を返す。HTTP 応答への変換と保存は担当しない。
+ *
+ * 全体の流れ:
+ *   GET /api/tasks/{id}
+ *     → TasksController.get（認証利用者と :id を検証）
+ *     → GetTaskUseCase.execute
+ *     → TaskRepository.findById / FriendshipRepository.areFriends
+ *     → domain: viewerRole / toTaskView
+ *   本人でもフレンドでもない閲覧者には NOT_FOUND を返し、存在を知らせない。
+ *
+ * 処理:
+ *   1. parseTaskId 済みの taskId で UnitOfWork.run 内から TaskRepository.findById(tx, taskId) を呼ぶ。null なら NOT_FOUND を返す。
+ *   2. FriendshipRepository.areFriends(tx, task.ownerId, viewerId) を調べ、viewerRole(task.ownerId, viewerId, isFriend) で owner / friend / none を決める。
+ *   3. role が none なら NOT_FOUND を返す。存在を隠すため、権限なしを FORBIDDEN と区別しない。
+ *   4. toTaskView(task, role) で閲覧者に合う TaskView を作って返す。friend の場合、非公開ペナルティ額は表示型にも含まれない。
+ *
+ * 失敗:
+ *   - DomainError("NOT_FOUND"): タスクがない、または閲覧者が本人でもフレンドでもない。
+ *
+ * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
 @Injectable()
 export class GetTaskUseCase {
+  /** タスクとフレンド関係を読む処理を同じ読み取り境界で実行する。 */
   protected readonly uow: UnitOfWork;
+  /** taskId に対応するタスクを取得する。 */
   protected readonly tasks: TaskRepository;
+  /** 閲覧者と所有者がフレンドかを判定する。 */
   protected readonly friendships: FriendshipRepository;
 
   constructor(
@@ -36,6 +61,10 @@ export class GetTaskUseCase {
     this.friendships = friendships;
   }
 
+  /**
+   * タスク詳細を読む利用者の関係に応じて閲覧権限を決め、安全な TaskView を返す。HTTP 応答への変換と保存は担当しない。
+   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   */
   execute(_input: GetTaskInput): Promise<GetTaskOutput> {
     return todo("GetTaskUseCase");
   }
