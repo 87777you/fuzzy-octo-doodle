@@ -15,7 +15,7 @@ import type { PhotoPaths } from "./evidence/evidence.ts";
 import type { StoragePath } from "./shared/storage-path.ts";
 import type { TaskDeadline } from "./task/task-policy.ts";
 import type { PhotoAccessGrant } from "./task/visibility-policy.ts";
-import type { IdempotentOperation, IdempotentResponseStatus } from "../application/ports/idempotency.repository.ts";
+import type { IdempotentOperation, IdempotentResponseStatus } from "./shared/idempotency.ts";
 import type { ObjectStorage } from "../application/ports/object-storage.port.ts";
 
 function use(...values: unknown[]): number {

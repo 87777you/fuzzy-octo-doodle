@@ -120,7 +120,7 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 | 写真は1〜3枚 | `PhotoPaths` は1〜3要素のタプル型 |
 | ストレージのパスの検証 | `ObjectStorage` の各メソッドは、`parseStoragePath` を通した `StoragePath` だけを受け付ける。`PhotoPaths` の要素も `StoragePath` |
 | 期限の範囲と作成数の上限の確認 | `createTask` の入力は `parseTaskDeadline` の結果（`TaskDeadline`）と `authorizeTaskCreation` の結果（`TaskCreationPermit`）を要求する |
-| 冪等性の対象 | `IdempotencyRepository` は、列挙した `IdempotentOperation`、`parseIdempotencyKey` を通した `IdempotencyKey`、`RequestHash`、成功のステータスに限った `IdempotentResponseStatus`（200、201、204）だけを受け付ける |
+| 冪等性の対象 | `IdempotencyRepository` は、列挙した `IdempotentOperation`、`parseIdempotencyKey` を通した `IdempotencyKey`、`RequestHash`、成功のステータスに限った `IdempotentResponseStatus`（200、201、204）だけを受け付ける。これらの型と `parse*` は `domain/shared/idempotency.ts` にあり、port のファイルには入出力のインターフェースだけを置く |
 | 検証前の値の混入 | タイトル、金額、ニックネームは `parse*` を通した名目型（`Brand`）だけを受け付ける |
 | ID の取り違え | `TaskId` や `UserId` を名目型にする |
 | フレンド関係の状態の網羅 | `switch` の `default` で `assertNever` を呼ぶ。状態を増やすとコンパイルエラーになる |
@@ -290,7 +290,7 @@ const { next, events } = acceptFirstObjection(reviewing, now);
 | `parseStoragePath` | `StoragePath` | S3 のキーとして安全な文字だけ、1024バイト以内、`//` や `..` を含まない |
 | `parseTaskDeadline(deadline, now)` | `TaskDeadline` | 作成時点から10分〜72時間 |
 | `authorizeTaskCreation(count)` | `TaskCreationPermit` | 初回未提出のタスクが3件未満（権限の証明と同じ扱い） |
-| `parseIdempotencyKey` | `IdempotencyKey` | UUID |
+| `parseIdempotencyKey` | `IdempotencyKey` | UUID（`domain/shared/idempotency.ts`） |
 | `parseRequestHash` | `RequestHash` | SHA-256 の16進64文字 |
 
 `createTask` と `registerUser` は、タイトルなどの文字列を受け取って内部で `parse*` を呼ぶので、ユースケースから個別に呼ぶ必要はない。ただし期限と作成数の上限は、`createTask` の前に `parseTaskDeadline` と `authorizeTaskCreation` を呼び、その結果を入力に渡す。
