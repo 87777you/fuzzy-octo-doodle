@@ -1,87 +1,49 @@
 
-"use client";
-
-import { useState } from "react";
-import { AppLayout } from "../../src/components/layout/AppLayout";
 import { TaskStatsCard } from "../../src/components/tasks/TaskStatsCard";
 
 export default function TestUIPage() {
-  const [rate, setRate] = useState(68);
-  const [active, setActive] = useState(3);
-  const [overdue, setOverdue] = useState(1);
-
   return (
-    <AppLayout title="共通コンポーネント確認">
+    <main
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f8f7fc",
+        padding: "40px 20px",
+      }}
+    >
       <div
         style={{
-          maxWidth: 760,
+          maxWidth: "430px",
           margin: "0 auto",
-          display: "grid",
-          gap: 24,
         }}
       >
-        <h2>TaskStatsCard</h2>
-
-        <TaskStatsCard
-          completionRate={rate}
-          activeCount={active}
-          overdueCount={overdue}
-        />
-
-        <div
+        <h1
           style={{
-            display: "grid",
-            gap: 12,
-            padding: 16,
-            background: "#fff",
-            borderRadius: 12,
+            fontSize: "24px",
+            fontWeight: "bold",
+            color: "#17134a",
+            marginBottom: "8px",
           }}
         >
-          <label>
-            達成率：{rate}%
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={rate}
-              onChange={(event) =>
-                setRate(Number(event.target.value))
-              }
-              style={{ display: "block", width: "100%" }}
-            />
-          </label>
+          マイページ
+        </h1>
 
-          <label>
-            進行中のタスク数
-            <input
-              type="number"
-              min={0}
-              value={active}
-              onChange={(event) =>
-                setActive(
-                  Math.max(0, Number(event.target.value))
-                )
-              }
-              style={{ display: "block", width: "100%" }}
-            />
-          </label>
+        <h2
+          style={{
+            fontSize: "18px",
+            fontWeight: "bold",
+            color: "#17134a",
+            marginBottom: "20px",
+          }}
+        >
+          今までのタスク状況
+        </h2>
 
-          <label>
-            期限切れのタスク数
-            <input
-              type="number"
-              min={0}
-              value={overdue}
-              onChange={(event) =>
-                setOverdue(
-                  Math.max(0, Number(event.target.value))
-                )
-              }
-              style={{ display: "block", width: "100%" }}
-            />
-          </label>
-        </div>
+        <TaskStatsCard
+          completionRate={70}
+          completedCount={14}
+          overdueCount={3}
+        />
       </div>
-    </AppLayout>
+    </main>
   );
 }
