@@ -23,14 +23,20 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-member-access": "error",
       "@typescript-eslint/no-unsafe-return": "error",
       "@typescript-eslint/consistent-type-imports": "error",
-      // 型アサーション（as / <T>）を禁止する。`as const` は許可される。
-      // 型の変換が避けられない箇所だけ、理由を書いた eslint-disable-next-line で明示的に許可する。
-      "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
       "@typescript-eslint/no-floating-promises": [
         "error",
         // node:test の test() は最上位で await しない前提の API
         { allowForKnownSafeCalls: [{ from: "package", package: "node:test", name: ["test"] }] },
       ],
+    },
+  },
+  {
+    // backend だけに適用する。frontend は React / DOM の型の都合で、型の変換が必要になる場面が多い。
+    files: ["backend/**/*.ts"],
+    rules: {
+      // 型アサーション（as / <T>）を禁止する。`as const` は許可される。
+      // 型の変換が避けられない箇所だけ、理由を書いた eslint-disable-next-line で明示的に許可する。
+      "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
     },
   },
 );
