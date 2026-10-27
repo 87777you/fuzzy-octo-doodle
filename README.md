@@ -3,7 +3,7 @@
 Next.js(React)のフロントエンドと、コンテナで動く TypeScript バックエンドの pnpm workspace モノレポ。
 
 ```text
-frontend/         Next.js + React（静的ビルド → frontend/dist）
+frontend/         Next.js + React（SSR対応。Next.jsサーバーで実行）
 backend/          TypeScript HTTP サーバー + Dockerfile
 docs/             実行契約、ツールの使い方
 mise.toml         ツールチェーン固定とタスク定義
@@ -24,4 +24,5 @@ mise run ci       # CI と同じ検証（Docker が必要）
 ## ドキュメント
 
 - [docs/tooling.md](docs/tooling.md) — mise でツールを追加する手順と、pnpm の基本的な使い方
+- [docs/backend-architecture.md](docs/backend-architecture.md) — バックエンドの層構成、タスクの状態遷移、実装時の規約
 - [docs/contracts.md](docs/contracts.md) — アプリケーションとインフラ・CI/CD の契約

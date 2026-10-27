@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
-// 静的ビルド（frontend/dist）を出力する。Cloudflare Pages などの静的配信を前提とする。
 const config: NextConfig = {
-  output: "export",
-  distDir: "dist",
+    output: "standalone",
+  // Default Next.js server output enables request-time rendering (SSR).
 };
 
 export default config;
