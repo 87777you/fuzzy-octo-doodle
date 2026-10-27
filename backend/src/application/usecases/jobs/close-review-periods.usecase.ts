@@ -14,7 +14,7 @@ import type { CloseReviewPeriodsInput } from "../../ports/usecases/close-review-
  * 責務: 審査期限を過ぎた reviewing タスクを success に確定し、確定通知につなぐ。ジョブの起動方法や認証は担わない。
  *
  * 全体の流れ:
- *   定期ジョブの起動元（方式は未決定）
+ *   jobs-main.ts（CronJob が `node dist/jobs-main.js <ジョブ名>` で起動する別エントリーポイント）
  *     → CloseReviewPeriodsUseCase.execute
  *     → TaskRepository.lockReviewEnded
  *     → domain の closeReviewPeriod

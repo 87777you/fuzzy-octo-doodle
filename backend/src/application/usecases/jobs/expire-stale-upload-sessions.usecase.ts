@@ -12,7 +12,7 @@ import type { JobResult } from "../../ports/usecases/job-result.ts";
  * 責務: 完了期限を過ぎたアップロードセッションを整理する。タスク状態や証拠データは変更しない。
  *
  * 全体の流れ:
- *   定期ジョブの起動元（方式は未決定）
+ *   jobs-main.ts（CronJob が `node dist/jobs-main.js <ジョブ名>` で起動する別エントリーポイント）
  *     → ExpireStaleUploadSessionsUseCase.execute
  *     → UploadSessionRepository.expireStale
  *     → 更新件数を JobResult として返す。
@@ -23,7 +23,7 @@ import type { JobResult } from "../../ports/usecases/job-result.ts";
  *   3. Repository が返した更新件数を JobResult.processed として返す。
  *
  * 注意:
- *   - ジョブの呼び出し元は HTTP Controller ではない。起動方式と認証の決定前に HTTP エンドポイントを追加しない。
+ *   - ジョブの呼び出し元は HTTP Controller ではなく、jobs-main.ts である。HTTP の入口は作らない。
  *   - この port は期限切れセッションを一括更新して件数を返し、batchSize や1件ごとの結果を受け取らない。個別失敗を分離する設計は現行の契約からは確認できない。
  *
  * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。

@@ -8,6 +8,8 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/main.js",
+    "job": "node dist/jobs-main.js",
+    "dev:job": "tsx src/jobs-main.ts",
     "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {

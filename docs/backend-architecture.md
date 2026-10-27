@@ -258,6 +258,19 @@ API 設計書のエンドポイントごとに、使う関数と port を示す�
 
 `lock*` は `FOR UPDATE SKIP LOCKED` で取得するため、ジョブを複数同時に動かしても同じ行を二重に処理しない。
 
+#### ジョブの起動
+
+ジョブは API とは別のプロセスで、**同じ Docker イメージ**のコマンドだけを変えて動かす。HTTP の入口は作らない（認証の仕組みが要らず、外から呼べる面も増えない）。
+
+- エントリーポイントは `backend/src/jobs-main.ts`。`node dist/jobs-main.js <ジョブ名>` で 1 回実行して終了する。
+- ジョブ名は `expire-initial-tasks`、`close-review-periods`、`expire-additional-evidence`、`expire-stale-upload-sessions` の 4 つ。未知の名前は Zod の検証で失敗する。
+- 環境変数 `JOB_BATCH_SIZE` で 1 回の処理件数を指定する（正の整数、省略時は 100）。DB の接続設定は API と同じ。
+- `AppModule` は使わず `JobsModule` だけで DI コンテナを作るため、ガードや HTTP は載らない。
+- 成功時は 0 で終了し、結果（処理件数）を JSON で標準出力に出す。失敗は例外のまま伝わり、終了コード 1 になる。
+- 手元では `pnpm --filter @app/backend dev:job <ジョブ名>` で動かせる。
+
+Kubernetes の CronJob では、API と同じイメージを使い、`command` だけを差し替える。`concurrencyPolicy: Forbid` を推奨する（前回の実行が終わる前に、次を始めない）。CronJob の manifest は `k8s-deploys` リポジトリで管理する。
+
 ## 実装に影響する関数の使い方
 
 実装者が直接呼ぶ関数と、型を扱うときの約束事をまとめる。いずれも `backend/src/domain/` にある。
@@ -448,6 +461,5 @@ domain と application は `DomainError`（`code`、`message`、`details`）を�
 ## 未決定
 
 - 認証基盤。サーバー側セッションの方針は決まっているが、ログイン方式（OAuth かメールとパスワードか）は未決定。
-- 定期ジョブの起動方法。`JobsModule` にユースケースだけを用意してある。Cloud Scheduler などから呼ぶ HTTP の入口にするか、別プロセスにするかは未決定で、HTTP にする場合は呼び出し元の認証方式も決める。
 - 通知・自分の情報の API の経路（`/api/notifications`、`/api/me` 以下）は暫定。API 設計書と食い違う場合は設計書に合わせる。
 - 通知の種別（現在の5種は暫定）。

@@ -18,7 +18,7 @@ import type { ExpireInitialTasksInput } from "../../ports/usecases/expire-initia
  * 責務: 期限を過ぎた初回証拠待ちタスクを failed に確定し、失敗イベントと請求依頼につなぐ。ジョブの起動方法や認証は担わない。
  *
  * 全体の流れ:
- *   定期ジョブの起動元（方式は未決定）
+ *   jobs-main.ts（CronJob が `node dist/jobs-main.js <ジョブ名>` で起動する別エントリーポイント）
  *     → ExpireInitialTasksUseCase.execute
  *     → TaskRepository.lockExpiredInitial / UploadSessionRepository.hasLiveSession
  *     → domain の expireInitial

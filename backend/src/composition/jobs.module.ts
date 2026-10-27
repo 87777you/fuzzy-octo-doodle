@@ -12,7 +12,8 @@ import { ExpireStaleUploadSessionsUseCase } from "../application/usecases/jobs/e
  * composition 層。コントローラとユースケースを Nest の DI に登録し、AppModule から読み込まれる。
  * ユースケースが @Inject する port（リポジトリなど）は、PersistenceModule が束縛して公開している。
  * ユースケースを足したら、providers に追加する（追加し忘れると起動時に依存が解決できずに失敗する）。
- * Controller は置かない。ジョブを HTTP endpoint から起動するか別プロセスから起動するか、HTTP の場合の呼び出し元認証をどうするかは docs/backend-architecture.md の「未決定」に記載された未決事項である。
+ * AppModule には読み込まない。ジョブは API とは別のプロセスで動き、jobs-main.ts がこのモジュールだけで DI コンテナを作って、ユースケースを 1 つ実行する。
+ * HTTP の入口（Controller）は置かない。
  */
 @Module({
   imports: [PersistenceModule, SharedApplicationModule],

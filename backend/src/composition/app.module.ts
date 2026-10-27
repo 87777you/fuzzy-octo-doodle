@@ -3,7 +3,6 @@ import { APP_FILTER } from "@nestjs/core";
 import { AllExceptionsFilter } from "../presentation/http/errors/all-exceptions.filter.ts";
 import { HealthController } from "../presentation/http/health.controller.ts";
 import { AuthModule } from "./auth.module.ts";
-import { JobsModule } from "./jobs.module.ts";
 import { SocialModule } from "./social.module.ts";
 import { TimelineModule } from "./timeline.module.ts";
 import { TasksModule } from "./tasks.module.ts";
@@ -18,14 +17,14 @@ import { PersistenceModule } from "./persistence.module.ts";
  * - TasksModule: タスクと証拠の提出。
  * - SocialModule: 異議とフレンド。
  * - TimelineModule: タイムライン、リアクション、通知、自分の情報。
- * - JobsModule: 定期ジョブのユースケース（起動方法は未決定のため、HTTP の入口はない）。
+ * - 定期ジョブは含めない。別エントリーポイント jobs-main.ts が JobsModule を使って実行する。
  * - HealthController: 死活監視。
  * - AllExceptionsFilter: すべての例外を API のエラーレスポンスにする（`APP_FILTER`）。
  *
  * 機能を足すときは、機能モジュールを作ってここの imports に足す。
  */
 @Module({
-  imports: [PersistenceModule, AuthModule, TasksModule, SocialModule, TimelineModule, JobsModule],
+  imports: [PersistenceModule, AuthModule, TasksModule, SocialModule, TimelineModule],
   controllers: [HealthController],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
