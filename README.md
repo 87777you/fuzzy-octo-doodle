@@ -3,7 +3,7 @@
 Next.js(React)のフロントエンドと、コンテナで動く TypeScript バックエンドの pnpm workspace モノレポ。
 
 ```text
-frontend/         Next.js + React（静的ビルド → frontend/dist）
+frontend/         Next.js + React（SSR対応。Next.jsサーバーで実行）
 backend/          TypeScript HTTP サーバー + Dockerfile
 docs/             実行契約、ツールの使い方
 mise.toml         ツールチェーン固定とタスク定義
