@@ -422,6 +422,11 @@ const objection = createObjection(
    - 戻り値が `null` なら新規の要求である。処理の最後に `complete` でレスポンスを保存する。
    - 記録があり `requestHash` が違えば、`IDEMPOTENCY_KEY_REUSED` を返す。
    - 記録があり完了済みなら、保存したレスポンスを返す。
+   - `requestHash` は `application/shared/request-hash.ts` の `hashRequest(操作, ペイロード)` だけで作る。
+     - 入力は `{ operation, payload }` を RFC 8785（JSON Canonicalization Scheme、ライブラリ `json-canonicalize`）で正規化した文字列で、UTF-8 の SHA-256 を 16 進 64 文字にする。
+     - 使わない値は省略せず `null` にする。型 `RequestPayloads` が、操作ごとに許す項目を決めている（余分な項目や `undefined` は型エラー）。
+     - 含めるのは、操作の意味を決める入力。含めないのは、`Idempotency-Key`、利用者 ID、時刻、乱数など。文字列は加工しない。
+     - 規則を変えると既存の記録と一致しなくなるため、変更には互換性の判断が要る。
 8. 通知は `deduplicationKey` で重複を防ぐ。キーは「種別:タスク ID:審査回」のように、同じ出来事から必ず同じ文字列になる形にする。ジョブが再実行されても、通知は1件になる。
 
 ### 時刻・ID・値

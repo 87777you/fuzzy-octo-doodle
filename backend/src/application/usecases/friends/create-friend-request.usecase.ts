@@ -29,7 +29,7 @@ import type { CreateFriendRequestInput } from "../../ports/usecases/create-frien
  *     → 関係・通知・冪等性レスポンスを保存し、FriendRequestView を返す。
  *
  * 処理:
- *   1. UnitOfWork.run 内で clock.now と parseIdempotencyKey を用意し、IdempotencyRepository.reserve に userId、create_friend_request、キー、要求内容の RequestHash を渡す。
+ *   1. UnitOfWork.run 内で clock.now と parseIdempotencyKey を用意し、hashRequest("create_friend_request", { inviteToken }) で RequestHash を作り（作ってよいのは hashRequest だけ）、IdempotencyRepository.reserve に userId、create_friend_request、キー、その RequestHash を渡す。
  *   2. 既存記録の hash 不一致は IDEMPOTENCY_KEY_REUSED、完了済み記録は保存された FriendRequestView を返す。新規要求だけを続ける。
  *   3. FriendInviteRepository.findActiveByToken で inviteToken の有効性と inviterId を確認する。招待がなければ NOT_FOUND とする。
  *   4. FriendshipRepository.findByPair(tx, userId, inviterId, { forUpdate: true }) でペアをロックする。同時申請を直列化するため、ロックなしの検索や事前 SELECT による競合判定を使わない。

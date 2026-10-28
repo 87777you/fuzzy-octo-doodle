@@ -34,7 +34,7 @@ import type { CompleteEvidenceUploadInput } from "../../ports/usecases/complete-
  *   成功後は OwnerTaskView を返し、同じキーの再送には保存済み結果を返す。
  *
  * 処理:
- *   1. Clock.now() で現在時刻を得て、parseIdempotencyKey と要求内容の requestHash を用意する。
+ *   1. Clock.now() で現在時刻を得て、requestHash = hashRequest("complete_evidence_upload", { taskId, sessionId, photoPaths }) を作る（RequestHash を作ってよいのは hashRequest だけ。photoPaths は並び順も内容の一部）。
  *   2. UnitOfWork.run の冒頭で IdempotencyRepository.reserve(tx, userId, "complete_evidence_upload", key, requestHash, now) を呼ぶ。ハッシュ不一致は IDEMPOTENCY_KEY_REUSED、完了済みなら保存レスポンスを返す。
  *   3. 新規要求では TaskRepository.findByIdForUpdate と UploadSessionRepository.findByIdForUpdate で対象行をロックする。null なら NOT_FOUND とし、タスク・セッション・利用者の対応を確認する。
  *   4. expectUploading(session) で状態を確認し、completeUpload(session, userId, now) で所有者と完了期限を検証した CompletedSession を得て、UploadSessionRepository.save(tx, completed) で保存する。
