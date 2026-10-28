@@ -58,7 +58,7 @@ export class WithdrawObjectionUseCase {
   protected readonly tasks: TaskRepository;
   /** 対象異議を取得し、取り下げ状態を保存する。 */
   protected readonly objections: ObjectionRepository;
-  /** タスク遷移の投稿・通知を同じトランザクション内で保存する。 */
+  /** タスク遷移の投稿を同じトランザクション内で保存する（通知は今は作らない）。 */
   protected readonly events: TaskEventPublisher;
 
   constructor(

@@ -49,7 +49,7 @@ export class ExpireInitialTasksUseCase {
   protected readonly tasks: TaskRepository;
   /** 期限内に開始した有効な初回アップロードが残るか確認する。 */
   protected readonly uploadSessions: UploadSessionRepository;
-  /** 未達成イベントを投稿と通知に変換して同じトランザクションで保存する。 */
+  /** 未達成イベントを TaskEventPublisher に渡し、投稿に変換して同じトランザクションで保存する（通知は今は作らない）。 */
   protected readonly events: TaskEventPublisher;
   /** 未達成が確定したタスクの請求をトランザクションのコミット後に依頼する。 */
   protected readonly payment: PaymentGateway;

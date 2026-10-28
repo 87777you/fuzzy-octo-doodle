@@ -11,7 +11,7 @@ import type { JobResult } from "../../ports/usecases/job-result.ts";
 import type { CloseReviewPeriodsInput } from "../../ports/usecases/close-review-periods.port.ts";
 
 /**
- * 責務: 審査期限を過ぎた reviewing タスクを success に確定し、確定通知につなぐ。ジョブの起動方法や認証は担わない。
+ * 責務: 審査期限を過ぎた reviewing タスクを success に確定し、確定する。ジョブの起動方法や認証は担わない。
  *
  * 全体の流れ:
  *   jobs-main.ts（CronJob が `node dist/jobs-main.js <ジョブ名>` で起動する別エントリーポイント）
@@ -24,7 +24,7 @@ import type { CloseReviewPeriodsInput } from "../../ports/usecases/close-review-
  * 処理:
  *   1. Clock.now() を取得し、batchSize を上限として対象を処理する。各タスクの処理は UnitOfWork.run の別トランザクションに分ける。
  *   2. TaskRepository.lockReviewEnded(tx, now, limit) で審査期限が終了した ReviewingTask をロックする。FOR UPDATE SKIP LOCKED が並行ジョブの二重取得を防ぐ。
- *   3. 各 ReviewingTask に closeReviewPeriod(task, now) を呼ぶ。期限がまだ来ていなければ null となり、保存や通知を行わない。
+ *   3. 各 ReviewingTask に closeReviewPeriod(task, now) を呼ぶ。期限がまだ来ていなければ null となり、保存を行わない。
  *   4. 遷移があれば TaskRepository.save(tx, transition.next) と TaskEventPublisher.publish(tx, transition.events) を同じトランザクションで行う。
  *
  * 注意:
@@ -40,7 +40,7 @@ export class CloseReviewPeriodsUseCase {
   protected readonly clock: Clock;
   /** 審査終了候補をロックし、遷移後のタスクを保存する。 */
   protected readonly tasks: TaskRepository;
-  /** 確定イベントから通知を作り同じトランザクションで保存する。 */
+  /** 確定イベントを TaskEventPublisher に渡す（通知は今は作らない）。 */
   protected readonly events: TaskEventPublisher;
 
   constructor(
@@ -56,7 +56,7 @@ export class CloseReviewPeriodsUseCase {
   }
 
   /**
-   * 審査期限を過ぎた reviewing タスクを success に確定し、確定通知につなぐ。ジョブの起動方法や認証は担わない。
+   * 審査期限を過ぎた reviewing タスクを success に確定し、確定する。ジョブの起動方法や認証は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
   execute(_input: CloseReviewPeriodsInput): Promise<JobResult> {

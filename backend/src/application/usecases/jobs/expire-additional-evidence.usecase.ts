@@ -13,7 +13,7 @@ import type { JobResult } from "../../ports/usecases/job-result.ts";
 import type { ExpireAdditionalEvidenceInput } from "../../ports/usecases/expire-additional-evidence.port.ts";
 
 /**
- * 責務: 期限を過ぎた追加証拠待ちタスクを indeterminate に確定し、通知につなぐ。請求は行わず、ジョブの起動方法や認証も担わない。
+ * 責務: 期限を過ぎた追加証拠待ちタスクを indeterminate に確定する。請求は行わず、ジョブの起動方法や認証も担わない。
  *
  * 全体の流れ:
  *   jobs-main.ts（CronJob が `node dist/jobs-main.js <ジョブ名>` で起動する別エントリーポイント）
@@ -44,7 +44,7 @@ export class ExpireAdditionalEvidenceUseCase {
   protected readonly tasks: TaskRepository;
   /** 期限内に開始した有効な追加アップロードが残るか確認する。 */
   protected readonly uploadSessions: UploadSessionRepository;
-  /** 判定不能イベントから通知を作り同じトランザクションで保存する。 */
+  /** 判定不能イベントを TaskEventPublisher に渡す（通知は今は作らない）。 */
   protected readonly events: TaskEventPublisher;
 
   constructor(
@@ -62,7 +62,7 @@ export class ExpireAdditionalEvidenceUseCase {
   }
 
   /**
-   * 期限を過ぎた追加証拠待ちタスクを indeterminate に確定し、通知につなぐ。請求は行わず、ジョブの起動方法や認証も担わない。
+   * 期限を過ぎた追加証拠待ちタスクを indeterminate に確定する。請求は行わず、ジョブの起動方法や認証も担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
   execute(_input: ExpireAdditionalEvidenceInput): Promise<JobResult> {

@@ -104,7 +104,7 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 
 1. 入力を検証する。値は `parse*` を通して名目型にする。
 2. `UnitOfWork.run` の中で、port と domain の関数を呼ぶ。
-3. 遷移関数が返したイベントを、投稿と通知に変換して保存する。
+3. 遷移関数が返したイベントを、投稿に変換して保存する（通知は今は作らない。モック）。
 4. コミット後に、外部への依頼（請求）を行う。
 
 ## NestJS の骨格
@@ -227,14 +227,14 @@ API 設計書のエンドポイントごとに、使う関数と port を示す�
 3. `parsePhotoPaths`（1〜3枚）と、`ObjectStorage.exists` による存在確認。
 4. `EvidenceRepository.insert`（重複は `ALREADY_EXISTS`）。
 5. `countFriends` を取得し、`submitInitialEvidence` または `submitAdditionalEvidence` を呼ぶ。
-6. `TaskRepository.save`、イベントから投稿と通知を保存する。
+6. `TaskRepository.save`、イベントから投稿を保存する（通知は今は作らない）。
 
 ### 異議
 
 | 操作 | 処理の流れ |
 |---|---|
-| `POST /api/tasks/{id}/objections` | `findByIdForUpdate` → `areFriends` → `authorizeObjection` → `createObjection` → `ObjectionRepository.tryInsert`（false なら `STATE_CONFLICT`）→ `acceptFirstObjection` または `acceptSecondObjection` → `save` → 通知 |
-| `POST /api/objections/{id}/withdraw` | `ObjectionRepository.findById` → `TaskRepository.findByIdForUpdate` → `expectOpenFirst` → `withdrawObjection` → `withdrawFirstObjection` → 保存 → 通知 |
+| `POST /api/tasks/{id}/objections` | `findByIdForUpdate` → `areFriends` → `authorizeObjection` → `createObjection` → `ObjectionRepository.tryInsert`（false なら `STATE_CONFLICT`）→ `acceptFirstObjection` または `acceptSecondObjection` → `save` |
+| `POST /api/objections/{id}/withdraw` | `ObjectionRepository.findById` → `TaskRepository.findByIdForUpdate` → `expectOpenFirst` → `withdrawObjection` → `withdrawFirstObjection` → 保存 |
 | `GET /api/me/objections` | `listByObjector`。判定が確定したタスクの写真は返さない |
 
 ### フレンド
@@ -266,9 +266,9 @@ API 設計書のエンドポイントごとに、使う関数と port を示す�
 
 | ジョブ | 処理の流れ |
 |---|---|
-| 初回期限切れ | `lockExpiredInitial` → `hasLiveSession` → `expireInitial` → 保存 → 「失敗」の投稿、通知 → コミット後に `PaymentGateway.requestCharge` |
-| 審査期間の終了 | `lockReviewEnded` → `closeReviewPeriod` → 保存 → 通知 |
-| 追加証拠の期限切れ | `lockExpiredAdditional` → `hasLiveSession` → `expireAdditional` → 保存 → 通知 |
+| 初回期限切れ | `lockExpiredInitial` → `hasLiveSession` → `expireInitial` → 保存 → 「失敗」の投稿 → コミット後に `PaymentGateway.requestCharge` |
+| 審査期間の終了 | `lockReviewEnded` → `closeReviewPeriod` → 保存 |
+| 追加証拠の期限切れ | `lockExpiredAdditional` → `hasLiveSession` → `expireAdditional` → 保存 |
 | アップロードセッションの整理 | `UploadSessionRepository.expireStale` |
 
 `lock*` は `FOR UPDATE SKIP LOCKED` で取得するため、ジョブを複数同時に動かしても同じ行を二重に処理しない。
@@ -394,7 +394,7 @@ const objection = createObjection(
 1. 引数の型に合う状態に絞る（`expectStatus` など）。
 2. 遷移関数を呼ぶ。
 3. `next` を `TaskRepository.save` で保存する。
-4. `events` を投稿と通知に変換して保存する。
+4. `events` を投稿に変換して保存する（通知は今は作らない）。
 
 遷移関数は、渡された値を書き換えない。保存を忘れても、元の値は変わらない。ジョブ用の関数（`expireInitial`、`closeReviewPeriod`、`expireAdditional`）は、まだ確定しない場合に `null` を返す。`null` のときは何も保存せず、次の対象に進む。
 
@@ -422,7 +422,7 @@ const objection = createObjection(
    - 戻り値が `null` なら新規の要求である。処理の最後に `complete` でレスポンスを保存する。
    - 記録があり `requestHash` が違えば、`IDEMPOTENCY_KEY_REUSED` を返す。
    - 記録があり完了済みなら、保存したレスポンスを返す。
-8. 通知は `deduplicationKey` で重複を防ぐ。キーは「種別:タスク ID:審査回」のように、同じ出来事から必ず同じ文字列になる形にする。ジョブが再実行されても、通知は1件になる。
+8. 通知を作るときは、`deduplicationKey` で重複を防ぐ（通知は今は作らないため、現時点では使わない）。キーは「種別:タスク ID:審査回」のように、同じ出来事から必ず同じ文字列になる形にする。ジョブが再実行されても、通知は1件になる。
 
 ### 時刻・ID・値
 
@@ -477,4 +477,4 @@ domain と application は `DomainError`（`code`、`message`、`details`）を�
 
 - 認証基盤。サーバー側セッションの方針は決まっているが、ログイン方式（OAuth かメールとパスワードか）は未決定。
 - 通知・自分の情報の API の経路（`/api/notifications`、`/api/me` 以下）は暫定。API 設計書と食い違う場合は設計書に合わせる。
-- 通知の種別（現在の5種は暫定）。
+- 通知の範囲。今は通知を作らず（モック）、`TaskEventPublisher` は投稿だけを保存する。通知を始めるときに、種別（現在の5種は暫定）、宛先、文面を決める。

@@ -36,7 +36,7 @@ import type { CreateObjectionInput } from "../../ports/usecases/create-objection
  *   6. createObjection に IdGenerator.uuid() で採番した ID、権限証明、理由を渡して初回または再審査の異議を作る。理由が空白だけなら VALIDATION_ERROR とする。
  *   7. ObjectionRepository.tryInsert を呼ぶ。事前 SELECT では先着判定をせず、UNIQUE(task_id, review_round) による false は STATE_CONFLICT とする。取り下げ済みでも枠は戻らない。
  *   8. 審査回に応じて acceptFirstObjection または acceptSecondObjection を呼び、TaskRepository.save で遷移後のタスクを保存する。審査期限切れなら DEADLINE_EXPIRED とする。
- *   9. TaskEventPublisher.publish に遷移イベントを渡し、同じ tx 内で通知を保存する。最後に IdempotencyRepository.complete で 201 相当の成功レスポンスを記録してコミットする。
+ *   9. TaskEventPublisher.publish に遷移イベントを渡し、同じ tx 内で投稿を保存する（通知は今は作らない）。最後に IdempotencyRepository.complete で 201 相当の成功レスポンスを記録してコミットする。
  *
  * 失敗:
  *   - DomainError("NOT_FOUND"): タスクがない、または存在を知らせない対象である。
@@ -67,7 +67,7 @@ export class CreateObjectionUseCase {
   protected readonly objections: ObjectionRepository;
   /** 申立人とタスク所有者がフレンドかを確認する。 */
   protected readonly friendships: FriendshipRepository;
-  /** タスク遷移が生んだ投稿・通知を同じトランザクション内で保存する。 */
+  /** タスク遷移が生んだ投稿を同じトランザクション内で保存する（通知は今は作らない）。 */
   protected readonly events: TaskEventPublisher;
 
   constructor(
