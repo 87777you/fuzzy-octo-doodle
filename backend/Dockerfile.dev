@@ -10,7 +10,10 @@ WORKDIR /repo
 RUN corepack enable
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY backend/package.json backend/
-RUN pnpm install --frozen-lockfile --filter @app/backend...
+# pnpm のストアをキャッシュマウントに置く。イメージの作り直し (rebuild) で、ダウンロード済みのパッケージを再利用する。
+# キャッシュはイメージに含まれず、Docker のビルドキャッシュとして残る（BuildKit が必要。Docker Engine 23 以降は既定）。
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
+    pnpm install --frozen-lockfile --filter @app/backend... --store-dir /pnpm-store
 COPY backend backend
 WORKDIR /repo/backend
 EXPOSE 8080
