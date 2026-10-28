@@ -9,8 +9,9 @@ import type { IdGenerator } from "../ports/id-generator.port.ts";
 import { POST_REPOSITORY } from "../ports/feed.repository.ts";
 import type { PostRepository } from "../ports/feed.repository.ts";
 import type { Tx } from "../ports/unit-of-work.port.ts";
+import type { Post, PostType } from "../../domain/feed/post.ts";
+import { parsePostId } from "../../domain/shared/id-parsers.ts";
 import type { TaskEvent } from "../../domain/task/task-events.ts";
-import { todo } from "./todo.ts";
 
 /**
  * 責務: 遷移関数が返した `TaskEvent` を、タイムラインの投稿に変換して保存する。複数のユースケースが共有する。
@@ -29,7 +30,7 @@ import { todo } from "./todo.ts";
  * - InitialEvidenceSubmitted → 投稿 `reported`
  * - TaskFinalized(failed) → 投稿 `failed`
  * - 上記以外のイベント（AdditionalEvidenceSubmitted、ObjectionAccepted、ObjectionWithdrawn、成功・不確定の TaskFinalized）→ 何もしない。
- *   これらは今は投稿にならず、通知にもしないため、エラーにせず読み飛ばす（網羅の確認は `assertNever` ではなく、この表で行う）。
+ *   これらは今は投稿にならず、通知にもしないため、エラーにせず読み飛ばす（イベントの種類の網羅は、`postTypeOf` の `switch` が型で確認する）。
  *
  * 保存には `insertIfAbsent` を使う。同じイベントを再度処理しても重複しない（ジョブの再実行に耐える）。
  * 外部への依頼（請求）はここでは行わない。コミット後にユースケースが行う。
@@ -59,10 +60,41 @@ export class TaskEventPublisher {
 
   /**
    * イベントを投稿にして保存する。通知は作らない。
-   * @param _tx 呼び出し元のトランザクション。ユースケースの保存と同時に確定させるため、必ずこれを使う
-   * @param _events 遷移関数が返したイベント。空でもよい
+   * 投稿にならないイベントは、エラーにせず読み飛ばす。`insertIfAbsent` は同じ `(task_id, post_type)` を 2 件にしない。
+   * @param tx 呼び出し元のトランザクション。ユースケースの保存と同時に確定させるため、必ずこれを使う
+   * @param events 遷移関数が返したイベント。空でもよい
    */
-  publish(_tx: Tx, _events: readonly TaskEvent[]): Promise<void> {
-    return todo("TaskEventPublisher.publish");
+  async publish(tx: Tx, events: readonly TaskEvent[]): Promise<void> {
+    for (const event of events) {
+      const postType = postTypeOf(event);
+      if (postType === null) continue;
+      const post: Post = {
+        id: parsePostId(this.ids.uuid()),
+        taskId: event.taskId,
+        userId: event.ownerId,
+        postType,
+        createdAt: this.clock.now(),
+      };
+      await this.posts.insertIfAbsent(tx, post);
+    }
+  }
+}
+
+/**
+ * イベントを、投稿の種類にする。投稿にならないイベントは `null`。
+ * `switch` は、イベントの種類をすべて書いている。種類が増えると、戻り値の型の検査でここが型エラーになり、投稿にするかを決め忘れない。
+ */
+function postTypeOf(event: TaskEvent): PostType | null {
+  switch (event.type) {
+    case "TaskCreated":
+      return "created";
+    case "InitialEvidenceSubmitted":
+      return "reported";
+    case "TaskFinalized":
+      return event.result === "failed" ? "failed" : null;
+    case "AdditionalEvidenceSubmitted":
+    case "ObjectionAccepted":
+    case "ObjectionWithdrawn":
+      return null;
   }
 }
