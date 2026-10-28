@@ -81,13 +81,13 @@ pnpm -r build
 | --- | --- |
 | `Argument of type 'string' is not assignable to parameter of type 'UserId'` | 名目型に `string` を渡している。`parseUserId(raw)` を通す。 |
 | `Type 'undefined' is not assignable to ...`(`exactOptionalPropertyTypes`) | 任意の項目に `undefined` を明示的に代入している。項目ごと省くか、型を `T \| null` にしているなら `null` を渡す。 |
-| `Do not use any type assertions` | `as` は backend では禁止。型を合わせるのは `parse*` などの関数で行う。どうしても必要なときは、Issue で相談する。 |
+| `Do not use any type assertions` | `as` は backend では禁止。型を合わせるのは `parse*` などの関数で行う。どうしても必要なときは、Issue または Discord で相談する。 |
 | `Property 'x' does not exist on type 'never'` | `switch` や `if` で、すべての状態を処理した後の `never`。`expect*` で状態を絞ってから使う。 |
 | `Promise returned in function argument where a void return was expected` | `await` の付け忘れ。`async` の関数の中で、Promise を返す呼び出しには `await` を付ける。 |
 | `Unsafe member access` / `no-unsafe-*`(eslint) | `unknown` や `any` をそのまま使っている。Zod で検証して型を付ける。 |
 
 ## 6. 困ったとき
 
-- 仕様が分からない、コメントと実装が食い違う: 推測で進めず、Issue にコメントで質問する。
-- 範囲を超える変更が必要になった(port の追加など): 別の Issue にして、先に相談する。
+- 仕様が分からない、コメントと実装が食い違う: 推測で進めず、Issue のコメントまたは Discord で質問する。
+- 範囲を超える変更が必要になった(port の追加など): 先に Issue または Discord で相談する。必要なら別の Issue にする。
 - `todo()` を残したまま PR を出さない。残る部分があるなら、その理由を PR に書く。
