@@ -38,3 +38,19 @@ run = "docker build -f backend/Dockerfile -t hackathon-api:ci ."
 [tasks.ci]
 description = "CI と同じ検証をローカルで実行する"
 depends = ["lint", "typecheck", "test", "build", "image:build"]
+
+[tasks."dev:up"]
+description = "DB と API をコンテナで起動し、変更を監視する（Docker が必要）"
+run = "docker compose up --build --watch"
+
+[tasks."dev:down"]
+description = "開発用のコンテナを止める（DB のデータは残る）"
+run = "docker compose down"
+
+[tasks."dev:reset"]
+description = "開発用のコンテナを止め、DB のデータも消す"
+run = "docker compose down -v"
+
+[tasks."dev:migrate"]
+description = "新しいマイグレーションを DB に適用する"
+run = "docker compose run --rm migrate"

@@ -1,0 +1,76 @@
+# ローカル開発用。backend の API と PostgreSQL を起動する。
+#
+#   docker compose up --watch      起動して、ファイルの変更を監視する
+#   docker compose down            止める（データは残る）
+#   docker compose down -v         止めて、DB のデータも消す
+#
+# watch の動き（develop.watch）:
+#   - backend/src の変更    → コンテナにコピーする。コンテナ内の `tsx watch` が API を再起動する。
+#   - package.json などの変更 → イメージを作り直して、コンテナを入れ替える。
+# 本番用のイメージ（backend/Dockerfile）とは別物で、この設定は開発専用。
+
+name: hackathon
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # マイグレーションを適用して終了する 1 回限りのサービス。新しい SQL を足したら `docker compose run --rm migrate` で再適用できる。
+  migrate:
+    image: postgres:17-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: app
+      PGPASSWORD: app
+      PGDATABASE: app
+    volumes:
+      - ./backend/migrations:/migrations:ro
+      - ./backend/scripts/migrate.sh:/migrate.sh:ro
+    entrypoint: ["sh", "/migrate.sh"]
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: "8080"
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: app
+      DATABASE_USER: app
+      DATABASE_PASSWORD: app
+    ports:
+      - "127.0.0.1:8080:8080"
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/src
+          target: /repo/backend/src
+        - action: rebuild
+          path: ./backend/package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+        - action: rebuild
+          path: ./pnpm-workspace.yaml
+
+volumes:
+  db-data:
