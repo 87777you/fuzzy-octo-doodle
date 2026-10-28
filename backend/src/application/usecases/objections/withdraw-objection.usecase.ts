@@ -24,7 +24,7 @@ import type { WithdrawObjectionInput } from "../../ports/usecases/withdraw-objec
  *     → domain の expectOpenFirst / withdrawObjection / withdrawFirstObjection → 保存と TaskEventPublisher.publish。
  *
  * 処理:
- *   1. UnitOfWork.run 内で clock.now と parseIdempotencyKey を用意し、IdempotencyRepository.reserve に withdraw_objection と要求 hash を渡す。
+ *   1. UnitOfWork.run 内で clock.now と parseIdempotencyKey を用意し、hashRequest("withdraw_objection", { objectionId }) で RequestHash を作り（作ってよいのは hashRequest だけ）、IdempotencyRepository.reserve に withdraw_objection とその RequestHash を渡す。
  *   2. 予約済みキーの hash 不一致は IDEMPOTENCY_KEY_REUSED、完了済み記録は保存済みレスポンスで返し、新規要求だけを続ける。
  *   3. ObjectionRepository.findById で objectionId を取得する。見つからなければ NOT_FOUND とする。
  *   4. TaskRepository.findByIdForUpdate で異議の taskId をロック付き取得し、見つからなければ NOT_FOUND とする。取り下げと追加証拠提出などの競合を防ぐ。

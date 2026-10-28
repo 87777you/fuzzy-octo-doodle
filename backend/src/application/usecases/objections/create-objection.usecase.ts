@@ -29,7 +29,7 @@ import type { CreateObjectionInput } from "../../ports/usecases/create-objection
  *
  * 処理:
  *   1. UnitOfWork.run を開始し、clock.now と parseIdempotencyKey を使って要求時刻とキーを得る。
- *   2. IdempotencyRepository.reserve に userId、create_objection、キー、要求内容の RequestHash を渡す。
+ *   2. hashRequest("create_objection", { taskId, reasonType, reasonDetail }) で RequestHash を作り（作ってよいのは hashRequest だけ）、IdempotencyRepository.reserve に userId、create_objection、キー、その RequestHash を渡す。
  *   3. 既存記録の hash が異なる場合は IDEMPOTENCY_KEY_REUSED を返し、完了済みなら保存済みレスポンスを返す。新規要求だけを続ける。
  *   4. TaskRepository.findByIdForUpdate で taskId の行をロックして取得する。見つからなければ NOT_FOUND とする。状態変更と異議の同時処理を直列化するため、通常の findById ではなくロック付き取得を使う。
  *   5. FriendshipRepository.areFriends で所有者との関係を確認し、viewerRole と authorizeObjection でフレンドかつ審査中であることを証明する。証明がない場合は、存在を隠す相手には NOT_FOUND、それ以外は FORBIDDEN とする。
