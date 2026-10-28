@@ -41,8 +41,10 @@ export class MeController {
    */
   @Get("")
   @HttpCode(200)
-  show(@CurrentUser() _user: UserId): Promise<User> {
-    return todo("MeController.show");
+  show(@CurrentUser() user: UserId): Promise<User> {
+    // 見本。このハンドラは入力が認証利用者の ID だけで、検証済みの名目型 (UserId) をそのままユースケースに渡す。
+    // 本文やクエリがあるハンドラでは、ここで Zod による検証と、名目型への変換を行ってから渡す。
+    return this.getMe.execute({ userId: user });
   }
 
   /**
