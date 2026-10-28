@@ -45,6 +45,21 @@ curl -i http://127.0.0.1:8080/healthz      # 200 が返る
 - 開発用のイメージは `backend/Dockerfile.dev`。本番用の `backend/Dockerfile` とは別で、ビルドせずに TypeScript を直接実行する。
 - 監視の対象外のファイル（`tsconfig.json`、`backend/migrations` など）を変えたときは、`docker compose up --build --watch` をやり直す。SQL を足しただけなら `mise run dev:migrate` でよい。
 
+## 開発用の認証
+
+認証方式が決まるまで、compose の API は環境変数 `DEV_AUTH_USER_ID` を設定して起動する。
+
+- 認証が必要なエンドポイントは、Cookie なしで呼べる。常にその固定の利用者（ID `11111111-1111-4111-8111-111111111111`、ニックネーム「開発ユーザー」）として扱われる。
+- `@Public()` のエンドポイントは、これまでどおり認証なしで呼べる。
+- 状態を変えるリクエスト(POST など)でも、`Origin` ヘッダは要らない。
+- 利用者は、`migrate` サービスが `backend/dev/seed.sql` で作る(何度実行しても同じ結果になる)。
+- 設定しなければ、本物の認証ガードが動く。`NODE_ENV=production` で設定すると、起動に失敗する。
+- 実装は `composition/auth.module.ts` と `presentation/http/auth/dev-auth.guard.ts`。認証の実装(`SessionAuthGuard`)には触れない。
+
+```bash
+curl -i http://127.0.0.1:8080/api/me      # 開発用の利用者として処理される
+```
+
 ## DB を直接見る
 
 ```bash

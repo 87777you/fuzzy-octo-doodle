@@ -42,7 +42,9 @@ services:
     volumes:
       - ./backend/migrations:/migrations:ro
       - ./backend/scripts/migrate.sh:/migrate.sh:ro
-    entrypoint: ["sh", "/migrate.sh"]
+      - ./backend/dev/seed.sql:/seed.sql:ro
+    # マイグレーションのあと、開発用の利用者を作る（DEV_AUTH_USER_ID の持ち主）。
+    entrypoint: ["sh", "-c", "sh /migrate.sh && psql -v ON_ERROR_STOP=1 -q -f /seed.sql"]
 
   api:
     build:
@@ -58,6 +60,8 @@ services:
       DATABASE_NAME: app
       DATABASE_USER: app
       DATABASE_PASSWORD: app
+      # 開発用の認証。認証が必要なエンドポイントを、常にこの利用者として通す（backend/dev/seed.sql で作る利用者）。
+      DEV_AUTH_USER_ID: "11111111-1111-4111-8111-111111111111"
     ports:
       - "127.0.0.1:8080:8080"
     develop:
