@@ -17,6 +17,29 @@ import { PersistenceModule } from "./persistence.module.ts";
 const DEV_AUTH_USER = Symbol("DEV_AUTH_USER");
 
 /**
+ * 1 つ目の `APP_GUARD`（CSRF の Origin 検証）を作る。
+ * 開発用の認証が有効なとき (`devUser` が UserId) は、何も検証せず通すガードにする。無効なら本物の `OriginGuard`。
+ */
+function createOriginGuard(devUser: UserId | null): CanActivate {
+  if (devUser === null) return new OriginGuard();
+  return { canActivate: () => true };
+}
+
+/**
+ * 2 つ目の `APP_GUARD`（認証）を作る。
+ * 開発用の認証が有効なとき (`devUser` が UserId) は、常にその利用者として通す `DevAuthGuard`。無効なら本物の `SessionAuthGuard`。
+ */
+function createAuthGuard(
+  devUser: UserId | null,
+  reflector: Reflector,
+  authenticator: SessionAuthenticator,
+  clock: Clock,
+): CanActivate {
+  if (devUser === null) return new SessionAuthGuard(reflector, authenticator, clock);
+  return new DevAuthGuard(reflector, devUser);
+}
+
+/**
  * 責務: 認証まわりの DI の登録。セッション検証の実装を束縛し、2 つのガードを全エンドポイントに適用する。
  *
  * 全体の流れ: リクエスト → OriginGuard → SessionAuthGuard → コントローラ。
@@ -33,17 +56,12 @@ const DEV_AUTH_USER = Symbol("DEV_AUTH_USER");
   providers: [
     { provide: SESSION_AUTHENTICATOR, useClass: DbSessionAuthenticator },
     { provide: DEV_AUTH_USER, useFactory: (): UserId | null => loadDevAuthUserId(process.env) },
-    {
-      provide: APP_GUARD,
-      inject: [DEV_AUTH_USER],
-      useFactory: (devUser: UserId | null): CanActivate => (devUser === null ? new OriginGuard() : { canActivate: () => true }),
-    },
-    {
-      provide: APP_GUARD,
-      inject: [DEV_AUTH_USER, Reflector, SESSION_AUTHENTICATOR, CLOCK],
-      useFactory: (devUser: UserId | null, reflector: Reflector, authenticator: SessionAuthenticator, clock: Clock): CanActivate =>
-        devUser === null ? new SessionAuthGuard(reflector, authenticator, clock) : new DevAuthGuard(reflector, devUser),
-    },
+    // 本物の 2 つのガード。開発用の認証 (DEV_AUTH_USER_ID) を使う間は、下の 2 つの工場関数が代わりに登録する。
+    // 開発用の認証を外すときは、この 2 行を戻し、下の 2 つの `APP_GUARD` と工場関数を消す。
+    // { provide: APP_GUARD, useClass: OriginGuard },
+    // { provide: APP_GUARD, useClass: SessionAuthGuard },
+    { provide: APP_GUARD, inject: [DEV_AUTH_USER], useFactory: createOriginGuard },
+    { provide: APP_GUARD, inject: [DEV_AUTH_USER, Reflector, SESSION_AUTHENTICATOR, CLOCK], useFactory: createAuthGuard },
   ],
 })
 export class AuthModule {}
