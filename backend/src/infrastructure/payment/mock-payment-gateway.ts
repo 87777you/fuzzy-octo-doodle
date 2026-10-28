@@ -1,4 +1,3 @@
-import { todo } from "../../application/shared/todo.ts";
 import type { PaymentGateway } from "../../application/ports/payment-gateway.port.ts";
 import type { TaskId, UserId } from "../../domain/shared/ids.ts";
 
@@ -13,11 +12,12 @@ import type { TaskId, UserId } from "../../domain/shared/ids.ts";
 export class MockPaymentGateway implements PaymentGateway {
   /** タスク作成前の確認。モックは常に成功させる。本実装では、満たさなければ DomainError("PAYMENT_REQUIRED") */
   assertCanCreateTask(_userId: UserId): Promise<void> {
-    return todo("MockPaymentGateway.assertCanCreateTask");
+    return Promise.resolve();
   }
 
   /** 失敗が確定したタスクの請求依頼。モックはログのみ。呼び出し元はコミット後に呼ぶ */
-  requestCharge(_input: { taskId: TaskId; userId: UserId; amount: number }): Promise<void> {
-    return todo("MockPaymentGateway.requestCharge");
+  requestCharge(input: { taskId: TaskId; userId: UserId; amount: number }): Promise<void> {
+    console.log(JSON.stringify({ msg: "mock charge requested", ...input }));
+    return Promise.resolve();
   }
 }
