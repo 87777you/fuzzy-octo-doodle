@@ -11,5 +11,3 @@ const app = await createApp();
 // SIGTERM / SIGINT では、createApp で有効にしたシャットダウンフックが接続を閉じる。
 await app.listen(port, "0.0.0.0");
 console.log(JSON.stringify({ msg: "listening", port }));
-// 保存先と決済は、実サービスが決まるまでモックで動く（infrastructure/storage、infrastructure/payment）。
-console.log(JSON.stringify({ msg: "mock in use", components: ["ObjectStorage", "PaymentGateway"] }));

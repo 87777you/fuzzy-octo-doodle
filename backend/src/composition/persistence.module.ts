@@ -30,6 +30,8 @@ import { OBJECT_STORAGE } from "../application/ports/object-storage.port.ts";
 import { PAYMENT_GATEWAY } from "../application/ports/payment-gateway.port.ts";
 import { MockPaymentGateway } from "../infrastructure/payment/mock-payment-gateway.ts";
 import { MockObjectStorage } from "../infrastructure/storage/mock-object-storage.ts";
+// 保存先が決まったら、モックをやめてこちらに戻す。
+// import { SignedUrlObjectStorage } from "../infrastructure/storage/object-storage.ts";
 
 const POSTGRES_HANDLE = Symbol("PostgresHandle");
 const DATABASE = Symbol("Database");
@@ -62,6 +64,8 @@ const DATABASE = Symbol("Database");
     { provide: IDEMPOTENCY_REPOSITORY, useClass: KyselyIdempotencyRepository },
     { provide: CLOCK, useClass: SystemClock },
     { provide: ID_GENERATOR, useClass: RandomIdGenerator },
+    // 本実装（保存先が決まったら、モックの代わりにこちらを使う）
+    // { provide: OBJECT_STORAGE, useClass: SignedUrlObjectStorage },
     { provide: OBJECT_STORAGE, useClass: MockObjectStorage },
     { provide: PAYMENT_GATEWAY, useClass: MockPaymentGateway },
   ],
