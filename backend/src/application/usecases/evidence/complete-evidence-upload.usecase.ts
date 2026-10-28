@@ -41,7 +41,7 @@ import type { CompleteEvidenceUploadInput } from "../../ports/usecases/complete-
  *   5. parsePhotoPaths(session, photoPaths) で 1〜3 枚、重複なし、セッション配下の安全な StoragePath に絞る。各パスを ObjectStorage.exists で確認し、存在しないオブジェクトは証拠として確定しない。
  *   6. EvidenceRepository.insert(tx, evidence) で証拠を保存する。同じタスク・提出種別の証拠がすでにあれば ALREADY_EXISTS となる。
  *   7. 初回提出なら FriendshipRepository.countFriends(tx, task.ownerId) を取得して submitInitialEvidence(activeTask, friendCount, now) を呼ぶ。追加提出なら submitAdditionalEvidence(disputedTask, now) を呼ぶ。
- *   8. TaskRepository.save(tx, next) で遷移後のタスクを保存し、TaskEventPublisher.publish(tx, events) でイベントに対応する投稿・通知を保存する。
+ *   8. TaskRepository.save(tx, next) で遷移後のタスクを保存し、TaskEventPublisher.publish(tx, events) でイベントに対応する投稿を保存する。
  *   9. toTaskView(next, "owner") の結果を IdempotencyRepository.complete に成功レスポンスとして記録し、トランザクションのコミット後に返す。
  *
  * 失敗:
@@ -78,7 +78,7 @@ export class CompleteEvidenceUploadUseCase {
   protected readonly friendships: FriendshipRepository;
   /** 提出された各写真パスのオブジェクトが存在するか確認する。 */
   protected readonly storage: ObjectStorage;
-  /** タスク遷移イベントから投稿・通知を保存する。 */
+  /** タスク遷移イベントから投稿を保存する（通知は今は作らない）。 */
   protected readonly events: TaskEventPublisher;
 
   constructor(
