@@ -31,7 +31,7 @@ import type { CreateTaskInput } from "../../ports/usecases/create-task.port.ts";
  *
  * 処理:
  *   1. Clock.now() で要求処理に使う現在時刻を得て、parseIdempotencyKey でヘッダ値を IdempotencyKey にする。
- *   2. UnitOfWork.run の中で IdempotencyRepository.reserve(tx, userId, "create_task", key, requestHash, now) を呼び、要求を予約する。
+ *   2. requestHash = hashRequest("create_task", { title, achievementCondition, evidenceMethod, originalTaskId }) を作る（RequestHash を作ってよいのは hashRequest だけ）。UnitOfWork.run の中で IdempotencyRepository.reserve(tx, userId, "create_task", key, requestHash, now) を呼び、要求を予約する。
  *   3. 既存記録のハッシュが異なる場合は IDEMPOTENCY_KEY_REUSED を返し、完了済みなら保存済みレスポンスを返して作成を繰り返さない。新規要求だけ次へ進む。
  *   4. PaymentGateway.assertCanCreateTask(userId) で支払い条件を確認する。
  *   5. TaskRepository.lockUserForCreation(tx, userId) を呼び、同じ利用者の作成処理を直列化する。
