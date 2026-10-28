@@ -29,7 +29,7 @@ import { RandomIdGenerator, SystemClock } from "../infrastructure/system/system.
 import { OBJECT_STORAGE } from "../application/ports/object-storage.port.ts";
 import { PAYMENT_GATEWAY } from "../application/ports/payment-gateway.port.ts";
 import { MockPaymentGateway } from "../infrastructure/payment/mock-payment-gateway.ts";
-import { SignedUrlObjectStorage } from "../infrastructure/storage/object-storage.ts";
+import { MockObjectStorage } from "../infrastructure/storage/mock-object-storage.ts";
 
 const POSTGRES_HANDLE = Symbol("PostgresHandle");
 const DATABASE = Symbol("Database");
@@ -42,7 +42,7 @@ const DATABASE = Symbol("Database");
  * 終了時（SIGTERM など）は `onApplicationShutdown` で接続を閉じる。
  * 機能モジュールは、これを imports して `exports` の port を使う。
  *
- * 実装を差し替える箇所: ObjectStorage（保存先の製品が未決定）、PaymentGateway（モックから Stripe へ）、認証は AuthModule。
+ * 実装を差し替える箇所: ObjectStorage（保存先の製品が未決定。今はモック）、PaymentGateway（モックから Stripe へ）、認証は AuthModule。
  */
 @Module({
   providers: [
@@ -62,7 +62,7 @@ const DATABASE = Symbol("Database");
     { provide: IDEMPOTENCY_REPOSITORY, useClass: KyselyIdempotencyRepository },
     { provide: CLOCK, useClass: SystemClock },
     { provide: ID_GENERATOR, useClass: RandomIdGenerator },
-    { provide: OBJECT_STORAGE, useClass: SignedUrlObjectStorage },
+    { provide: OBJECT_STORAGE, useClass: MockObjectStorage },
     { provide: PAYMENT_GATEWAY, useClass: MockPaymentGateway },
   ],
   exports: [
