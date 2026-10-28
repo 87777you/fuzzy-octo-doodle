@@ -3,6 +3,9 @@ import { CLOCK } from "../ports/clock.port.ts";
 import type { Clock } from "../ports/clock.port.ts";
 import { ID_GENERATOR } from "../ports/id-generator.port.ts";
 import type { IdGenerator } from "../ports/id-generator.port.ts";
+// 通知は今は作らないため、通知の依存はコメントアウトで残す（削除しない）。通知を始めるときは、ここを有効にする。
+// import { NOTIFICATION_REPOSITORY } from "../ports/notification.repository.ts";
+// import type { NotificationRepository } from "../ports/notification.repository.ts";
 import { POST_REPOSITORY } from "../ports/feed.repository.ts";
 import type { PostRepository } from "../ports/feed.repository.ts";
 import type { Tx } from "../ports/unit-of-work.port.ts";
@@ -14,7 +17,7 @@ import { todo } from "./todo.ts";
  * 変換の規則を 1 か所に置くことで、「どの出来事が、どの投稿になるか」をユースケースごとにずらさない。
  *
  * 通知は今は作らない（モック）。通知の範囲が固まっていないため、「通知は飛ばない」ことを現時点の仕様とする。
- * このクラスは `NotificationRepository` に依存しない。通知を始めるときは、依存を足して `publish` に通知への変換を足す
+ * このクラスは `NotificationRepository` を使わない（依存はコメントアウトで残してある）。通知を始めるときは、コメントアウトを外して `publish` に通知への変換を足す
  * （その前に、通知の種別、宛先、文面を docs の「未決定」で決める）。通知用の `deduplicationKey` の方針は、その時に決める。
  *
  * 全体の流れ: ユースケースが domain の遷移関数を呼ぶ（`{ next, events }` が返る）
@@ -35,6 +38,8 @@ import { todo } from "./todo.ts";
 export class TaskEventPublisher {
   /** 投稿の保存先。`(task_id, post_type)` が一意なので、同じ投稿は 2 件にならない */
   protected readonly posts: PostRepository;
+  // 通知の保存先。`deduplicationKey` が一意。通知はモックのため、今は使わない（仕様上は存在する依存なので、コードに残す）。
+  // protected readonly notifications: NotificationRepository;
   /** 投稿の ID の採番 */
   protected readonly ids: IdGenerator;
   /** 投稿の作成日時 */
@@ -42,10 +47,12 @@ export class TaskEventPublisher {
 
   constructor(
     @Inject(POST_REPOSITORY) posts: PostRepository,
+    // @Inject(NOTIFICATION_REPOSITORY) notifications: NotificationRepository,
     @Inject(ID_GENERATOR) ids: IdGenerator,
     @Inject(CLOCK) clock: Clock,
   ) {
     this.posts = posts;
+    // this.notifications = notifications;
     this.ids = ids;
     this.clock = clock;
   }
