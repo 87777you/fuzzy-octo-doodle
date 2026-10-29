@@ -70,9 +70,9 @@ export class MeController {
    * 入力: @CurrentUser() のセッション利用者 ID。
    * 呼び出し先: GetMyStatsUseCase.execute
    */
-  @Get("stats")
+    @Get("stats")
   @HttpCode(200)
-  statistics(@CurrentUser() _user: UserId): Promise<MyStats> {
-    return todo("MeController.statistics");
+  statistics(@CurrentUser() user: UserId): Promise<MyStats> {
+    return this.getMyStats.execute({ userId: user });
   }
 }
