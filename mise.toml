@@ -32,12 +32,24 @@ depends = ["install"]
 run = "pnpm -r build"
 
 [tasks."image:build"]
-description = "backend の OCI イメージをビルドする"
-run = "docker build -f backend/Dockerfile -t hackathon-api:ci ."
+description = "backend と migrate の OCI イメージをビルドする"
+run = [
+  "docker build -f backend/Dockerfile -t hackathon-api:ci .",
+  "docker build -f backend/Dockerfile.migrate -t hackathon-migrate:ci .",
+]
+
+[tasks."db:hash"]
+description = "backend/migrations/atlas.sum を更新する（SQL を足したら実行する。Docker が必要）"
+run = "docker run --rm --user \"$(id -u):$(id -g)\" -v \"$PWD/backend/migrations:/migrations\" arigaio/atlas:1.3.1-community-distroless@sha256:76cc66fb31f99d5d316676b8a9866ef4b6d6bf5aacc0639485d04848670839e4 migrate hash --dir file:///migrations"
+
+[tasks."db:check"]
+description = "atlas.sum が migrations の内容と一致しているか検証する（Docker が必要）"
+depends = ["db:hash"]
+run = "git diff --exit-code -- backend/migrations/atlas.sum"
 
 [tasks.ci]
 description = "CI と同じ検証をローカルで実行する"
-depends = ["lint", "typecheck", "test", "build", "image:build"]
+depends = ["lint", "typecheck", "test", "build", "image:build", "db:check"]
 
 [tasks."dev:up"]
 description = "DB と API をコンテナで起動し、変更を監視する（Docker が必要）"
@@ -52,5 +64,5 @@ description = "開発用のコンテナを止め、DB のデータも消す"
 run = "docker compose down -v"
 
 [tasks."dev:migrate"]
-description = "新しいマイグレーションを DB に適用する"
-run = "docker compose run --rm migrate"
+description = "新しいマイグレーションを DB に適用し、開発用の利用者を作る"
+run = "docker compose run --rm migrate && docker compose run --rm --no-deps seed"
