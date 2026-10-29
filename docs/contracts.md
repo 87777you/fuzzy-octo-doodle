@@ -44,4 +44,4 @@
 
 ## CI
 
-- Pull Request と `master` への push で `mise run ci` を実行する。クラウド認証は行わない。
+- Pull Request と `main` への push で `mise run ci` を実行する。クラウド認証は行わない。
