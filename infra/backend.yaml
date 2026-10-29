@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: fuzzy-octo-doodle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+      app.kubernetes.io/part-of: fuzzy-octo-doodle
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backend
+        app.kubernetes.io/part-of: fuzzy-octo-doodle
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: DATABASE_HOST
+              value: fuzzy-octo-doodle-db-rw
+            - name: DATABASE_NAME_FILE
+              value: /etc/database/dbname
+            - name: DATABASE_USER_FILE
+              value: /etc/database/username
+            - name: DATABASE_PASSWORD_FILE
+              value: /etc/database/password
+            # CNPG は TLS 接続のみを受け付ける。-rw Service の名前はサーバー証明書の SAN に含まれる。
+            - name: DATABASE_SSL_MODE
+              value: verify-full
+            - name: DATABASE_SSL_CA_FILE
+              value: /etc/database/ca.crt
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: database
+              mountPath: /etc/database
+              readOnly: true
+      volumes:
+        - name: database
+          projected:
+            sources:
+              - secret:
+                  name: fuzzy-octo-doodle-db-app
+                  items:
+                    - key: dbname
+                      path: dbname
+                    - key: username
+                      path: username
+                    - key: password
+                      path: password
+              - secret:
+                  name: fuzzy-octo-doodle-db-ca
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: fuzzy-octo-doodle
+spec:
+  selector:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: fuzzy-octo-doodle
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
