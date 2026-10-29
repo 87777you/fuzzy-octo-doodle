@@ -4,13 +4,26 @@ namespace: fuzzy-octo-doodle
 resources:
   - namespace.yaml
   - database.yaml
+  - migrate.yaml
   - backend.yaml
   - frontend.yaml
   - ingress.yaml
   - networkpolicy.yaml
+# アプリは、スキーマの適用(migrate、wave 1)が終わってから更新する。
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          argocd.argoproj.io/sync-wave: "2"
 # イメージのタグはここで一元管理する。自動更新(Argo CD Image Updater)の書き戻し先でもある。
+# 3 つのイメージは同じコミットから作る。スキーマとコードのずれを防ぐため、タグは同時に更新する。
 images:
   - name: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
     newTag: main
   - name: ghcr.io/akatukisora/fuzzy-octo-doodle-frontend
+    newTag: main
+  - name: ghcr.io/akatukisora/fuzzy-octo-doodle-migrate
     newTag: main

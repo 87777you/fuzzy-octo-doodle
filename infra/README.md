@@ -15,10 +15,12 @@ Cloudflare Tunnel ─┬─ /api → backend  (8080) ── database (CloudNativ
 | --- | --- |
 | `namespace.yaml` | `fuzzy-octo-doodle` namespace(Pod Security: restricted を audit/warn) |
 | `database.yaml` | CloudNativePG の `Cluster`(PostgreSQL、2 インスタンス) |
+| `migrate.yaml` | スキーマを適用する Sync フックの Job |
 | `backend.yaml` | backend の Deployment と Service |
 | `frontend.yaml` | frontend の Deployment と Service |
 | `ingress.yaml` | `donee.sora-lab.dev` の公開設定(`/api` と `/`) |
 | `networkpolicy.yaml` | 層ごとの許可する入口 |
+| `jobs/` | 定期ジョブ(未展開) |
 | `kustomization.yaml` | リソース一覧とイメージのタグ |
 
 ## イメージ
@@ -27,6 +29,9 @@ Cloudflare Tunnel ─┬─ /api → backend  (8080) ── database (CloudNativ
 
 - `ghcr.io/akatukisora/fuzzy-octo-doodle-backend`(`backend/Dockerfile`)
 - `ghcr.io/akatukisora/fuzzy-octo-doodle-frontend`
+- `ghcr.io/akatukisora/fuzzy-octo-doodle-migrate`(`backend/Dockerfile.migrate`)
+
+3 つは同じコミットから作り、タグを同時に更新する。
 
 GHCR のパッケージは public にする。イメージのビルドと公開は、このディレクトリの範囲外である。
 
@@ -34,9 +39,13 @@ GHCR のパッケージは public にする。イメージのビルドと公開�
 
 CloudNativePG が `fuzzy-octo-doodle-db-app`(接続情報)と `fuzzy-octo-doodle-db-ca`(CA 証明書)の Secret を生成する。backend は両方を読み取り専用ファイルとしてマウントし、`DATABASE_*_FILE` で参照する。接続は `verify-full` の TLS で、ホストは `fuzzy-octo-doodle-db-rw`。
 
-パスワードは Git に置かない。ただし固定パスワードであり、短期認証情報ではない。
+パスワードは Git に置かない。バックアップは設定しない(データが失われても許容できる閉じたアプリのため)。
 
-スキーマ(`backend/migrations/`)の適用は、この構成には含まれない。
+スキーマ(`backend/migrations/`)は、同期のたびに `migrate` の Job が適用する。Job は Argo CD の Sync フックで、Cluster が Healthy になったあと(wave 1)、アプリの更新(wave 2)より先に実行される。失敗すると同期が止まり、アプリは更新されない。イメージは `backend/Dockerfile.migrate` で作る。
+
+## 定期ジョブ
+
+`jobs/` に、backend のイメージで動く 4 つの CronJob(`backend/src/jobs-main.ts` のジョブ)を置いている。ジョブの整備が済むまで展開しない。`kustomization.yaml` の `resources` に `jobs` を追加すると展開される。実行間隔は暫定値(5 分ごと)。
 
 ## NetworkPolicy
 
@@ -44,7 +53,7 @@ Cilium が audit モードの間は、違反は記録されるだけで遮断さ
 
 - frontend ← `cloudflare-tunnel-ingress-controller` namespace(3000)
 - backend ← `cloudflare-tunnel-ingress-controller` namespace(8080)
-- database ← backend(5432)、`cnpg-system`(5432、8000)、同一クラスタのインスタンス(5432、8000)、`monitoring`(9187)
+- database ← backend、定期ジョブ、migrate(5432)、`cnpg-system`(5432、8000)、同一クラスタのインスタンス(5432、8000)、`monitoring`(9187)
 
 enforce に切り替える前に、記録された拒否がこの一覧で説明できることを確認する。egress は未定義である。
 
