@@ -3,6 +3,10 @@ name: Publish images
 on:
   push:
     branches: [main]
+    # Image Updater が infra/ のタグを書き戻すコミットで、再び公開が走って無限に続かないようにする。
+    # infra/ はイメージの内容に含まれない。
+    paths-ignore:
+      - "infra/**"
 
 permissions:
   contents: read
