@@ -18,13 +18,15 @@ DB（PostgreSQL）と API をコンテナで起動し、ソースを変更する
 | 起動して変更を監視する | `mise run dev:up` | `docker compose up --build --watch` |
 | 止める（データは残る） | `mise run dev:down` | `docker compose down` |
 | 止めて DB のデータも消す | `mise run dev:reset` | `docker compose down -v` |
-| 新しい SQL を適用する | `mise run dev:migrate` | `docker compose run --rm migrate` |
+| 新しい SQL を適用する | `mise run dev:migrate` | `docker compose run --rm migrate && docker compose run --rm --no-deps seed` |
+| `atlas.sum` を更新する | `mise run db:hash` | (mise のタスクの `docker run` を参照) |
 
 起動すると、次の順に動く。
 
 1. `db` — PostgreSQL 17 が起動する（`127.0.0.1:5432`、ユーザー・パスワード・DB 名はすべて `app`）。
-2. `migrate` — `backend/migrations/*.sql` を番号順に適用して終了する。適用済みは `schema_migrations` テーブルに記録するため、何度実行しても同じ結果になる。
-3. `api` — `tsx watch` で API が起動する（`127.0.0.1:8080`）。
+2. `migrate` — [Atlas](https://atlasgo.io/)(Community Edition)が `backend/migrations/*.sql` を番号順に適用して終了する。適用済みは DB の `atlas_schema_revisions` に記録するため、何度実行しても同じ結果になる。
+3. `seed` — 開発用の利用者を作って終了する。
+4. `api` — `tsx watch` で API が起動する（`127.0.0.1:8080`）。
 
 動作確認:
 
@@ -52,13 +54,21 @@ curl -i http://127.0.0.1:8080/healthz      # 200 が返る
 - 認証が必要なエンドポイントは、Cookie なしで呼べる。常にその固定の利用者（ID `11111111-1111-4111-8111-111111111111`、ニックネーム「開発ユーザー」）として扱われる。
 - `@Public()` のエンドポイントは、これまでどおり認証なしで呼べる。
 - 状態を変えるリクエスト(POST など)でも、`Origin` ヘッダは要らない。
-- 利用者は、`migrate` サービスが `backend/dev/seed.sql` で作る(何度実行しても同じ結果になる)。
+- 利用者は、`seed` サービスが `backend/dev/seed.sql` で作る(何度実行しても同じ結果になる)。
 - 設定しなければ、本物の認証ガードが動く。`NODE_ENV=production` で設定すると、起動に失敗する。
 - 実装は `composition/auth.module.ts` と `presentation/http/auth/dev-auth.guard.ts`。認証の実装(`SessionAuthGuard`)には触れない。
 
 ```bash
 curl -i http://127.0.0.1:8080/api/me      # 開発用の利用者として処理される
 ```
+
+## マイグレーションを足す
+
+1. `backend/migrations/` に、番号を続けた SQL を置く(例: `0002_add_foo.sql`)。1 ファイルは 1 トランザクションで適用される。
+2. `mise run db:hash` で `backend/migrations/atlas.sum` を更新し、SQL と一緒にコミットする。
+3. `mise run dev:migrate` で手元の DB に適用する。
+
+`atlas.sum` は各ファイルのチェックサムを持つ。`atlas.sum` を更新せずに SQL を足したり書き換えたりすると、適用がエラーになる。CI も `atlas.sum` が最新かを検証する。複数人が同時に SQL を足したときは `atlas.sum` が衝突するので、番号を振り直して `mise run db:hash` をやり直す。
 
 ## DB を直接見る
 
@@ -72,3 +82,4 @@ docker compose exec db psql -U app -d app
 - `permission denied ... docker.sock` — ユーザーが `docker` グループに入っていない。上の手順 1 を見る。
 - ポート 5432 や 8080 が使用中 — 他のプロセスを止める。`compose.yaml` の `ports` の左側の数字を変えてもよい（コミットしない）。
 - マイグレーションが失敗した — エラーの SQL を直したあと、`mise run dev:reset` で DB を作り直す。
+- 以前の開発 DB が残っていて `atlas_schema_revisions` がない — スキーマは適用済みなのに Atlas が DB が空でないとして失敗する。`mise run dev:reset` で DB を作り直す。
