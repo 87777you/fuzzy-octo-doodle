@@ -1,14 +1,15 @@
 import type { Page } from "../../../application/ports/task.repository.ts";
 import type { FeedItemView } from "../../../domain/feed/feed-view.ts";
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Put, Query } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { z } from "zod";
+import { FEED_PAGE_SIZE } from "../../../domain/feed/post.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { GetFeedUseCase } from "../../../application/usecases/feed/get-feed.usecase.ts";
 import { GetPostUseCase } from "../../../application/usecases/feed/get-post.usecase.ts";
 import { RemoveReactionUseCase } from "../../../application/usecases/feed/remove-reaction.usecase.ts";
 import { SetReactionUseCase } from "../../../application/usecases/feed/set-reaction.usecase.ts";
-
+import { todo } from "../../../application/shared/todo.ts"
 /**
  * 責務: タイムラインと投稿リアクションの HTTP 入出力を受け持つ。入力検証と UseCase 呼び出しまでを行い、閲覧権限や保存処理は担わない。
  *
@@ -23,6 +24,12 @@ import { SetReactionUseCase } from "../../../application/usecases/feed/set-react
  *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
  * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
+const feedQuerySchema = z.object({
+  filter: z.enum(["all", "objected"]).default("all"),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(FEED_PAGE_SIZE),
+});
+
 @Controller("")
 export class FeedController {
   constructor(
@@ -40,10 +47,16 @@ export class FeedController {
    * 入力: @CurrentUser() のセッション利用者 ID と query の filter・cursor・limit。
    * 呼び出し先: GetFeedUseCase.execute
    */
-  @Get("feed")
+    @Get("feed")
   @HttpCode(200)
-  feed(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<FeedItemView>> {
-    return todo("FeedController.feed");
+  feed(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<Page<FeedItemView>> {
+    const { filter, cursor, limit } = feedQuerySchema.parse(query);
+    return this.getFeed.execute({
+      userId: user,
+      filter,
+      limit,
+      ...(cursor === undefined ? {} : { cursor }),
+    });
   }
 
   /**
