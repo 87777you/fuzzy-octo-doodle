@@ -7,5 +7,6 @@ backend/ @AkatukiSora
 
 # CI/CD、Lintなどその他のレビュワー
 .github/ @AkatukiSora
+infra/ @AkatukiSora
 eslint.config.mjs @AkatukiSora
 tsconfig.base.json @AkatukiSora

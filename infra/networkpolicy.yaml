@@ -1,0 +1,89 @@
+# Cilium が audit モードの間は通信を遮断しない(違反は記録される)。enforce に切り替える前に、
+# Hubble で記録された拒否が、ここに書いた許可だけで説明できることを確認する。
+# ブラウザは同一ドメインの /api を通して backend を呼ぶため、frontend から backend への通信は存在しない。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: frontend
+      app.kubernetes.io/part-of: fuzzy-octo-doodle
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cloudflare-tunnel-ingress-controller
+      ports:
+        - protocol: TCP
+          port: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+      app.kubernetes.io/part-of: fuzzy-octo-doodle
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cloudflare-tunnel-ingress-controller
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: database-allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: fuzzy-octo-doodle-db
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: backend
+              app.kubernetes.io/part-of: fuzzy-octo-doodle
+      ports:
+        - protocol: TCP
+          port: 5432
+    # CNPG operator が各インスタンスの状態取得(8000)と接続(5432)を行う。
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cnpg-system
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 8000
+    # インスタンス間のレプリケーション(5432)と状態確認(8000)。
+    - from:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: fuzzy-octo-doodle-db
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 8000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9187
