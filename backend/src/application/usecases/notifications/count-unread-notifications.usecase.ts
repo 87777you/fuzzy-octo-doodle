@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { NOTIFICATION_REPOSITORY } from "../../../application/ports/notification.repository.ts";
@@ -42,7 +41,9 @@ export class CountUnreadNotificationsUseCase {
    * 認証利用者本人の未読通知数を返す。通知一覧や通知状態は変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CountUnreadNotificationsInput): Promise<UnreadCount> {
-    return todo("CountUnreadNotificationsUseCase");
-  }
+  execute(input: CountUnreadNotificationsInput): Promise<UnreadCount> {
+    return this.uow.run(async (tx) => {
+      const count = await this.notifications.countUnread(tx, input.userId);
+      return { count };
+  })}
 }

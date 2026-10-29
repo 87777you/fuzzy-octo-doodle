@@ -57,8 +57,8 @@ export class NotificationsController {
    */
   @Get("unread-count")
   @HttpCode(200)
-  unreadCount(@CurrentUser() _user: UserId): Promise<UnreadCount> {
-    return todo("NotificationsController.unreadCount");
+    unreadCount(@CurrentUser() user: UserId): Promise<UnreadCount> {
+    return this.countUnreadNotifications.execute({ userId: user });
   }
 
   /**
