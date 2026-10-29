@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { successRate } from "../../../domain/user/user.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
@@ -46,7 +46,10 @@ export class GetMyStatsUseCase {
    * 認証利用者本人のタスク実績と達成率を返す。プロフィールやタスク状態は変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetMyStatsInput): Promise<MyStats> {
-    return todo("GetMyStatsUseCase");
+  async execute(input: GetMyStatsInput): Promise<MyStats> {
+    return this.uow.run(async (tx) => {
+      const stats = await this.users.getStats(tx, input.userId);
+      return { stats, successRate: successRate(stats) };
+    });
   }
 }
