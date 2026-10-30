@@ -21,7 +21,8 @@ WORKDIR /app
 COPY --from=build /out/package.json /out/next.config.ts ./
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /out/public ./public
-COPY --from=build /out/.next ./.next
+# Next.js の実行時キャッシュを非 root ユーザーが作成できるようにする。
+COPY --chown=node:node --from=build /out/.next ./.next
 USER node
 EXPOSE 3000
 ENV PORT=3000
