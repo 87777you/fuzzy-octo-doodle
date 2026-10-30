@@ -1,6 +1,8 @@
 import type { Page } from "../../../application/ports/task.repository.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { FEED_WINDOW_DAYS } from "../../../domain/feed/post.ts";
+import { toTaskView } from "../../../domain/task/task-view.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -68,7 +70,42 @@ export class GetFeedUseCase {
    * タイムラインの1ページを読み、投稿・投稿者・タスク・リアクションを FeedItemView にまとめる。投稿やリアクションの更新は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetFeedInput): Promise<Page<FeedItemView>> {
-    return todo("GetFeedUseCase");
+    execute(input: GetFeedInput): Promise<Page<FeedItemView>> {
+    return this.uow.run(async (tx) => {
+      const now = this.clock.now();
+      const since = new Date(now.getTime() - FEED_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+      const page = await this.posts.listFeed(tx, {
+        viewer: input.userId,
+        filter: input.filter,
+        since,
+        ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+        limit: input.limit,
+      });
+
+      const tasks = await this.tasks.findByIds(tx, [...new Set(page.items.map((item) => item.taskId))]);
+      const users = await this.users.findByIds(tx, [...new Set(page.items.map((item) => item.post.userId))]);
+      const taskById = new Map(tasks.map((task) => [task.id, task]));
+      const userById = new Map(users.map((user) => [user.id, user]));
+
+      const items = page.items.map((item): FeedItemView => {
+        const task = taskById.get(item.taskId);
+        const author = userById.get(item.post.userId);
+        // 投稿は task と user を参照しているので、通常は欠けない。欠けたら黙って除かず、明示的に失敗させる。
+        if (task === undefined || author === undefined) {
+          throw new DomainError("NOT_FOUND", "投稿の関連データが見つかりません");
+        }
+        return {
+          postId: item.post.id,
+          postType: item.post.postType,
+          postedAt: item.post.createdAt,
+          author: { userId: author.id, nickname: author.nickname },
+          task: toTaskView(task, "friend"),
+          reactionCounts: item.reactionCounts,
+          myReaction: item.myReaction,
+        };
+      });
+
+      return { items, nextCursor: page.nextCursor };
+    });
   }
 }
