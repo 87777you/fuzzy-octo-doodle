@@ -41,7 +41,7 @@ CloudNativePG が `fuzzy-octo-doodle-db-app`(接続情報)と `fuzzy-octo-doodle
 
 パスワードは Git に置かない。バックアップは設定しない(データが失われても許容できる閉じたアプリのため)。
 
-スキーマ(`backend/migrations/`)は、同期のたびに `migrate` の Job が適用する。Job は Argo CD の Sync フックで、Cluster が Healthy になったあと(wave 1)、アプリの更新(wave 2)より先に実行される。失敗すると同期が止まり、アプリは更新されない。イメージは `backend/Dockerfile.migrate` で作る。
+スキーマ(`backend/migrations/`)は、同期のたびに `migrate` の Job が適用する。Job は Argo CD の Sync フックで、Cluster が Healthy になったあと(wave 1)、アプリの更新(wave 3)より先に実行される。失敗すると同期が止まり、アプリは更新されない。イメージは `backend/Dockerfile.migrate` で作る。
 
 ## 定期ジョブ
 
@@ -62,3 +62,11 @@ enforce に切り替える前に、記録された拒否がこの一覧で説明
 ```bash
 kubectl kustomize infra
 ```
+
+## 開発用の認証
+
+認証方式が決まるまでの暫定として、backend は `DEV_AUTH_USER_ID` で固定の利用者として動く。認証なしで `/api` を使えるので、公開ドメインに出る間は、閉じたアプリの範囲でのみ使う。
+
+- backend は `NODE_ENV=production` だと起動に失敗するため、Deployment で `NODE_ENV=development` に上書きしている。
+- その利用者は、`seed` の Job(Sync フック、wave 2)が作る。`migrate`(wave 1)のあと、アプリ(wave 3)より先に実行され、何度実行しても同じ結果になる。
+- 認証を実装したら、`seed` の Job、`NetworkPolicy` の `seed` の許可、backend の 2 つの環境変数を消す。
