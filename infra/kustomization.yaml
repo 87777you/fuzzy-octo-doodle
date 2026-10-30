@@ -17,7 +17,7 @@ patches:
       - op: add
         path: /metadata/annotations
         value:
-          argocd.argoproj.io/sync-wave: "2"
+          argocd.argoproj.io/sync-wave: "3"
 # イメージのタグはここで一元管理する。自動更新(Argo CD Image Updater)の書き戻し先でもある。
 # 3 つのイメージは同じコミットから作る。スキーマとコードのずれを防ぐため、タグは同時に更新する。
 images:
