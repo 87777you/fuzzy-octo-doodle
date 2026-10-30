@@ -23,3 +23,20 @@ jobs:
       - uses: jdx/mise-action@v3
       # 開発者がローカルで実行する `mise run ci` と同一の検証を行う。
       - run: mise run ci
+      # ビルド成功だけでは実行時の 500 エラーを検知できないため、完成したイメージを起動して確認する。
+      - name: Smoke-test frontend container
+        run: |
+          set -euo pipefail
+          container="$(docker run --rm -d -p 127.0.0.1::3000 hackathon-frontend:ci)"
+          trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
+          port="$(docker port "$container" 3000/tcp | awk -F: 'NR==1 {print $NF}')"
+          for attempt in $(seq 1 30); do
+            status="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${port}/" || true)"
+            case "$status" in
+              200|301|302|303|307|308|404) exit 0 ;;
+              500|502|503|504) docker logs "$container"; exit 1 ;;
+            esac
+            sleep 1
+          done
+          docker logs "$container"
+          exit 1

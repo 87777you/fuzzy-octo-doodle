@@ -1,5 +1,6 @@
 # フロントエンドのレビュワー
 frontend/ @Satoukk
+frontend/Dockerfile @AkatukiSora
 
 # バックエンドのレビュワー
 backend/ @AkatukiSora

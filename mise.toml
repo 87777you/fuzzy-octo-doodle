@@ -32,9 +32,10 @@ depends = ["install"]
 run = "pnpm -r build"
 
 [tasks."image:build"]
-description = "backend と migrate の OCI イメージをビルドする"
+description = "backend、frontend、migrate の OCI イメージをビルドする"
 run = [
   "docker build -f backend/Dockerfile -t hackathon-api:ci .",
+  "docker build -f frontend/Dockerfile -t hackathon-frontend:ci .",
   "docker build -f backend/Dockerfile.migrate -t hackathon-migrate:ci .",
 ]
 
