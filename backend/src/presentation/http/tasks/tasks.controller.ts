@@ -4,6 +4,8 @@ import type { Page } from "../../../application/ports/task.repository.ts";
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
+import { z } from "zod";
+import { TASK_STATUSES } from "../../../domain/task/task-status.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CreateTaskUseCase } from "../../../application/usecases/tasks/create-task.usecase.ts";
@@ -27,6 +29,17 @@ import { ListMyTasksUseCase } from "../../../application/usecases/tasks/list-my-
  *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
  * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
+
+const DEFAULT_TASK_PAGE_SIZE = 20;
+
+const listQuerySchema = z.object({
+  view: z.enum(["active", "history"]).default("active"),
+  status: z.enum(TASK_STATUSES).optional(),
+  search: z.string().min(1).optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(DEFAULT_TASK_PAGE_SIZE),
+});
+
 @Controller("tasks")
 export class TasksController {
   constructor(
@@ -61,8 +74,16 @@ export class TasksController {
    */
   @Get("")
   @HttpCode(200)
-  list(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<OwnerTaskView>> {
-    return todo("TasksController.list");
+    list(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<Page<OwnerTaskView>> {
+    const { view, status, search, cursor, limit } = listQuerySchema.parse(query);
+    return this.listMyTasks.execute({
+      userId: user,
+      view,
+      limit,
+      ...(status === undefined ? {} : { status }),
+      ...(search === undefined ? {} : { search }),
+      ...(cursor === undefined ? {} : { cursor }),
+    });
   }
 
   /**
