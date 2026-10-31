@@ -3,6 +3,7 @@ import type { Page } from "../../../application/ports/task.repository.ts";
 import type { UnreadCount } from "../../../application/ports/usecases/count-unread-notifications.port.ts";
 import { Controller, Get, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { todo } from "../../../application/shared/todo.ts";
+import { z } from "zod";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CountUnreadNotificationsUseCase } from "../../../application/usecases/notifications/count-unread-notifications.usecase.ts";
@@ -24,6 +25,13 @@ import { parseNotificationId } from "../../../domain/shared/id-parsers.ts";
  *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
  * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
+
+const listQuerySchema = z.object({
+  filter: z.enum(["all", "unread"]).default("all"),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
 @Controller("notifications")
 export class NotificationsController {
   constructor(
@@ -43,8 +51,14 @@ export class NotificationsController {
    */
   @Get("")
   @HttpCode(200)
-  listAll(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<Notification>> {
-    return todo("NotificationsController.listAll");
+  listAll(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<Page<Notification>> {
+        const { filter, cursor, limit } = listQuerySchema.parse(query);
+    return this.listNotifications.execute({
+      userId: user,
+      filter,
+      limit,
+      ...(cursor === undefined ? {} : { cursor }),
+    });
   }
 
   /**
