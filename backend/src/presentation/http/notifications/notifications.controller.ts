@@ -2,7 +2,6 @@ import type { Notification } from "../../../domain/notification/notification.ts"
 import type { Page } from "../../../application/ports/task.repository.ts";
 import type { UnreadCount } from "../../../application/ports/usecases/count-unread-notifications.port.ts";
 import { Controller, Get, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { z } from "zod";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
