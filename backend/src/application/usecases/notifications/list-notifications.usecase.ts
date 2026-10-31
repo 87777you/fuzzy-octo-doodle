@@ -43,9 +43,9 @@ export class ListNotificationsUseCase {
    * 認証利用者自身の通知を条件付きでページ取得する。通知の作成や既読更新は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListNotificationsInput): Promise<Page<Notification>> {
+  execute(input: ListNotificationsInput): Promise<Page<Notification>> {
     return this.uow.run((tx) =>
-      this.notifications.list(tx, _input.userId, _input.filter, _input.cursor, _input.limit),
+      this.notifications.list(tx, input.userId, input.filter, input.cursor, input.limit),
     );
   }
 }

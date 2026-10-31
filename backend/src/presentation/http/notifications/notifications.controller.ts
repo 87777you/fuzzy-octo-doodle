@@ -51,10 +51,10 @@ export class NotificationsController {
    */
   @Get("")
   @HttpCode(200)
-  listAll(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<Notification>> {
-        const { filter, cursor, limit } = listQuerySchema.parse(_query);
+  listAll(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<Page<Notification>> {
+        const { filter, cursor, limit } = listQuerySchema.parse(query);
     return this.listNotifications.execute({
-      userId: _user,
+      userId: user,
       filter,
       limit,
       ...(cursor === undefined ? {} : { cursor }),
