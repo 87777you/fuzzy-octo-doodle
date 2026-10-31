@@ -9,7 +9,7 @@ import { CountUnreadNotificationsUseCase } from "../../../application/usecases/n
 import { ListNotificationsUseCase } from "../../../application/usecases/notifications/list-notifications.usecase.ts";
 import { MarkAllNotificationsReadUseCase } from "../../../application/usecases/notifications/mark-all-notifications-read.usecase.ts";
 import { MarkNotificationReadUseCase } from "../../../application/usecases/notifications/mark-notification-read.usecase.ts";
-
+import { parseNotificationId } from "../../../domain/shared/id-parsers.ts";
 /**
  * 責務: 通知 API の HTTP 入出力を受け持つ。認証利用者と入力を UseCase に渡し、通知の検索・既読化は UseCase に委ねる。
  *
@@ -72,7 +72,7 @@ export class NotificationsController {
   @Post("read-all")
   @HttpCode(204)
   readAll(@CurrentUser() _user: UserId): Promise<null> {
-    return todo("NotificationsController.readAll");
+    return this.markAllNotificationsRead.execute({ userId: _user });
   }
 
   /**
@@ -86,6 +86,6 @@ export class NotificationsController {
   @Post(":id/read")
   @HttpCode(204)
   read(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<null> {
-    return todo("NotificationsController.read");
+     return this.markNotificationRead.execute({ userId: _user, notificationId: parseNotificationId(_id) });
   }
 }
