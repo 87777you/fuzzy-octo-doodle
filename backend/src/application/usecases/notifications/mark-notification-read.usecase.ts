@@ -50,9 +50,9 @@ export class MarkNotificationReadUseCase {
    * 利用者本人の指定通知を未読から既読に更新する。他人の通知や存在しない通知の有無は知らせない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: MarkNotificationReadInput): Promise<null> {
+  execute(input: MarkNotificationReadInput): Promise<null> {
     return this.uow.run(async (tx) => {
-      await this.notifications.markRead(tx, _input.userId, _input.notificationId, this.clock.now());
+      await this.notifications.markRead(tx, input.userId, input.notificationId, this.clock.now());
       return null;
     });
   }

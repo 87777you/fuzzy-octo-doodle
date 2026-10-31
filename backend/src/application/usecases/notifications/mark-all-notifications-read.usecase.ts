@@ -47,9 +47,9 @@ export class MarkAllNotificationsReadUseCase {
    * 認証利用者本人の未読通知をすべて既読にする。他の利用者の通知は変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: MarkAllNotificationsReadInput): Promise<null> {
+  execute(input: MarkAllNotificationsReadInput): Promise<null> {
     return this.uow.run(async (tx) => {
-      await this.notifications.markAllRead(tx, _input.userId, this.clock.now());
+      await this.notifications.markAllRead(tx, input.userId, this.clock.now());
       return null;
     });
   }
