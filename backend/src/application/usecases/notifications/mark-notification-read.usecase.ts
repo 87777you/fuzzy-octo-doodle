@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -52,6 +51,9 @@ export class MarkNotificationReadUseCase {
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
   execute(_input: MarkNotificationReadInput): Promise<null> {
-    return todo("MarkNotificationReadUseCase");
+    return this.uow.run(async (tx) => {
+      await this.notifications.markRead(tx, _input.userId, _input.notificationId, this.clock.now());
+      return null;
+    });
   }
 }
