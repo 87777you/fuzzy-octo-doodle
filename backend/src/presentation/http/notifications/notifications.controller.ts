@@ -71,8 +71,8 @@ export class NotificationsController {
    */
   @Post("read-all")
   @HttpCode(204)
-  readAll(@CurrentUser() _user: UserId): Promise<null> {
-    return this.markAllNotificationsRead.execute({ userId: _user });
+  readAll(@CurrentUser() user: UserId): Promise<null> {
+    return this.markAllNotificationsRead.execute({ userId: user });
   }
 
   /**
@@ -85,7 +85,7 @@ export class NotificationsController {
    */
   @Post(":id/read")
   @HttpCode(204)
-  read(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<null> {
-     return this.markNotificationRead.execute({ userId: _user, notificationId: parseNotificationId(_id) });
+  read(@CurrentUser() user: UserId, @Param("id") id: string): Promise<null> {
+     return this.markNotificationRead.execute({ userId: user, notificationId: parseNotificationId(id) });
   }
 }
