@@ -26,6 +26,7 @@ import { PAYMENT_GATEWAY } from "../../../application/ports/payment-gateway.port
 import type { PaymentGateway } from "../../../application/ports/payment-gateway.port.ts";
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
 import type { CreateTaskInput } from "../../ports/usecases/create-task.port.ts";
+import { TASK_STATUSES } from "../../../domain/task/task-status.ts";
 
 /**
  * 責務: 利用者のタスクを 1 件作成し、作成前の支払い条件・同時作成数・期限の確認と保存を調整する。HTTP 入力検証そのものは担当しない。
@@ -71,15 +72,7 @@ const savedTaskResponseSchema = z.object({
   achievementCondition: z.string(),
   evidenceMethod: z.string(),
   deadlineAt: z.iso.datetime(),
-  status: z.enum([
-    "active",
-    "reviewing",
-    "disputed",
-    "success",
-    "failed",
-    "indeterminate",
-    "closed",
-  ]),
+  status: z.enum(TASK_STATUSES),
   isPenaltyPublic: z.boolean(),
   createdAt: z.iso.datetime(),
   viewer: z.literal("owner"),
