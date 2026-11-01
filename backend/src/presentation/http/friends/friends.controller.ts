@@ -190,11 +190,11 @@ export class FriendsController {
    * 入力: CurrentUser の userId。body、query、header は受け取らない。
    * 呼び出し先: ListBlockedUsersUseCase.execute
    */
-  @Get("blocked-users")
-  @HttpCode(200)
-  listBlocked(@CurrentUser() _user: UserId): Promise<readonly UserSummary[]> {
-    return todo("FriendsController.listBlocked");
-  }
+ @Get("blocked-users")
+@HttpCode(200)
+listBlocked(@CurrentUser() user: UserId): Promise<readonly UserSummary[]> {
+  return this.listBlockedUsers.execute({ userId: user });
+}
 
   /**
    * 指定した相手をブロックし、関係の有無を応答で区別しない。
