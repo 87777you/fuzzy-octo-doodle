@@ -28,6 +28,10 @@ interface ReviewData {
   reviewEndsAt: string;
 }
 
+function hoursFromNow(hours: number): string {
+  return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+}
+
 const mockReviewData: ReviewData = {
   taskId: "task-1",
   taskTitle: "毎日ストレッチする",
@@ -42,7 +46,7 @@ const mockReviewData: ReviewData = {
   ],
   memo: "朝に10分ストレッチしました！\n肩まわりがすっきりしました。",
   submittedAt: "2025/04/20 08:12",
-  reviewEndsAt: "2026-11-02T22:42:00+09:00",
+  reviewEndsAt: hoursFromNow(23),
 };
 
 export default function ReviewHome() {
