@@ -16,8 +16,12 @@ export function ReviewStatusPanel({
 
   useEffect(() => {
     setNow(Date.now());
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 60_000);
+    return () => {
+      window.clearInterval(timer);
+    };
   }, []);
 
   const reviewRemaining =
@@ -66,7 +70,7 @@ function formatRemainingTime(reviewEndsAt: string, now: number): string {
   const totalHours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  if (totalHours === 0) return `あと${minutes}分`;
-  if (minutes === 0) return `あと${totalHours}時間`;
-  return `あと${totalHours}時間${minutes}分`;
+  if (totalHours === 0) return `あと${String(minutes)}分`;
+  if (minutes === 0) return `あと${String(totalHours)}時間`;
+  return `あと${String(totalHours)}時間${String(minutes)}分`;
 }

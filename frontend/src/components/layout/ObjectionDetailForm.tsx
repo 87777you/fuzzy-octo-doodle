@@ -21,7 +21,9 @@ export function ObjectionDetailForm({
       maxLength={maxLength}
       showCount
       placeholder="具体的な理由を入力してください。"
-      onChange={(event) => onChange(event.target.value)}
+      onChange={(event) => {
+        onChange(event.target.value);
+      }}
     />
   );
 }

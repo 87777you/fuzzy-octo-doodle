@@ -53,9 +53,11 @@ export default function ObjectionCompletePage() {
             variant="secondary"
             size="md"
             fullWidth
-            onClick={() => router.push("/")}
+            onClick={() => {
+              router.push("/");
+            }}
           >
-            ‹　フレンドのタスク一覧に戻る
+            ‹ フレンドのタスク一覧に戻る
           </Button>
         </div>
       </ObjectionCompleteContent>

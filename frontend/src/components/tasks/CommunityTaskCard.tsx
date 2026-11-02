@@ -49,8 +49,12 @@ export function CommunityTaskCard({
     if (!targetTime) return;
 
     setNow(Date.now());
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 60_000);
+    return () => {
+      window.clearInterval(timer);
+    };
   }, [targetTime]);
 
   const remainingTime =
@@ -169,12 +173,14 @@ function formatRemainingTime(deadlineAt: string, now: number): string | null {
   if (difference <= 0) return "期限切れ";
 
   const totalMinutes = Math.ceil(difference / 60_000);
-  if (totalMinutes < 60) return `あと${totalMinutes}分`;
+  if (totalMinutes < 60) return `あと${String(totalMinutes)}分`;
 
   const totalHours = Math.floor(totalMinutes / 60);
-  if (totalHours < 24) return `あと${totalHours}時間`;
+  if (totalHours < 24) return `あと${String(totalHours)}時間`;
 
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
-  return hours > 0 ? `あと${days}日${hours}時間` : `あと${days}日`;
+  return hours > 0
+    ? `あと${String(days)}日${String(hours)}時間`
+    : `あと${String(days)}日`;
 }

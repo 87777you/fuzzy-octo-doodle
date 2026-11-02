@@ -19,6 +19,10 @@ interface ObjectionReasonSelectorProps {
   onChange: (value: ObjectionReasonType) => void;
 }
 
+function classNames(...names: (string | undefined)[]): string {
+  return names.filter((name): name is string => name !== undefined).join(" ");
+}
+
 export function ObjectionReasonSelector({
   options,
   value,
@@ -37,15 +41,19 @@ export function ObjectionReasonSelector({
               type="button"
               role="radio"
               aria-checked={selected}
-              className={`${styles["option"]} ${
-                selected ? styles["selected"] : ""
-              }`}
-              onClick={() => onChange(option.value)}
+              className={classNames(
+                styles["option"],
+                selected ? styles["selected"] : undefined,
+              )}
+              onClick={() => {
+                onChange(option.value);
+              }}
             >
               <span
-                className={`${styles["radio"]} ${
-                  selected ? styles["radioSelected"] : ""
-                }`}
+                className={classNames(
+                  styles["radio"],
+                  selected ? styles["radioSelected"] : undefined,
+                )}
                 aria-hidden="true"
               />
               <span className={styles["text"]}>

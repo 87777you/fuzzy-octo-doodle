@@ -1,9 +1,9 @@
 import type { FeedPost, ReactionType } from "../types/feed";
 
-export const reactionDefinitions: ReadonlyArray<{
+export const reactionDefinitions: readonly {
   type: ReactionType;
   emoji: string;
-}> = [
+}[] = [
   { type: "support", emoji: "👏" },
   { type: "fire", emoji: "🔥" },
   { type: "congrats", emoji: "🎉" },

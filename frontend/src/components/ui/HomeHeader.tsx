@@ -10,9 +10,9 @@ const tabItems = [
 
 export type HomeTaskTab = (typeof tabItems)[number]["value"];
 
-type HomeHeaderProps = {
+interface HomeHeaderProps {
   onTabChange?: (tab: HomeTaskTab) => void;
-};
+}
 
 export function HomeHeader({ onTabChange }: HomeHeaderProps) {
   const [selectedTab, setSelectedTab] = useState<HomeTaskTab>("all");
@@ -28,15 +28,19 @@ export function HomeHeader({ onTabChange }: HomeHeaderProps) {
         <button
           key={tab.value}
           type="button"
-          className={`${styles["tab"]} ${
-            selectedTab === tab.value ? styles["active"] : ""
-          }`}
+          className={[
+            styles["tab"],
+            selectedTab === tab.value ? styles["active"] : undefined,
+          ]
+            .filter((name): name is string => name !== undefined)
+            .join(" ")}
           aria-pressed={selectedTab === tab.value}
-          onClick={() => handleTabChange(tab.value)}
+          onClick={() => {
+            handleTabChange(tab.value);
+          }}
         >
           {tab.label}
         </button>
-        
       ))}
     </div>
   );

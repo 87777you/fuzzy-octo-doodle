@@ -30,6 +30,16 @@ interface ObjectionDraft {
   reasonDetail: string;
 }
 
+const objectionReasonTypes = [
+  "insufficient_evidence",
+  "conditions_not_met",
+  "other",
+] as const;
+
+function isObjectionReasonType(value: string): value is ObjectionReasonType {
+  return (objectionReasonTypes as readonly string[]).includes(value);
+}
+
 export default function ObjectionConfirmPage() {
   // URLのtaskIdを、保存データの読み込みと完了画面への遷移に使う。
   const { taskId } = useParams<{ taskId: string }>();
@@ -41,7 +51,10 @@ export default function ObjectionConfirmPage() {
   useEffect(() => {
     // 入力画面で保存したタスク別の下書きを取得する。
     const storedDraft = sessionStorage.getItem(`objection-draft:${taskId}`);
-    if (!storedDraft) return;
+    if (!storedDraft) {
+      router.replace(`/tasks/${taskId}/objection`);
+      return;
+    }
 
     try {
       // sessionStorageの値は文字列なので、JSONとして解析する。
@@ -54,31 +67,30 @@ export default function ObjectionConfirmPage() {
         "reasonType" in parsedDraft &&
         "reasonDetail" in parsedDraft &&
         typeof parsedDraft.reasonType === "string" &&
-        typeof parsedDraft.reasonDetail === "string"
+        typeof parsedDraft.reasonDetail === "string" &&
+        isObjectionReasonType(parsedDraft.reasonType) &&
+        parsedDraft.reasonDetail.trim().length > 0
       ) {
         // 検証した入力内容を確認画面に反映する。
         setDraft({
-          reasonType: parsedDraft.reasonType as ObjectionReasonType,
+          reasonType: parsedDraft.reasonType,
           reasonDetail: parsedDraft.reasonDetail,
         });
+      } else {
+        sessionStorage.removeItem(`objection-draft:${taskId}`);
+        router.replace(`/tasks/${taskId}/objection`);
       }
     } catch {
       // 壊れたJSONは削除し、無効な入力を残さない。
       sessionStorage.removeItem(`objection-draft:${taskId}`);
+      router.replace(`/tasks/${taskId}/objection`);
     }
-  }, [taskId]);
+  }, [router, taskId]);
 
   // 確認した異議内容をモック送信し、完了画面へ移動する。
   const handleSubmit = () => {
     // 下書きが読み込めていない場合は送信しない。
     if (!draft) return;
-
-    // 実APIのPOST /api/tasks/{id}/objectionsに渡す想定のリクエスト。
-    const mockRequest = {
-      reason_type: draft.reasonType,
-      reason_detail: draft.reasonDetail,
-    };
-    void mockRequest;
 
     // APIの代わりに完了画面へ遷移する。
     router.push(`/tasks/${taskId}/objection/complete`);
@@ -111,7 +123,9 @@ export default function ObjectionConfirmPage() {
         )}
         {/* 戻る、またはモック送信を実行するボタン。 */}
         <ObjectionConfirmActions
-          onBack={() => router.back()}
+          onBack={() => {
+            router.back();
+          }}
           onSubmit={handleSubmit}
           disabled={!draft}
         />

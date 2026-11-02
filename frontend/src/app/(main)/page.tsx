@@ -21,7 +21,10 @@ async function fetchFeed(signal: AbortSignal): Promise<FeedPost[]> {
   const response = await fetch("/api/feed", { signal });
   if (!response.ok) throw new Error("投稿一覧を取得できませんでした。");
 
-  const data: FeedResponse = await response.json();
+  const data: unknown = await response.json();
+  if (!isFeedResponse(data)) {
+    throw new Error("投稿一覧の形式が不正です。");
+  }
   return data.items;
 }
 
@@ -41,12 +44,39 @@ async function fetchAllMyObjections(
     });
     if (!response.ok) throw new Error("異議一覧を取得できませんでした。");
 
-    const data: ObjectionListResponse = await response.json();
+    const data: unknown = await response.json();
+    if (!isObjectionListResponse(data)) {
+      throw new Error("異議一覧の形式が不正です。");
+    }
     allItems.push(...data.items);
     cursor = data.nextCursor;
   } while (cursor !== null);
 
   return allItems;
+}
+
+function isFeedResponse(value: unknown): value is FeedResponse {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "items" in value &&
+    Array.isArray(value.items) &&
+    "nextCursor" in value &&
+    (typeof value.nextCursor === "string" || value.nextCursor === null)
+  );
+}
+
+function isObjectionListResponse(
+  value: unknown,
+): value is ObjectionListResponse {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "items" in value &&
+    Array.isArray(value.items) &&
+    "nextCursor" in value &&
+    (typeof value.nextCursor === "string" || value.nextCursor === null)
+  );
 }
 
 export default function HomePage() {
@@ -97,7 +127,9 @@ export default function HomePage() {
     void loadFeed();
 
     // タブが切り替わったら前の通信を中断し、古い結果の反映を防ぐ。
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+    };
   }, [filter, retryKey]);
 
   const [reactingPostIds, setReactingPostIds] = useState<Set<FeedPost["id"]>>(
