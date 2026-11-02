@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { notFound, useParams, useRouter } from "next/navigation";
 import { ObjectionDetailForm } from "../../../../../components/layout/ObjectionDetailForm";
 import { ObjectionPageContent } from "../../../../../components/layout/ObjectionPageContent";
 import {
@@ -15,20 +15,11 @@ import { PageHeader } from "../../../../../components/layout/PageHeader";
 import { SubmitterMemo } from "../../../../../components/layout/SubmitterMemo";
 import { TaskInfoCard } from "../../../../../components/tasks/TaskInfoCard";
 import { ImagePreview } from "../../../../../components/ui/ImagePreview";
+import { ErrorState } from "../../../../../components/ui/ErrorState";
+import { Loading } from "../../../../../components/ui/Loading";
+import { getMockTaskReview } from "../../../../../lib/mockTaskReview";
+import { readObjectionDraft } from "../../../../../lib/objectionDraft";
 
-// APIが未実装でも画面を確認できるようにする仮のタスク情報。
-const mockObjectionData = {
-  taskTitle: "毎日ストレッチする",
-  deadline: "2025/04/25 23:59",
-  submitter: { name: "りく", avatarUrl: "/images/pazul.jpg" },
-  evidenceImages: [
-    { src: "/images/pazul.jpg", alt: "ストレッチの証拠写真1" },
-    { src: "/images/pazul.jpg", alt: "ストレッチの証拠写真2" },
-  ],
-  memo: "朝に10分ストレッチしました！\n肩まわりがすっきりしました。",
-};
-
-// バックエンドのReasonTypeに合わせた異議理由の表示設定。
 const reasonOptions: readonly ObjectionReasonOption[] = [
   {
     value: "insufficient_evidence",
@@ -44,73 +35,90 @@ const reasonOptions: readonly ObjectionReasonOption[] = [
 ];
 
 export default function ObjectionPage() {
-  // URLのtaskIdを使って、入力内容をタスクごとに保存する。
   const { taskId } = useParams<{ taskId: string }>();
   const router = useRouter();
-
-  // 選択中の異議理由。初期状態では「証拠が不十分」を選択する。
-  const [reasonType, setReasonType] = useState<ObjectionReasonType | null>(
+  const data = getMockTaskReview(taskId);
+  const taskPath = `/tasks/${encodeURIComponent(taskId)}`;
+  const [reasonType, setReasonType] = useState<ObjectionReasonType>(
     "insufficient_evidence",
   );
-
-  // ユーザーが入力した異議の詳細理由。
   const [reasonDetail, setReasonDetail] = useState("");
+  const [isReady, setIsReady] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
-  // 入力内容を一時保存して、確認画面へ遷移する。
+  useEffect(() => {
+    setIsReady(false);
+    setStorageError(null);
+    setReasonType("insufficient_evidence");
+    setReasonDetail("");
+    try {
+      const draft = readObjectionDraft(`objection-draft:${taskId}`);
+      if (draft) {
+        setReasonType(draft.reasonType);
+        setReasonDetail(draft.reasonDetail);
+      }
+    } catch {
+      setStorageError("保存した入力内容を読み込めませんでした。再度入力してください。");
+    } finally {
+      setIsReady(true);
+    }
+  }, [taskId]);
+
   const handleSubmit = () => {
-    // 理由と詳細理由がない場合は送信できない。
-    if (!reasonType || !reasonDetail.trim()) return;
+    if (!isReady || !reasonDetail.trim()) return;
 
-    // APIが使えないため、確認画面とのデータ受け渡しにsessionStorageを使う。
-    sessionStorage.setItem(
-      `objection-draft:${taskId}`,
-      JSON.stringify({
-        reasonType,
-        reasonDetail: reasonDetail.trim(),
-      }),
-    );
-    router.push(`/tasks/${taskId}/objection/confirm`);
+    try {
+      sessionStorage.setItem(
+        `objection-draft:${taskId}`,
+        JSON.stringify({ reasonType, reasonDetail: reasonDetail.trim() }),
+      );
+      setStorageError(null);
+      router.push(`${taskPath}/objection/confirm`);
+    } catch {
+      setStorageError(
+        "入力内容を保存できませんでした。ブラウザの保存設定を確認して、もう一度お試しください。",
+      );
+    }
   };
+
+  if (!data) notFound();
+  if (!isReady) return <Loading message="入力内容を読み込んでいます..." />;
 
   return (
     <>
-      {/* ページタイトルと戻るボタンを表示する。 */}
-      <PageHeader title="異議申し立て" />
+      <PageHeader title="異議申し立て" backHref={`${taskPath}/review`} />
       <ObjectionPageContent>
-        {/* 異議対象となるタスクの基本情報。 */}
-        <TaskInfoCard
-          title={mockObjectionData.taskTitle}
-          deadline={mockObjectionData.deadline}
-          submitter={mockObjectionData.submitter}
-        />
-
-        {/* 提出された証拠写真を表示する。 */}
-        <ImagePreview images={mockObjectionData.evidenceImages} />
-
-        {/* 提出者が付けたメモを表示する。 */}
-        <SubmitterMemo memo={mockObjectionData.memo} />
-
-        {/* 異議の理由を1つ選択する。 */}
-        <ObjectionReasonSelector
-          options={reasonOptions}
-          value={reasonType}
-          onChange={setReasonType}
-        />
-
-        {/* 異議の具体的な内容を入力する。 */}
-        <ObjectionDetailForm
-          value={reasonDetail}
-          onChange={setReasonDetail}
-        />
-
-        {/* 入力済みの場合だけ確認画面へ進める。 */}
-        <SubmitObjectionButton
-          disabled={!reasonType || !reasonDetail.trim()}
-          onClick={handleSubmit}
-        />
+        {data.canObject ? (
+          <>
+            <TaskInfoCard
+              title={data.taskTitle}
+              deadline={data.deadline}
+              submitter={data.submitter}
+            />
+            <ImagePreview images={data.evidenceImages} />
+            <SubmitterMemo memo={data.memo} />
+            <ObjectionReasonSelector
+              options={reasonOptions}
+              value={reasonType}
+              onChange={setReasonType}
+            />
+            <ObjectionDetailForm
+              value={reasonDetail}
+              onChange={setReasonDetail}
+            />
+            {storageError && <p role="alert">{storageError}</p>}
+            <SubmitObjectionButton
+              disabled={!reasonDetail.trim()}
+              onClick={handleSubmit}
+            />
+          </>
+        ) : (
+          <ErrorState
+            title="異議申し立てできません"
+            description="審査中のタスクから異議申し立てを行ってください。"
+          />
+        )}
       </ObjectionPageContent>
-
-      {/* モバイル画面下部の共通ナビゲーション。 */}
       <BottomNavigation />
     </>
   );

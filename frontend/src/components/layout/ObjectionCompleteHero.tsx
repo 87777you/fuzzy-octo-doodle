@@ -6,9 +6,9 @@ export function ObjectionCompleteHero() {
       <div className={styles["check"]} aria-hidden="true">
         ✓
       </div>
-      <h2>異議申し立てを送信しました</h2>
-      <p>このタスクは再確認中です。</p>
-      <p>タスク登録者が24時間以内に追加証拠を提出します。</p>
+      <h2>入力内容を保存しました</h2>
+      <p>現在は画面確認用です。</p>
+      <p>異議申し立てはまだ送信されていません。</p>
     </section>
   );
 }

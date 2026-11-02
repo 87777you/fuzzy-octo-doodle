@@ -1,5 +1,7 @@
 "use client";
 
+import { notFound, useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { PageHeader } from "../../../../../components/layout/PageHeader";
 import { ObjectionButton } from "../../../../../components/layout/ObjectionButton";
 import { ReviewStatusPanel } from "../../../../../components/layout/ReviewStatusPanel";
@@ -7,93 +9,51 @@ import { SubmitterMemo } from "../../../../../components/layout/SubmitterMemo";
 import { TaskInfoCard } from "../../../../../components/tasks/TaskInfoCard";
 import { BottomNavigation } from "../../../../../components/layout/BottomNavigation";
 import { ImagePreview } from "../../../../../components/ui/ImagePreview";
-import { useParams } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-
-interface ReviewData {
-  taskId: string;
-  taskTitle: string;
-  submitter: {
-    name: string;
-    avatarUrl?: string;
-  };
-  deadline: string;
-  evidenceImages: {
-    src: string;
-    alt: string;
-  }[];
-  memo?: string;
-  submittedAt: string;
-  reviewEndsAt: string;
-}
-
-function hoursFromNow(hours: number): string {
-  return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
-}
-
-const mockReviewData: ReviewData = {
-  taskId: "task-1",
-  taskTitle: "毎日ストレッチする",
-  submitter: {
-    name: "りく",
-    avatarUrl: "/images/pazul.jpg",
-  },
-  deadline: "2025/04/25 23:59",
-  evidenceImages: [
-    { src: "/images/pazul.jpg", alt: "ストレッチの証拠写真1" },
-    { src: "/images/pazul.jpg", alt: "ストレッチの証拠写真2" },
-  ],
-  memo: "朝に10分ストレッチしました！\n肩まわりがすっきりしました。",
-  submittedAt: "2025/04/20 08:12",
-  reviewEndsAt: hoursFromNow(23),
-};
+import { EmptyState } from "../../../../../components/ui/EmptyState";
+import { Loading } from "../../../../../components/ui/Loading";
+import { getMockTaskReview } from "../../../../../lib/mockTaskReview";
 
 export default function ReviewHome() {
   const { taskId } = useParams<{ taskId: string }>();
   const router = useRouter();
-  const [data, setData] = useState<ReviewData>(mockReviewData);
-
+  const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    async function loadReview() {
-      try {
-        const response = await fetch(`/api/tasks/${taskId}`);
-        if (!response.ok) return;
-
-        const reviewData = (await response.json()) as ReviewData;
-        setData(reviewData);
-      } catch {
-        // API未実装時は仮データを表示する。
-      }
-    }
-
-    void loadReview();
-  }, [taskId]);
+    setIsReady(true);
+  }, []);
+  const data = getMockTaskReview(taskId);
+  if (!data) notFound();
+  if (!isReady) return <Loading message="タスクを読み込んでいます..." />;
 
   return (
     <>
-      <PageHeader title="証拠の確認" />
+      <PageHeader title="タスクの詳細" backHref="/" />
       <TaskInfoCard
         title={data.taskTitle}
         deadline={data.deadline}
-        submitter={{
-          name: data.submitter.name,
-          ...(data.submitter.avatarUrl !== undefined
-            ? { avatarUrl: data.submitter.avatarUrl }
-            : {}),
-        }}
+        submitter={data.submitter}
       />
-      <ImagePreview images={data.evidenceImages} />
-      {data.memo && <SubmitterMemo memo={data.memo} />}
-      <ReviewStatusPanel
-        submittedAt={data.submittedAt}
-        reviewEndsAt={data.reviewEndsAt}
-      />
-      <ObjectionButton
-        onClick={() => {
-          router.push(`/tasks/${taskId}/objection`);
-        }}
-      />
+      {data.canObject ? (
+        <>
+          <ImagePreview images={data.evidenceImages} />
+          <SubmitterMemo memo={data.memo} />
+          {data.submittedAt && data.reviewEndsAt && (
+            <ReviewStatusPanel
+              submittedAt={data.submittedAt}
+              reviewEndsAt={data.reviewEndsAt}
+            />
+          )}
+          <ObjectionButton
+            onClick={() => {
+              router.push(`/tasks/${encodeURIComponent(taskId)}/objection`);
+            }}
+          />
+        </>
+      ) : (
+        <EmptyState
+          title="確認できる証拠はありません"
+          description="証拠の確認と異議申し立ては、審査中のタスクで利用できます。"
+        />
+      )}
       <BottomNavigation />
     </>
   );

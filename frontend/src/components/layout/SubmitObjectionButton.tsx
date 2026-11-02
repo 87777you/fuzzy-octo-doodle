@@ -20,7 +20,7 @@ export function SubmitObjectionButton({
       onClick={onClick}
     >
       <span aria-hidden="true">!</span>
-      <span>異議申し立てを送信する</span>
+      <span>内容を確認する</span>
     </Button>
   );
 }

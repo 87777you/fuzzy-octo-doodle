@@ -24,7 +24,7 @@ export function ObjectionConfirmActions({
         disabled={disabled}
         onClick={onSubmit}
       >
-        異議申し立てを送信する
+        内容を保存して完了する
       </Button>
     </div>
   );

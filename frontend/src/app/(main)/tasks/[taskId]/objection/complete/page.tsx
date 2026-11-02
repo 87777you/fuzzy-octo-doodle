@@ -1,10 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { BottomNavigation } from "../../../../../../components/layout/BottomNavigation";
 import { ObjectionCompleteContent } from "../../../../../../components/layout/ObjectionCompleteContent";
 import { ObjectionCompleteHero } from "../../../../../../components/layout/ObjectionCompleteHero";
-import { ObjectionNextSteps } from "../../../../../../components/layout/ObjectionNextSteps";
 import { ObjectionConfirmation } from "../../../../../../components/layout/ObjectionConfirmation";
 import { PageHeader } from "../../../../../../components/layout/PageHeader";
 import { Button } from "../../../../../../components/ui/Button";
@@ -12,42 +12,61 @@ import styles from "../../../../../../components/layout/ObjectionCompleteContent
 import { SubmitterMemo } from "../../../../../../components/layout/SubmitterMemo";
 import { TaskInfoCard } from "../../../../../../components/tasks/TaskInfoCard";
 import { ImagePreview } from "../../../../../../components/ui/ImagePreview";
-import type { ObjectionReasonType } from "../../../../../../components/layout/ObjectionReasonSelector";
-
-const mockData = {
-  taskTitle: "毎日ストレッチする",
-  deadline: "2025/04/25 23:59",
-  submitter: { name: "りく", avatarUrl: "/images/pazul.jpg" },
-  evidenceImages: [
-    { src: "/images/pazul.jpg", alt: "ストレッチの証拠写真1" },
-    { src: "/images/pazul.jpg", alt: "ストレッチの証拠写真2" },
-  ],
-  memo: "朝に10分ストレッチしました！\n肩まわりがすっきりしました。",
-  submittedAt: "2025/04/20 08:12",
-  reasonType: "insufficient_evidence" as ObjectionReasonType,
-  reasonDetail: "写真ではストレッチの内容が確認できませんでした。",
-};
+import { getMockTaskReview } from "../../../../../../lib/mockTaskReview";
+import {
+  readObjectionDraft,
+  type ObjectionDraft,
+} from "../../../../../../lib/objectionDraft";
 
 export default function ObjectionCompletePage() {
+  const { taskId } = useParams<{ taskId: string }>();
   const router = useRouter();
+  const data = getMockTaskReview(taskId);
+  const inputPath = `/tasks/${encodeURIComponent(taskId)}/objection`;
+  const [completed, setCompleted] = useState<ObjectionDraft | null>(null);
+  const [storageError, setStorageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCompleted(null);
+    setStorageError(null);
+    try {
+      const saved = readObjectionDraft(`objection-complete:${taskId}`);
+      if (!saved || !data?.canObject) {
+        router.replace(inputPath);
+        return;
+      }
+      setCompleted(saved);
+    } catch {
+      setStorageError("保存内容を読み込めませんでした。入力画面に戻ってやり直してください。");
+    }
+  }, [router, taskId, inputPath, data?.canObject]);
+
+  if (!data) notFound();
 
   return (
     <>
-      <PageHeader title="異議申し立て完了" />
+      <PageHeader title="入力内容の保存" backHref={inputPath} />
       <ObjectionCompleteContent>
-        <ObjectionCompleteHero />
-        <TaskInfoCard
-          title={mockData.taskTitle}
-          deadline={mockData.deadline}
-          submitter={mockData.submitter}
-        />
-        <ImagePreview images={mockData.evidenceImages} />
-        <SubmitterMemo memo={mockData.memo} />
-        <ObjectionConfirmation
-          reasonType={mockData.reasonType}
-          reasonDetail={mockData.reasonDetail}
-        />
-        <ObjectionNextSteps />
+        {completed ? (
+          <>
+            <ObjectionCompleteHero />
+            <TaskInfoCard
+              title={data.taskTitle}
+              deadline={data.deadline}
+              submitter={data.submitter}
+            />
+            <ImagePreview images={data.evidenceImages} />
+            <SubmitterMemo memo={data.memo} />
+            <ObjectionConfirmation
+              reasonType={completed.reasonType}
+              reasonDetail={completed.reasonDetail}
+            />
+          </>
+        ) : storageError ? (
+          <p role="alert">{storageError}</p>
+        ) : (
+          <p>保存内容を読み込んでいます...</p>
+        )}
         <div className={styles["action"]}>
           <Button
             variant="secondary"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { CommunityTaskCard } from "../../components/tasks/CommunityTaskCard";
 import { HomeHeader } from "../../components/ui/HomeHeader";
@@ -80,6 +81,7 @@ function isObjectionListResponse(
 }
 
 export default function HomePage() {
+  const router = useRouter();
   // allは全投稿、objectedは自分が異議を出したタスクの投稿を表示する。
   const [filter, setFilter] = useState<FeedFilter>("all");
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -206,6 +208,9 @@ export default function HomePage() {
             taskTitle={post.taskTitle}
             status={post.status}
             reactions={post.reactions}
+            onDetailClick={() => {
+              router.push(`/tasks/${encodeURIComponent(post.taskId)}/review`);
+            }}
             onReactionClick={(reactionType, reacted) => {
               void handleReaction(post.id, reactionType, reacted);
             }}
