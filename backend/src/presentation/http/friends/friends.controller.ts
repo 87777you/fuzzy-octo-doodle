@@ -18,7 +18,7 @@ import { ListFriendsUseCase } from "../../../application/usecases/friends/list-f
 import { RejectFriendRequestUseCase } from "../../../application/usecases/friends/reject-friend-request.usecase.ts";
 import { RemoveFriendUseCase } from "../../../application/usecases/friends/remove-friend.usecase.ts";
 import { UnblockUserUseCase } from "../../../application/usecases/friends/unblock-user.usecase.ts";
-
+import { z } from "zod";
 /**
  * 責務: 招待、フレンド申請、フレンド一覧、ブロックの HTTP 入出力を受け持ち、検証済み入力を対応 use case に渡す。関係の権限・状態遷移や repository 操作は所有しない。
  *
@@ -47,7 +47,7 @@ export class FriendsController {
     @Inject(RejectFriendRequestUseCase) protected readonly rejectFriendRequest: RejectFriendRequestUseCase,
     @Inject(RemoveFriendUseCase) protected readonly removeFriend: RemoveFriendUseCase,
     @Inject(UnblockUserUseCase) protected readonly unblockUser: UnblockUserUseCase,
-  ) {}
+  ) { }
 
   /**
    * 有効な自分の招待リンクを再利用し、なければ作成して返す。
@@ -104,8 +104,14 @@ export class FriendsController {
    */
   @Get("friend-requests")
   @HttpCode(200)
-  listRequests(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<readonly FriendRequestView[]> {
-    return todo("FriendsController.listRequests");
+  listRequests(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<readonly FriendRequestView[]> {
+    const { direction } = z.object({
+      direction: z.enum(["incoming", "outgoing"]),
+    }).parse(query);
+    return this.listFriendRequests.execute({
+      userId: user,
+      direction
+    });
   }
 
   /**
