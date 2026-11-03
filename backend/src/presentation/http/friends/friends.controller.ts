@@ -1,4 +1,5 @@
 import type { FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
+import { z } from "zod";
 import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
 import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
 import { Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
@@ -6,6 +7,7 @@ import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import { Public } from "../auth/public.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
+import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
 import { AcceptFriendRequestUseCase } from "../../../application/usecases/friends/accept-friend-request.usecase.ts";
 import { BlockUserUseCase } from "../../../application/usecases/friends/block-user.usecase.ts";
 import { CancelFriendRequestUseCase } from "../../../application/usecases/friends/cancel-friend-request.usecase.ts";
@@ -18,6 +20,8 @@ import { ListFriendsUseCase } from "../../../application/usecases/friends/list-f
 import { RejectFriendRequestUseCase } from "../../../application/usecases/friends/reject-friend-request.usecase.ts";
 import { RemoveFriendUseCase } from "../../../application/usecases/friends/remove-friend.usecase.ts";
 import { UnblockUserUseCase } from "../../../application/usecases/friends/unblock-user.usecase.ts";
+
+const createFriendRequestBodySchema = z.object({ inviteToken: z.string() });
 
 /**
  * 責務: 招待、フレンド申請、フレンド一覧、ブロックの HTTP 入出力を受け持ち、検証済み入力を対応 use case に渡す。関係の権限・状態遷移や repository 操作は所有しない。
@@ -90,8 +94,10 @@ export class FriendsController {
    */
   @Post("friend-requests")
   @HttpCode(201)
-  createRequest(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Body() _body: unknown): Promise<FriendRequestView> {
-    return todo("FriendsController.createRequest");
+  createRequest(@CurrentUser() user: UserId, @Headers("idempotency-key") key: string | undefined, @Body() body: unknown): Promise<FriendRequestView> {
+    const { inviteToken } = createFriendRequestBodySchema.parse(body);
+    const idempotencyKey = parseIdempotencyKey(z.string().parse(key));
+    return this.createFriendRequest.execute({ userId: user, idempotencyKey, inviteToken });
   }
 
   /**
