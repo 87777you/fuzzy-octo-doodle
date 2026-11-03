@@ -18,6 +18,7 @@ import { ListFriendsUseCase } from "../../../application/usecases/friends/list-f
 import { RejectFriendRequestUseCase } from "../../../application/usecases/friends/reject-friend-request.usecase.ts";
 import { RemoveFriendUseCase } from "../../../application/usecases/friends/remove-friend.usecase.ts";
 import { UnblockUserUseCase } from "../../../application/usecases/friends/unblock-user.usecase.ts";
+import { parseFriendshipId } from "../../../domain/shared/id-parsers.ts";
 
 /**
  * 責務: 招待、フレンド申請、フレンド一覧、ブロックの HTTP 入出力を受け持ち、検証済み入力を対応 use case に渡す。関係の権限・状態遷移や repository 操作は所有しない。
@@ -134,8 +135,11 @@ export class FriendsController {
    */
   @Post("friend-requests/:id/reject")
   @HttpCode(200)
-  reject(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FriendRequestView> {
-    return todo("FriendsController.reject");
+  reject(@CurrentUser() user: UserId, @Param("id") id: string): Promise<FriendRequestView> {
+    return this.rejectFriendRequest.execute({
+      userId:user,
+      friendshipId:parseFriendshipId(id)
+    });
   }
 
   /**
@@ -149,8 +153,11 @@ export class FriendsController {
    */
   @Post("friend-requests/:id/cancel")
   @HttpCode(200)
-  cancel(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FriendRequestView> {
-    return todo("FriendsController.cancel");
+  cancel(@CurrentUser() user: UserId, @Param("id") id: string): Promise<FriendRequestView> {
+    return this.cancelFriendRequest.execute({
+      userId:user,
+      friendshipId:parseFriendshipId(id)
+    });
   }
 
   /**

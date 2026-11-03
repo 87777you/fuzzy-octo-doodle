@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -10,6 +9,7 @@ import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
 import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
 import type { CancelFriendRequestInput } from "../../ports/usecases/cancel-friend-request.port.ts";
+import { DomainError, expectFriendshipStatus, cancelFriendship } from "../../../domain/index.ts";
 
 /**
  * 責務: 申請者本人の保留中フレンド申請を取り消す。受信者側の拒否や申請の削除は担当しない。
@@ -62,7 +62,33 @@ export class CancelFriendRequestUseCase {
    * 申請者本人の保留中フレンド申請を取り消す。受信者側の拒否や申請の削除は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CancelFriendRequestInput): Promise<FriendRequestView> {
-    return todo("CancelFriendRequestUseCase");
-  }
+  execute(input: CancelFriendRequestInput): Promise<FriendRequestView> {
+  return this.uow.run(async (tx) => {
+    const friendship = await this.friendships.findById(tx, input.friendshipId);
+    if (friendship === null) {
+      throw new DomainError("NOT_FOUND", "見つかりません");
+    }
+    const pending = expectFriendshipStatus(friendship, "pending");
+    const cancelled = cancelFriendship(pending, input.userId);
+    await this.friendships.save(tx, cancelled);
+
+    const users = await this.users.findByIds(tx, [
+      cancelled.requesterId,
+      cancelled.receiverId,
+    ]);
+    const usersById = new Map(users.map((user) => [user.id, user]));
+    const requester = usersById.get(cancelled.requesterId);
+    const receiver = usersById.get(cancelled.receiverId);
+    if (requester === undefined || receiver === undefined) {
+      throw new Error("フレンド申請の当事者ユーザーが見つかりません");
+    }
+
+    return {
+      id: cancelled.id,
+      requester: { userId: requester.id, nickname: requester.nickname },
+      addressee: { userId: receiver.id, nickname: receiver.nickname },
+      requestedAt: cancelled.requestedAt,
+    };
+  });
+}
 }

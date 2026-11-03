@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -10,6 +9,7 @@ import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
 import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
 import type { RejectFriendRequestInput } from "../../ports/usecases/reject-friend-request.port.ts";
+import { DomainError, expectFriendshipStatus, rejectFriendship } from "../../../domain/index.ts";
 
 /**
  * 責務: 受信者本人の保留中フレンド申請を拒否済み状態にする。申請の作成や拒否理由の保存は担当しない。
@@ -62,7 +62,33 @@ export class RejectFriendRequestUseCase {
    * 受信者本人の保留中フレンド申請を拒否済み状態にする。申請の作成や拒否理由の保存は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: RejectFriendRequestInput): Promise<FriendRequestView> {
-    return todo("RejectFriendRequestUseCase");
+  async execute(input: RejectFriendRequestInput): Promise<FriendRequestView> {
+    return this.uow.run(async (tx) => {
+      const friendship = await this.friendships.findById(tx, input.friendshipId);
+      if (friendship === null) {
+        throw new DomainError("NOT_FOUND", "見つかりません");
+      }
+      const pending = expectFriendshipStatus(friendship, "pending");
+      const rejected = rejectFriendship(pending, input.userId);
+      await this.friendships.save(tx, rejected);
+
+      const users = await this.users.findByIds(tx, [
+        rejected.requesterId,
+        rejected.receiverId,
+      ]);
+      const usersById = new Map(users.map((user) => [user.id, user]));
+      const requester = usersById.get(rejected.requesterId);
+      const receiver = usersById.get(rejected.receiverId);
+      if (requester === undefined || receiver === undefined) {
+        throw new Error("フレンド申請の当事者ユーザーが見つかりません");
+      }
+
+      return {
+        id: rejected.id,
+        requester: { userId: requester.id, nickname: requester.nickname },
+        addressee: { userId: receiver.id, nickname: receiver.nickname },
+        requestedAt: rejected.requestedAt,
+      };
+    });
   }
 }
