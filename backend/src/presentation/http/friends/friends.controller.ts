@@ -1,4 +1,5 @@
 import type { FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
+import { z } from "zod";
 import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
 import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
 import { Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
@@ -6,6 +7,7 @@ import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import { Public } from "../auth/public.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
+import { parseFriendshipId } from "../../../domain/shared/id-parsers.ts";
 import { AcceptFriendRequestUseCase } from "../../../application/usecases/friends/accept-friend-request.usecase.ts";
 import { BlockUserUseCase } from "../../../application/usecases/friends/block-user.usecase.ts";
 import { CancelFriendRequestUseCase } from "../../../application/usecases/friends/cancel-friend-request.usecase.ts";
@@ -119,8 +121,9 @@ export class FriendsController {
    */
   @Post("friend-requests/:id/accept")
   @HttpCode(200)
-  accept(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FriendRequestView> {
-    return todo("FriendsController.accept");
+  accept(@CurrentUser() user: UserId, @Param("id") rawId: string): Promise<FriendRequestView> {
+    const friendshipId = parseFriendshipId(z.string().parse(rawId));
+    return this.acceptFriendRequest.execute({ userId: user, friendshipId });
   }
 
   /**
