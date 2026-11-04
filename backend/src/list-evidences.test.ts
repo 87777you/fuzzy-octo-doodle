@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { parseTaskId, parseUserId } from "./domain/shared/id-parsers.ts";
+import type { UserId } from "./domain/shared/ids.ts";
 import type { Task, TaskBase } from "./domain/task/task.ts";
 import {
   parseNonEmptyText,
@@ -83,12 +84,13 @@ function makeTask(
 }
 
 test("本人はどのタスク状態でも写真を閲覧できる", () => {
-  for (const status of [
+  const statuses: readonly ("active" | "reviewing" | "disputed" | "success")[] = [
     "active",
     "reviewing",
     "disputed",
     "success",
-  ] as const) {
+  ];
+  for (const status of statuses) {
     const task = makeTask(status);
     const role = viewerRole(ownerId, ownerId, false);
 
@@ -189,9 +191,12 @@ class FakeEvidences implements EvidenceRepository {
 }
 
 class FakeFriendships implements FriendshipRepository {
+  readonly calls: { ownerId: UserId; viewerId: UserId }[] = [];
+
   constructor(private readonly isFriend: boolean) {}
 
-  areFriends(): Promise<boolean> {
+  areFriends(_tx: Tx, ownerId: UserId, viewerId: UserId): Promise<boolean> {
+    this.calls.push({ ownerId, viewerId });
     return Promise.resolve(this.isFriend);
   }
 
@@ -219,16 +224,17 @@ class FakeStorage implements ObjectStorage {
 
 function createTestUseCase(task: Task | null, isFriend: boolean) {
   const storage = new FakeStorage();
+  const friendships = new FakeFriendships(isFriend);
 
   const useCase = new ListEvidencesUseCase(
     testUow,
     new FakeTasks(task),
     new FakeEvidences(),
-    new FakeFriendships(isFriend),
+    friendships,
     storage,
   );
 
-  return { useCase, storage };
+  return { useCase, storage, friendships };
 }
 
 test("UseCase: 本人は証拠写真のURLを取得できる", async () => {
@@ -247,6 +253,38 @@ test("UseCase: 本人は証拠写真のURLを取得できる", async () => {
     "https://example.com/signed-photo",
   ]);
   assert.equal(storage.signedUrlCount, 1);
+});
+
+test("UseCase: フレンドは審査中の証拠写真URLを取得できる", async () => {
+  const { useCase, storage, friendships } = createTestUseCase(
+    makeTask("reviewing"),
+    true,
+  );
+
+  const result = await useCase.execute({ viewerId: friendId, taskId });
+
+  assert.equal(result.evidences.length, 1);
+  assert.deepEqual(result.evidences[0]?.photoUrls, [
+    "https://example.com/signed-photo",
+  ]);
+  assert.equal(storage.signedUrlCount, 1);
+  assert.deepEqual(friendships.calls, [{ ownerId, viewerId: friendId }]);
+});
+
+test("UseCase: フレンドは異議申し立て中の証拠写真URLを取得できる", async () => {
+  const { useCase, storage, friendships } = createTestUseCase(
+    makeTask("disputed"),
+    true,
+  );
+
+  const result = await useCase.execute({ viewerId: friendId, taskId });
+
+  assert.equal(result.evidences.length, 1);
+  assert.deepEqual(result.evidences[0]?.photoUrls, [
+    "https://example.com/signed-photo",
+  ]);
+  assert.equal(storage.signedUrlCount, 1);
+  assert.deepEqual(friendships.calls, [{ ownerId, viewerId: friendId }]);
 });
 
 test("UseCase: 第三者にはURLを発行しない", async () => {
