@@ -10,7 +10,7 @@ import { WithdrawObjectionUseCase } from "../../../application/usecases/objectio
 import { z } from "zod";
 import { REASON_TYPES } from "../../../domain/objection/objection.ts";
 import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
-import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
+import { parseObjectionId, parseTaskId } from "../../../domain/shared/id-parsers.ts";
 
 const createObjectionBodySchema = z.object({
   reasonType: z.enum(REASON_TYPES),
@@ -71,8 +71,12 @@ export class ObjectionsController {
    */
   @Post("objections/:objectionId/withdraw")
   @HttpCode(200)
-  withdraw(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("objectionId") _objectionId: string): Promise<ObjectionSummary> {
-    return todo("ObjectionsController.withdraw");
+  withdraw(@CurrentUser() user: UserId, @Headers("idempotency-key") key: string | undefined, @Param("objectionId") objectionId: string): Promise<ObjectionSummary> {
+    return this.withdrawObjection.execute({
+      userId: user,
+      idempotencyKey: parseIdempotencyKey(z.string().parse(key)),
+      objectionId: parseObjectionId(objectionId),
+    });
   }
 
   /**
