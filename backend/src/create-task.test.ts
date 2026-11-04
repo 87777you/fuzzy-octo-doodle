@@ -9,12 +9,23 @@ import type { Clock } from "./application/ports/clock.port.ts";
 import type { IdGenerator } from "./application/ports/id-generator.port.ts";
 import type { PaymentGateway } from "./application/ports/payment-gateway.port.ts";
 import type { TaskRepository } from "./application/ports/task.repository.ts";
-import type { IdempotencyRepository } from "./application/ports/idempotency.repository.ts";
+import type {
+  IdempotencyRecord,
+  IdempotencyRepository,
+} from "./application/ports/idempotency.repository.ts";
 import { TaskEventPublisher } from "./application/shared/task-event-publisher.ts";
 
-import type { ActiveTask } from "./domain/task/task.ts";
+import { DomainError } from "./domain/shared/errors.ts";
 import { parseUserId } from "./domain/shared/id-parsers.ts";
 import { parseIdempotencyKey } from "./domain/shared/idempotency.ts";
+import type {
+  IdempotentOperation,
+  IdempotencyKey,
+  RequestHash,
+} from "./domain/shared/idempotency.ts";
+import type { ResponsePayloads } from "./domain/shared/response-payloads.ts";
+import type { UserId } from "./domain/shared/ids.ts";
+import type { ActiveTask } from "./domain/task/task.ts";
 
 const userId = parseUserId("11111111-1111-4111-8111-111111111111");
 const taskId = "11111111-1111-4111-8111-111111111112";
@@ -47,6 +58,8 @@ const payment: PaymentGateway = {
 
 // 保存されたタスクを記録する
 const savedTasks: ActiveTask[] = [];
+const storedRequestHashes: Partial<Record<IdempotentOperation, RequestHash>> = {};
+const replayResponses: Partial<ResponsePayloads> = {};
 
 const tasks: TaskRepository = {
   insert: (_tx, task) => {
@@ -68,9 +81,29 @@ const tasks: TaskRepository = {
   lockExpiredAdditional: () => Promise.reject(new Error("使わない")),
 };
 
-// 初回リクエストとして扱う
+// 冪等性の予約と再送をテスト用に模擬する
 const idempotency: IdempotencyRepository = {
-  reserve: () => Promise.resolve(null),
+  reserve<O extends IdempotentOperation>(
+    _tx: Tx,
+    _user: UserId,
+    operation: O,
+    _key: IdempotencyKey,
+    requestHash: RequestHash,
+    _now: Date,
+  ): Promise<IdempotencyRecord<O> | null> {
+    const storedRequestHash = storedRequestHashes[operation];
+    if (storedRequestHash === undefined) {
+      storedRequestHashes[operation] = requestHash;
+      return Promise.resolve(null);
+    }
+
+    const responseBody = replayResponses[operation] ?? null;
+    return Promise.resolve({
+      requestHash: storedRequestHash,
+      responseStatus: responseBody === null ? null : 201,
+      responseBody,
+    });
+  },
   complete: () => Promise.resolve(),
 };
 
@@ -119,8 +152,14 @@ const input: CreateTaskInput = {
   originalTaskId: null,
 };
 
-test("CreateTask は新しいタスクを1件作成する", async () => {
+function resetState(): void {
   savedTasks.length = 0;
+  delete storedRequestHashes.create_task;
+  delete replayResponses.create_task;
+}
+
+test("CreateTask は新しいタスクを1件作成する", async () => {
+  resetState();
 
   const result = await useCase.execute(input);
 
@@ -137,4 +176,38 @@ test("CreateTask は新しいタスクを1件作成する", async () => {
   assert.equal(result.status, "active");
   assert.equal(result.viewer, "owner");
   assert.equal(result.penaltyAmount, 100);
+});
+
+test("同じキーと内容の再送は保存済み結果を返して再作成しない", async () => {
+  resetState();
+
+  const first = await useCase.execute(input);
+  replayResponses.create_task = first;
+  const replay = await useCase.execute(input);
+
+  assert.deepEqual(replay, first);
+  assert.equal(savedTasks.length, 1);
+});
+
+test("同じキーで締切・金額・公開設定が異なる再送を拒否する", async () => {
+  resetState();
+
+  await useCase.execute(input);
+
+  const isKeyReused = (error: unknown): boolean =>
+    error instanceof DomainError && error.code === "IDEMPOTENCY_KEY_REUSED";
+
+  await assert.rejects(
+    useCase.execute({ ...input, deadlineAt: new Date("2026-11-01T12:00:00.000Z") }),
+    isKeyReused,
+  );
+  await assert.rejects(
+    useCase.execute({ ...input, penaltyAmount: 200 }),
+    isKeyReused,
+  );
+  await assert.rejects(
+    useCase.execute({ ...input, isPenaltyPublic: true }),
+    isKeyReused,
+  );
+  assert.equal(savedTasks.length, 1);
 });
