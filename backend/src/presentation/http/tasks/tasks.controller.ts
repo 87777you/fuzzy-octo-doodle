@@ -119,7 +119,13 @@ export class TasksController {
    */
   @Get(":id")
   @HttpCode(200)
-  get(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<TaskView> {
-    return todo("TasksController.get");
+  get(
+    @CurrentUser() user: UserId,
+    @Param("id") id: string,
+  ): Promise<TaskView> {
+    return this.getTask.execute({
+      viewerId: user,
+      taskId: parseTaskId(id),
+    });
   }
 }
