@@ -40,14 +40,16 @@ const expectedView: FriendRequestView = {
 class FakeFriendships implements FriendshipRepository {
   readonly existing: Friendship | null;
   queriedId: FriendshipId | null = null;
+  queriedForUpdate: boolean | undefined;
   saved: Friendship | null = null;
 
   constructor(existing: Friendship | null) {
     this.existing = existing;
   }
 
-  findById(_actualTx: Tx, id: FriendshipId): Promise<Friendship | null> {
+  findById(_actualTx: Tx, id: FriendshipId, opts?: { forUpdate?: boolean }): Promise<Friendship | null> {
     this.queriedId = id;
+    this.queriedForUpdate = opts?.forUpdate;
     return Promise.resolve(this.existing);
   }
 
@@ -137,6 +139,7 @@ test("RejectFriendRequest は受信者本人が pending 申請を拒否する", 
   const result = await fixture.reject.execute({ userId: receiverId, friendshipId });
 
   assert.equal(fixture.friendships.queriedId, friendshipId);
+  assert.equal(fixture.friendships.queriedForUpdate, true);
   assert.deepEqual(fixture.friendships.saved, { ...pending, status: "rejected" });
   assert.deepEqual(fixture.users.queriedIds, [requesterId, receiverId]);
   assert.deepEqual(result, expectedView);
@@ -153,6 +156,7 @@ test("RejectFriendRequest は pending 以外の申請を STATE_CONFLICT にす�
   const fixture = setup({ ...pending, status: "cancelled" });
 
   await assertDomainError(fixture.reject.execute({ userId: receiverId, friendshipId }), "STATE_CONFLICT");
+  assert.equal(fixture.friendships.queriedForUpdate, true);
   assert.equal(fixture.friendships.saved, null);
 });
 
@@ -169,6 +173,7 @@ test("CancelFriendRequest は申請者本人が pending 申請を取り消す", 
   const result = await fixture.cancel.execute({ userId: requesterId, friendshipId });
 
   assert.equal(fixture.friendships.queriedId, friendshipId);
+  assert.equal(fixture.friendships.queriedForUpdate, true);
   assert.deepEqual(fixture.friendships.saved, { ...pending, status: "cancelled" });
   assert.deepEqual(fixture.users.queriedIds, [requesterId, receiverId]);
   assert.deepEqual(result, expectedView);
@@ -185,6 +190,7 @@ test("CancelFriendRequest は pending 以外の申請を STATE_CONFLICT にす�
   const fixture = setup({ ...pending, status: "rejected" });
 
   await assertDomainError(fixture.cancel.execute({ userId: requesterId, friendshipId }), "STATE_CONFLICT");
+  assert.equal(fixture.friendships.queriedForUpdate, true);
   assert.equal(fixture.friendships.saved, null);
 });
 

@@ -65,7 +65,7 @@ export class CancelFriendRequestUseCase {
    */
   execute(input: CancelFriendRequestInput): Promise<FriendRequestView> {
     return this.uow.run(async (tx) => {
-      const friendship = await this.friendships.findById(tx, input.friendshipId);
+      const friendship = await this.friendships.findById(tx, input.friendshipId, { forUpdate: true });
       if (friendship === null) throw new DomainError("NOT_FOUND", "フレンド申請が見つかりません");
 
       const pending = expectFriendshipStatus(friendship, "pending");
