@@ -1,3 +1,4 @@
+
 import type { TaskView } from "../../../domain/task/task-view.ts";
 import type { RetryTemplate } from "../../../application/ports/usecases/get-retry-template.port.ts";
 import type { Page } from "../../../application/ports/task.repository.ts";
@@ -8,10 +9,12 @@ import { z } from "zod";
 import { TASK_STATUSES } from "../../../domain/task/task-status.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
+import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
 import { CreateTaskUseCase } from "../../../application/usecases/tasks/create-task.usecase.ts";
 import { GetRetryTemplateUseCase } from "../../../application/usecases/tasks/get-retry-template.usecase.ts";
 import { GetTaskUseCase } from "../../../application/usecases/tasks/get-task.usecase.ts";
 import { ListMyTasksUseCase } from "../../../application/usecases/tasks/list-my-tasks.usecase.ts";
+import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
 
 /**
  * 責務: /api/tasks のタスク作成・本人一覧・詳細・再挑戦テンプレートについて、HTTP 入力の検証と対応するユースケースの呼び出しを担う。業務ルールや永続化は担わない。
@@ -74,7 +77,7 @@ export class TasksController {
    */
   @Get("")
   @HttpCode(200)
-    list(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<Page<OwnerTaskView>> {
+  list(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<Page<OwnerTaskView>> {
     const { view, status, search, cursor, limit } = listQuerySchema.parse(query);
     return this.listMyTasks.execute({
       userId: user,
@@ -97,8 +100,13 @@ export class TasksController {
    */
   @Get(":id/retry-template")
   @HttpCode(200)
-  retryTemplate(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<RetryTemplate> {
-    return todo("TasksController.retryTemplate");
+  retryTemplate(@CurrentUser() user: UserId, @Param("id") id: string): Promise<RetryTemplate> {
+    const taskId = parseTaskId(z.uuid().parse(id));
+
+    return this.getRetryTemplate.execute({
+      userId: user,
+      taskId,
+    });
   }
 
   /**
@@ -112,7 +120,13 @@ export class TasksController {
    */
   @Get(":id")
   @HttpCode(200)
-  get(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<TaskView> {
-    return todo("TasksController.get");
+  get(
+    @CurrentUser() user: UserId,
+    @Param("id") id: string,
+  ): Promise<TaskView> {
+    return this.getTask.execute({
+      viewerId: user,
+      taskId: parseTaskId(id),
+    });
   }
 }

@@ -7,6 +7,9 @@ import type { UserId } from "../../../domain/shared/ids.ts";
 import { CreateObjectionUseCase } from "../../../application/usecases/objections/create-objection.usecase.ts";
 import { ListMyObjectionsUseCase } from "../../../application/usecases/objections/list-my-objections.usecase.ts";
 import { WithdrawObjectionUseCase } from "../../../application/usecases/objections/withdraw-objection.usecase.ts";
+import { z } from "zod";
+import { parseObjectionId } from "../../../domain/shared/id-parsers.ts";
+import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
 
 /**
  * 責務: 異議に関する HTTP ルートを受け、セッション利用者・path・header・query・body を検証して対応する use case に渡す。業務上の権限判定や状態遷移は行わない。
@@ -55,8 +58,12 @@ export class ObjectionsController {
    */
   @Post("objections/:objectionId/withdraw")
   @HttpCode(200)
-  withdraw(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("objectionId") _objectionId: string): Promise<ObjectionSummary> {
-    return todo("ObjectionsController.withdraw");
+  withdraw(@CurrentUser() user: UserId, @Headers("idempotency-key") key: string | undefined, @Param("objectionId") objectionId: string): Promise<ObjectionSummary> {
+    return this.withdrawObjection.execute({
+      userId: user,
+      idempotencyKey: parseIdempotencyKey(z.string().parse(key)),
+      objectionId: parseObjectionId(objectionId),
+    });
   }
 
   /**
