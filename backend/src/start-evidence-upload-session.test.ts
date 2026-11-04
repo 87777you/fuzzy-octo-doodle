@@ -177,6 +177,16 @@ test("タスク所有者以外はFORBIDDEN", async () => {
   assert.equal(saved.length, 0);
 });
 
+test("状態不一致でもタスク所有者以外はFORBIDDEN", async () => {
+  const { useCase, saved } = setup(makeTask("disputed"));
+
+  await assert.rejects(
+    useCase.execute({ userId: OTHER, taskId: TASK_ID, submissionType: "initial" }),
+    expectError("FORBIDDEN"),
+  );
+  assert.equal(saved.length, 0);
+});
+
 test("初回提出期限切れはDEADLINE_EXPIRED", async () => {
   const { useCase, saved } = setup(makeTask("active", new Date(NOW.getTime() - 1)));
 

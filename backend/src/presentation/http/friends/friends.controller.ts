@@ -20,7 +20,6 @@ import { ListFriendsUseCase } from "../../../application/usecases/friends/list-f
 import { RejectFriendRequestUseCase } from "../../../application/usecases/friends/reject-friend-request.usecase.ts";
 import { RemoveFriendUseCase } from "../../../application/usecases/friends/remove-friend.usecase.ts";
 import { UnblockUserUseCase } from "../../../application/usecases/friends/unblock-user.usecase.ts";
-import { z } from "zod";
 /**
  * 責務: 招待、フレンド申請、フレンド一覧、ブロックの HTTP 入出力を受け持ち、検証済み入力を対応 use case に渡す。関係の権限・状態遷移や repository 操作は所有しない。
  *

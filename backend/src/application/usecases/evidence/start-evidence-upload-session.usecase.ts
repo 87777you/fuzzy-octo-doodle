@@ -11,7 +11,7 @@ import type { TaskRepository } from "../../../application/ports/task.repository.
 import { UPLOAD_SESSION_REPOSITORY } from "../../../application/ports/evidence.repository.ts";
 import type { UploadSessionRepository } from "../../../application/ports/evidence.repository.ts";
 import type { StartEvidenceUploadSessionInput } from "../../ports/usecases/start-evidence-upload-session.port.ts";
-import { DomainError } from "../../../domain/shared/errors.ts"
+import { DomainError } from "../../../domain/shared/errors.ts";
 import { parseUploadSessionId } from "../../../domain/shared/id-parsers.ts";
 import { startInitialUpload } from "../../../domain/evidence/upload-session.ts";
 import { startAdditionalUpload } from "../../../domain/evidence/upload-session.ts";
@@ -73,13 +73,15 @@ export class StartEvidenceUploadSessionUseCase {
 
   /**
    * 所有者の初回または追加証拠提出について、期限内にアップロードセッションを開始して保存する。写真本体の転送は担当しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
   execute(input: StartEvidenceUploadSessionInput): Promise<UploadingSession> {
     return this.uow.run(async (tx) => {
       const task = await this.tasks.findById(tx, input.taskId);
       if (!task) {
         throw new DomainError("NOT_FOUND", "タスクが見つかりません");
+      }
+      if (task.ownerId !== input.userId) {
+        throw new DomainError("FORBIDDEN", "本人のタスクのみ証拠を提出できます");
       }
       const now = this.clock.now();
       const sessionId = parseUploadSessionId(this.ids.uuid());
