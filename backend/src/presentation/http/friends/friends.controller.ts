@@ -1,5 +1,5 @@
-import type { FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
 import { z } from "zod";
+import type { FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
 import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
 import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
 import { Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
@@ -7,7 +7,7 @@ import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import { Public } from "../auth/public.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
-import { parseFriendshipId } from "../../../domain/shared/id-parsers.ts";
+import { parseUserId, parseFriendshipId } from "../../../domain/shared/id-parsers.ts";
 import { AcceptFriendRequestUseCase } from "../../../application/usecases/friends/accept-friend-request.usecase.ts";
 import { BlockUserUseCase } from "../../../application/usecases/friends/block-user.usecase.ts";
 import { CancelFriendRequestUseCase } from "../../../application/usecases/friends/cancel-friend-request.usecase.ts";
@@ -20,7 +20,6 @@ import { ListFriendsUseCase } from "../../../application/usecases/friends/list-f
 import { RejectFriendRequestUseCase } from "../../../application/usecases/friends/reject-friend-request.usecase.ts";
 import { RemoveFriendUseCase } from "../../../application/usecases/friends/remove-friend.usecase.ts";
 import { UnblockUserUseCase } from "../../../application/usecases/friends/unblock-user.usecase.ts";
-
 /**
  * 責務: 招待、フレンド申請、フレンド一覧、ブロックの HTTP 入出力を受け持ち、検証済み入力を対応 use case に渡す。関係の権限・状態遷移や repository 操作は所有しない。
  *
@@ -49,7 +48,7 @@ export class FriendsController {
     @Inject(RejectFriendRequestUseCase) protected readonly rejectFriendRequest: RejectFriendRequestUseCase,
     @Inject(RemoveFriendUseCase) protected readonly removeFriend: RemoveFriendUseCase,
     @Inject(UnblockUserUseCase) protected readonly unblockUser: UnblockUserUseCase,
-  ) {}
+  ) { }
 
   /**
    * 有効な自分の招待リンクを再利用し、なければ作成して返す。
@@ -61,8 +60,8 @@ export class FriendsController {
    */
   @Post("friend-invites")
   @HttpCode(200)
-  createInvite(@CurrentUser() _user: UserId): Promise<FriendInviteView> {
-    return todo("FriendsController.createInvite");
+  createInvite(@CurrentUser() user: UserId): Promise<FriendInviteView> {
+    return this.createFriendInvite.execute({ userId: user });
   }
 
   /**
@@ -77,8 +76,9 @@ export class FriendsController {
   @Public()
   @Get("friend-invites/:token")
   @HttpCode(200)
-  getInvite(@Param("token") _token: string): Promise<UserSummary> {
-    return todo("FriendsController.getInvite");
+  getInvite(@Param("token") rawToken: string): Promise<UserSummary> {
+    const token = z.string().parse(rawToken);
+    return this.getFriendInvite.execute({ token });
   }
 
   /**
@@ -106,8 +106,14 @@ export class FriendsController {
    */
   @Get("friend-requests")
   @HttpCode(200)
-  listRequests(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<readonly FriendRequestView[]> {
-    return todo("FriendsController.listRequests");
+  listRequests(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<readonly FriendRequestView[]> {
+    const { direction } = z.object({
+      direction: z.enum(["incoming", "outgoing"]),
+    }).parse(query);
+    return this.listFriendRequests.execute({
+      userId: user,
+      direction
+    });
   }
 
   /**
@@ -193,11 +199,11 @@ export class FriendsController {
    * 入力: CurrentUser の userId。body、query、header は受け取らない。
    * 呼び出し先: ListBlockedUsersUseCase.execute
    */
-  @Get("blocked-users")
-  @HttpCode(200)
-  listBlocked(@CurrentUser() _user: UserId): Promise<readonly UserSummary[]> {
-    return todo("FriendsController.listBlocked");
-  }
+ @Get("blocked-users")
+@HttpCode(200)
+listBlocked(@CurrentUser() user: UserId): Promise<readonly UserSummary[]> {
+  return this.listBlockedUsers.execute({ userId: user });
+}
 
   /**
    * 指定した相手をブロックし、関係の有無を応答で区別しない。
@@ -210,8 +216,9 @@ export class FriendsController {
    */
   @Post("users/:userId/block")
   @HttpCode(204)
-  block(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<null> {
-    return todo("FriendsController.block");
+  block(@CurrentUser() user: UserId, @Param("userId") rawTargetUserId: string): Promise<null> {
+    const targetUserId = parseUserId(z.string().parse(rawTargetUserId));
+    return this.blockUser.execute({ userId: user, targetUserId });
   }
 
   /**
@@ -225,7 +232,8 @@ export class FriendsController {
    */
   @Delete("users/:userId/block")
   @HttpCode(204)
-  unblock(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<null> {
-    return todo("FriendsController.unblock");
+  unblock(@CurrentUser() user: UserId, @Param("userId") rawTargetUserId: string): Promise<null> {
+    const targetUserId = parseUserId(z.string().parse(rawTargetUserId));
+    return this.unblockUser.execute({ userId: user, targetUserId });
   }
 }
