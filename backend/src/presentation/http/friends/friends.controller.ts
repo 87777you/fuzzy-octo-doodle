@@ -7,6 +7,7 @@ import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import { Public } from "../auth/public.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
+import { parseUserId } from "../../../domain/shared/id-parsers.ts";
 import { AcceptFriendRequestUseCase } from "../../../application/usecases/friends/accept-friend-request.usecase.ts";
 import { BlockUserUseCase } from "../../../application/usecases/friends/block-user.usecase.ts";
 import { CancelFriendRequestUseCase } from "../../../application/usecases/friends/cancel-friend-request.usecase.ts";
@@ -209,8 +210,9 @@ export class FriendsController {
    */
   @Post("users/:userId/block")
   @HttpCode(204)
-  block(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<null> {
-    return todo("FriendsController.block");
+  block(@CurrentUser() user: UserId, @Param("userId") rawTargetUserId: string): Promise<null> {
+    const targetUserId = parseUserId(z.string().parse(rawTargetUserId));
+    return this.blockUser.execute({ userId: user, targetUserId });
   }
 
   /**
@@ -224,7 +226,8 @@ export class FriendsController {
    */
   @Delete("users/:userId/block")
   @HttpCode(204)
-  unblock(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<null> {
-    return todo("FriendsController.unblock");
+  unblock(@CurrentUser() user: UserId, @Param("userId") rawTargetUserId: string): Promise<null> {
+    const targetUserId = parseUserId(z.string().parse(rawTargetUserId));
+    return this.unblockUser.execute({ userId: user, targetUserId });
   }
 }
