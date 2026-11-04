@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
 import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
 import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
@@ -59,8 +60,8 @@ export class FriendsController {
    */
   @Post("friend-invites")
   @HttpCode(200)
-  createInvite(@CurrentUser() _user: UserId): Promise<FriendInviteView> {
-    return todo("FriendsController.createInvite");
+  createInvite(@CurrentUser() user: UserId): Promise<FriendInviteView> {
+    return this.createFriendInvite.execute({ userId: user });
   }
 
   /**
@@ -75,8 +76,9 @@ export class FriendsController {
   @Public()
   @Get("friend-invites/:token")
   @HttpCode(200)
-  getInvite(@Param("token") _token: string): Promise<UserSummary> {
-    return todo("FriendsController.getInvite");
+  getInvite(@Param("token") rawToken: string): Promise<UserSummary> {
+    const token = z.string().parse(rawToken);
+    return this.getFriendInvite.execute({ token });
   }
 
   /**
