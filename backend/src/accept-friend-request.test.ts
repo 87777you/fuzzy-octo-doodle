@@ -41,14 +41,16 @@ const expectedView: FriendRequestView = {
 class FakeFriendships implements FriendshipRepository {
   readonly existing: Friendship | null;
   queriedId: FriendshipId | null = null;
+  queriedForUpdate: boolean | undefined;
   saved: Friendship | null = null;
 
   constructor(existing: Friendship | null) {
     this.existing = existing;
   }
 
-  findById(_actualTx: Tx, id: FriendshipId): Promise<Friendship | null> {
+  findById(_actualTx: Tx, id: FriendshipId, opts?: { forUpdate?: boolean }): Promise<Friendship | null> {
     this.queriedId = id;
+    this.queriedForUpdate = opts?.forUpdate;
     return Promise.resolve(this.existing);
   }
 
@@ -134,6 +136,7 @@ test("AcceptFriendRequest は受信者本人が pending 申請を承認し、表
   const result = await fixture.useCase.execute({ userId: receiverId, friendshipId });
 
   assert.equal(fixture.friendships.queriedId, friendshipId);
+  assert.equal(fixture.friendships.queriedForUpdate, true);
   assert.deepEqual(fixture.friendships.saved, { ...pending, status: "accepted", acceptedAt });
   assert.deepEqual(fixture.users.queriedIds, [requesterId, receiverId]);
   assert.deepEqual(result, expectedView);
@@ -150,6 +153,7 @@ test("AcceptFriendRequest は pending 以外の申請を STATE_CONFLICT にす�
   const fixture = setup(rejected);
 
   await assertDomainError(fixture.useCase.execute({ userId: receiverId, friendshipId }), "STATE_CONFLICT");
+  assert.equal(fixture.friendships.queriedForUpdate, true);
   assert.equal(fixture.friendships.saved, null);
 });
 
