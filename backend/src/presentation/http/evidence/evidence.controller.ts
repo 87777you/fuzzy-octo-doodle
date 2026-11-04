@@ -15,8 +15,6 @@ import { CompleteEvidenceUploadUseCase } from "../../../application/usecases/evi
 import { IssueUploadUrlsUseCase } from "../../../application/usecases/evidence/issue-upload-urls.usecase.ts";
 import { ListEvidencesUseCase } from "../../../application/usecases/evidence/list-evidences.usecase.ts";
 import { StartEvidenceUploadSessionUseCase } from "../../../application/usecases/evidence/start-evidence-upload-session.usecase.ts";
-import { z } from "zod";
-import { parseTaskId, parseUploadSessionId } from "../../../domain/shared/id-parsers.ts";
 import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
 /**
  * 責務: /api/tasks/:id 配下で証拠アップロードセッションの開始・URL 発行・完了と証拠一覧取得を受け付け、入力を検証して対応するユースケースへ渡す。写真データの転送と業務判定は担わない。
