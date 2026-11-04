@@ -28,5 +28,5 @@ images:
     newTag: 20261104154102-70844ad
     newName: ghcr.io/akatukisora/fuzzy-octo-doodle-frontend
   - name: ghcr.io/akatukisora/fuzzy-octo-doodle-migrate
-    newTag: 20261104154257-eae96c0
+    newTag: 20261104154343-00913a0
     newName: ghcr.io/akatukisora/fuzzy-octo-doodle-migrate
