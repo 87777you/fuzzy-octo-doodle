@@ -8,8 +8,14 @@ import { CreateObjectionUseCase } from "../../../application/usecases/objections
 import { ListMyObjectionsUseCase } from "../../../application/usecases/objections/list-my-objections.usecase.ts";
 import { WithdrawObjectionUseCase } from "../../../application/usecases/objections/withdraw-objection.usecase.ts";
 import { z } from "zod";
-import { parseObjectionId } from "../../../domain/shared/id-parsers.ts";
+import { REASON_TYPES } from "../../../domain/objection/objection.ts";
 import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
+import { parseObjectionId, parseTaskId } from "../../../domain/shared/id-parsers.ts";
+
+const createObjectionBodySchema = z.object({
+  reasonType: z.enum(REASON_TYPES),
+  reasonDetail: z.string(),
+});
 
 /**
  * 責務: 異議に関する HTTP ルートを受け、セッション利用者・path・header・query・body を検証して対応する use case に渡す。業務上の権限判定や状態遷移は行わない。
@@ -24,6 +30,10 @@ import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
  *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
  * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
+const listMyObjectionsQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
 @Controller("")
 export class ObjectionsController {
   constructor(
@@ -43,8 +53,15 @@ export class ObjectionsController {
    */
   @Post("tasks/:id/objections")
   @HttpCode(201)
-  create(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("id") _id: string, @Body() _body: unknown): Promise<ObjectionSummary> {
-    return todo("ObjectionsController.create");
+  create(@CurrentUser() user: UserId, @Headers("idempotency-key") key: string | undefined, @Param("id") id: string, @Body() body: unknown): Promise<ObjectionSummary> {
+    const parsedBody = createObjectionBodySchema.parse(body);
+    return this.createObjection.execute({
+      userId: user,
+      idempotencyKey: parseIdempotencyKey(z.string().parse(key)),
+      taskId: parseTaskId(id),
+      reasonType: parsedBody.reasonType,
+      reasonDetail: parsedBody.reasonDetail,
+    });
   }
 
   /**
@@ -76,7 +93,17 @@ export class ObjectionsController {
    */
   @Get("me/objections")
   @HttpCode(200)
-  listMine(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<ObjectionSummary>> {
-    return todo("ObjectionsController.listMine");
+  listMine(
+    @CurrentUser() user: UserId,
+    @Query() query: Record<string, string | undefined>,
+  ): Promise<Page<ObjectionSummary>> {
+    const { cursor, limit } =
+      listMyObjectionsQuerySchema.parse(query);
+
+    return this.listMyObjections.execute({
+      userId: user,
+      limit,
+      ...(cursor === undefined ? {} : { cursor }),
+    });
   }
 }
