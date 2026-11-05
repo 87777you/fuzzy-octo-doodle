@@ -30,6 +30,10 @@ const createObjectionBodySchema = z.object({
  *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
  * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
+const listMyObjectionsQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
 @Controller("")
 export class ObjectionsController {
   constructor(
@@ -89,7 +93,17 @@ export class ObjectionsController {
    */
   @Get("me/objections")
   @HttpCode(200)
-  listMine(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<ObjectionSummary>> {
-    return todo("ObjectionsController.listMine");
+  listMine(
+    @CurrentUser() user: UserId,
+    @Query() query: Record<string, string | undefined>,
+  ): Promise<Page<ObjectionSummary>> {
+    const { cursor, limit } =
+      listMyObjectionsQuerySchema.parse(query);
+
+    return this.listMyObjections.execute({
+      userId: user,
+      limit,
+      ...(cursor === undefined ? {} : { cursor }),
+    });
   }
 }
