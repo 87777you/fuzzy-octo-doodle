@@ -3,7 +3,6 @@ import type { FriendInviteView } from "../../../domain/friendship/friend-invite.
 import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
 import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
 import { Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import { Public } from "../auth/public.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
@@ -148,8 +147,9 @@ export class FriendsController {
    */
   @Post("friend-requests/:id/reject")
   @HttpCode(200)
-  reject(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FriendRequestView> {
-    return todo("FriendsController.reject");
+  reject(@CurrentUser() user: UserId, @Param("id") rawId: string): Promise<FriendRequestView> {
+    const friendshipId = parseFriendshipId(z.string().parse(rawId));
+    return this.rejectFriendRequest.execute({ userId: user, friendshipId });
   }
 
   /**
@@ -163,8 +163,9 @@ export class FriendsController {
    */
   @Post("friend-requests/:id/cancel")
   @HttpCode(200)
-  cancel(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FriendRequestView> {
-    return todo("FriendsController.cancel");
+  cancel(@CurrentUser() user: UserId, @Param("id") rawId: string): Promise<FriendRequestView> {
+    const friendshipId = parseFriendshipId(z.string().parse(rawId));
+    return this.cancelFriendRequest.execute({ userId: user, friendshipId });
   }
 
   /**
