@@ -30,7 +30,9 @@ export function FriendTaskList({ tasks }: FriendTaskListProps) {
           <span className={styles["visuallyHidden"]}>並び順</span>
           <select
             value={sortOrder}
-            onChange={(event) => setSortOrder(event.target.value as "soonest" | "latest")}
+            onChange={(event) => {
+              setSortOrder(event.target.value as "soonest" | "latest");
+            }}
           >
             <option value="soonest">期限が近い順</option>
             <option value="latest">期限が遠い順</option>

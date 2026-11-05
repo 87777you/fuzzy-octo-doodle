@@ -6,11 +6,11 @@ import { FriendProfile } from "../../../../components/friends/FriendProfile";
 import { FriendTaskList } from "../../../../components/friends/FriendTaskList";
 import type { FriendTask } from "../../../../components/friends/friend.types";
 
-type Friend = {
+interface Friend {
   name: string;
   avatarUrl: string;
   tasks: FriendTask[];
-};
+}
 
 const friendData: Friend = {
   name: "さくら",

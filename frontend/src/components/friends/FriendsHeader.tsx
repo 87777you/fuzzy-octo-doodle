@@ -31,7 +31,7 @@ export function FriendsHeader() {
       </label>
       <nav className={styles["tabs"]} aria-label="フレンドメニュー">
         <Link
-          className={`${styles["tab"]} ${styles["activeTab"]}`}
+          className={[styles["tab"] ?? "", styles["activeTab"] ?? ""].join(" ")}
           href="/friends"
           aria-current="page"
         >
