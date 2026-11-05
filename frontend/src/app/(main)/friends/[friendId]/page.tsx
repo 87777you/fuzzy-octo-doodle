@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
 import { PageHeader } from "../../../../components/layout/PageHeader";
 import { BottomNavigation } from "../../../../components/layout/BottomNavigation";
 import { FriendProfile } from "../../../../components/friends/FriendProfile";
@@ -24,25 +23,11 @@ const friendData: Friend = {
 };
 
 export default function FriendDetail() {
-  const [friend] = useState<Friend>(friendData);
-  const [friends,setFriends] = useState<Friend>();
-  useEffect(()=>{
-    async function loadFriend(){
-        
-    const response = await fetch("api/friend-invites/${token}");
-    if(!response) throw new Error("データを取得できません")
-    
-    const data = await response.json(); 
-    setFriends(data);
-    }
-    void loadFriend()
-  },[])
-
   return (
     <>
       <PageHeader title="フレンド詳細" />
-      <FriendProfile name={friend.name} avatarUrl={friend.avatarUrl} />
-      <FriendTaskList tasks={friend.tasks} />
+      <FriendProfile name={friendData.name} avatarUrl={friendData.avatarUrl} />
+      <FriendTaskList tasks={friendData.tasks} />
       <BottomNavigation />
     </>
   );
