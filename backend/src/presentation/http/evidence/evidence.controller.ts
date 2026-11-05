@@ -8,7 +8,6 @@ import type { UploadUrlsResult } from "../../../application/ports/usecases/issue
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import type { EvidenceListResult } from "../../../application/ports/usecases/list-evidences.port.ts";
 import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CompleteEvidenceUploadUseCase } from "../../../application/usecases/evidence/complete-evidence-upload.usecase.ts";
