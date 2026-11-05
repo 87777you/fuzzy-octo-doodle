@@ -176,8 +176,8 @@ export class FriendsController {
    */
   @Get("friends")
   @HttpCode(200)
-  list(@CurrentUser() _user: UserId): Promise<readonly UserSummary[]> {
-    return todo("FriendsController.list");
+  list(@CurrentUser() user: UserId): Promise<readonly UserSummary[]> {
+    return this.listFriends.execute({ userId: user });
   }
 
   /**
@@ -191,8 +191,9 @@ export class FriendsController {
    */
   @Delete("friends/:userId")
   @HttpCode(204)
-  remove(@CurrentUser() _user: UserId, @Param("userId") _userId: string): Promise<null> {
-    return todo("FriendsController.remove");
+  remove(@CurrentUser() user: UserId, @Param("userId") rawFriendUserId: string): Promise<null> {
+    const friendUserId = parseUserId(z.string().parse(rawFriendUserId));
+    return this.removeFriend.execute({ userId: user, friendUserId });
   }
 
   /**
