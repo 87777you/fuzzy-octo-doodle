@@ -8,7 +8,6 @@ import type { UploadUrlsResult } from "../../../application/ports/usecases/issue
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import type { EvidenceListResult } from "../../../application/ports/usecases/list-evidences.port.ts";
 import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CompleteEvidenceUploadUseCase } from "../../../application/usecases/evidence/complete-evidence-upload.usecase.ts";
@@ -55,8 +54,21 @@ export class EvidenceController {
    */
   @Post("evidence-upload-sessions")
   @HttpCode(201)
-  startSession(@CurrentUser() _user: UserId, @Param("id") _id: string, @Body() _body: unknown): Promise<UploadingSession> {
-    return todo("EvidenceController.startSession");
+  startSession(
+    @CurrentUser() user: UserId,
+    @Param("id") id: string,
+    @Body() body: unknown,
+  ): Promise<UploadingSession> {
+    const { submissionType } = z.object({
+      submissionType: z.enum(["initial", "additional"]),
+    }).parse(body);
+    const taskId = parseTaskId(id);
+
+    return this.startEvidenceUploadSession.execute({
+      userId: user,
+      taskId,
+      submissionType,
+    });
   }
 
   /**
@@ -123,7 +135,16 @@ export class EvidenceController {
    */
   @Get("evidences")
   @HttpCode(200)
-  list(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<EvidenceListResult> {
-    return todo("EvidenceController.list");
+  list(
+    @CurrentUser() user: UserId,
+    @Param("id") id: string,
+  ): Promise<EvidenceListResult> {
+    const validatedId = z.uuid().parse(id);
+    const taskId = parseTaskId(validatedId);
+
+    return this.listEvidences.execute({
+      viewerId: user,
+      taskId,
+    });
   }
 }
