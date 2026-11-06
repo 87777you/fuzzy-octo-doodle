@@ -81,6 +81,7 @@ export function BottomNavigation() {
           <Link
             key={item.href}
             href={item.href}
+            prefetch={false}
             className={`${styles["item"] ?? ""} ${
               active ? (styles["active"] ?? "") : ""
             }`}
