@@ -70,6 +70,14 @@ test("isTaskDraft rejects malformed data rather than trusting session storage", 
   assert.equal(isTaskDraft(null), false);
 });
 
+test("field validation reports deadline and amount independently", () => {
+  const invalid = draft({ title: "", deadline: "", reward: "99" });
+  assert.match(validateTaskDraft(invalid, NOW, "deadline") ?? "", /10分〜72時間/);
+  assert.match(validateTaskDraft(invalid, NOW, "reward") ?? "", /100〜10,000円/);
+  assert.equal(validateTaskDraft(draft(), NOW, "deadline"), null);
+  assert.equal(validateTaskDraft(draft(), NOW, "reward"), null);
+});
+
 test("validateTaskDraft enforces trimmed title length", () => {
   assert.match(validateTaskDraft(draft({ title: "  \t " }), NOW) ?? "", /タスク名/);
   assert.equal(validateTaskDraft(draft({ title: ` ${"a".repeat(100)} ` }), NOW), null);

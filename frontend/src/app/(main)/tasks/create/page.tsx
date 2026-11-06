@@ -70,6 +70,8 @@ export default function CreateTaskPage() {
   const [reward, setReward] = useState("500");
   const [visibility, setVisibility] = useState<TaskVisibility>("private");
   const [draftError, setDraftError] = useState("");
+  const [deadlineError, setDeadlineError] = useState("");
+  const [rewardError, setRewardError] = useState("");
 
   useEffect(() => {
     const storedDraft = window.sessionStorage.getItem(TASK_DRAFT_STORAGE_KEY);
@@ -115,9 +117,14 @@ export default function CreateTaskPage() {
       reward,
       visibility,
     };
-    const validationError = validateTaskDraft(draft);
-    if (validationError !== null) {
-      setDraftError(validationError);
+    const now = Date.now();
+    const titleError = validateTaskDraft(draft, now, "title");
+    const nextDeadlineError = validateTaskDraft(draft, now, "deadline");
+    const nextRewardError = validateTaskDraft(draft, now, "reward");
+    setDraftError(titleError ?? "");
+    setDeadlineError(nextDeadlineError ?? "");
+    setRewardError(nextRewardError ?? "");
+    if (titleError || nextDeadlineError || nextRewardError) {
       return;
     }
 
@@ -136,7 +143,7 @@ export default function CreateTaskPage() {
       <div className={styles["screen"]}>
         <PageHeader title="タスク作成" backHref="/tasks" />
 
-        <form className={styles["formCard"]} onSubmit={handleSubmit}>
+        <form className={styles["formCard"]} onSubmit={handleSubmit} noValidate>
           {draftError && <p className={styles["fieldError"]} role="alert">{draftError}</p>}
           <div className={styles["field"]}>
             <label className={styles["labelRow"]} htmlFor="task-title">
@@ -193,12 +200,25 @@ export default function CreateTaskPage() {
                 className={styles["dateInput"]}
                 type="datetime-local"
                 value={deadline}
+                aria-invalid={!!deadlineError}
+                aria-describedby={deadlineError ? "deadline-error" : undefined}
                 onChange={(event) => {
-                  setDeadline(event.target.value);
+                  const nextDeadline = event.target.value;
+                  setDeadline(nextDeadline);
+                  if (deadlineError) {
+                    setDeadlineError(
+                      validateTaskDraft(
+                        { title, description, deadline: nextDeadline, reward, visibility },
+                        Date.now(),
+                        "deadline",
+                      ) ?? "",
+                    );
+                  }
                 }}
                 required
               />
             </div>
+            {deadlineError && <p id="deadline-error" className={styles["fieldError"]} role="alert">{deadlineError}</p>}
           </div>
 
           <fieldset
@@ -241,13 +261,26 @@ export default function CreateTaskPage() {
                 max="10000"
                 step="1"
                 value={reward}
+                aria-invalid={!!rewardError}
+                aria-describedby={rewardError ? "reward-error" : undefined}
                 onChange={(event) => {
-                  setReward(event.target.value);
+                  const nextReward = event.target.value;
+                  setReward(nextReward);
+                  if (rewardError) {
+                    setRewardError(
+                      validateTaskDraft(
+                        { title, description, deadline, reward: nextReward, visibility },
+                        Date.now(),
+                        "reward",
+                      ) ?? "",
+                    );
+                  }
                 }}
                 required
               />
               <span className={styles["currency"]}>円</span>
             </div>
+            {rewardError && <p id="reward-error" className={styles["fieldError"]} role="alert">{rewardError}</p>}
             <p className={styles["hint"]}>
               100〜10,000円。タスクを達成できなかった場合、この金額を支払います。
             </p>

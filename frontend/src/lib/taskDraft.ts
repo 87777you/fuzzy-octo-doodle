@@ -79,20 +79,20 @@ function parseLocalDateTime(value: string): Date | null {
   return date;
 }
 
-export function validateTaskDraft(draft: TaskDraft, nowMs = Date.now()): string | null {
+export function validateTaskDraft(draft: TaskDraft, nowMs = Date.now(), field?: "title" | "reward" | "deadline"): string | null {
   const title = draft.title.trim();
-  if (title.length < 1 || title.length > 100) {
+  if ((!field || field === "title") && (title.length < 1 || title.length > 100)) {
     return "タスク名は空白以外の1〜100文字で入力してください。";
   }
 
   const penaltyAmount = Number(draft.reward);
-  if (!Number.isInteger(penaltyAmount) || penaltyAmount < MIN_PENALTY || penaltyAmount > MAX_PENALTY) {
+  if ((!field || field === "reward") && (!Number.isInteger(penaltyAmount) || penaltyAmount < MIN_PENALTY || penaltyAmount > MAX_PENALTY)) {
     return "金額は100〜10,000円の整数で入力してください。";
   }
 
   const deadline = parseLocalDateTime(draft.deadline);
   const lead = deadline === null ? Number.NaN : deadline.getTime() - nowMs;
-  if (!Number.isFinite(lead) || lead < MIN_DEADLINE_LEAD_MS || lead > MAX_DEADLINE_LEAD_MS) {
+  if ((!field || field === "deadline") && (!Number.isFinite(lead) || lead < MIN_DEADLINE_LEAD_MS || lead > MAX_DEADLINE_LEAD_MS)) {
     return "期限は現在から10分〜72時間の範囲で指定してください。";
   }
 
