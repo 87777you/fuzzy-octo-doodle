@@ -42,7 +42,7 @@ services:
       - ./backend/atlas.hcl:/atlas.hcl:ro
       - ./backend/migrations:/migrations:ro
 
-  # マイグレーションのあと、開発用の利用者を作る（DEV_AUTH_USER_ID の持ち主）。
+  # マイグレーションのあと、開発用データを入れる。同じ seed ID の既存行は日時・状態を含めて上書きする。
   seed:
     image: postgres:17-alpine
     depends_on:

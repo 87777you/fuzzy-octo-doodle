@@ -19,6 +19,7 @@ DB（PostgreSQL）、API、frontend をコンテナで起動し、nginx で本�
 | 止める（データは残る） | `mise run dev:down` | `docker compose down` |
 | 止めて DB のデータも消す | `mise run dev:reset` | `docker compose down -v` |
 | 新しい SQL を適用する | `mise run dev:migrate` | `docker compose run --rm migrate && docker compose run --rm --no-deps seed` |
+| seed 対象のデータを初期値で上書きする（DB 起動済み） | — | `docker compose run --rm --no-deps seed` |
 | `atlas.sum` を更新する | `mise run db:hash` | (mise のタスクの `docker run` を参照) |
 
 起動すると、次の順に動く。
@@ -80,9 +81,15 @@ curl -i http://127.0.0.1:8080/api/me      # 開発用の利用者として処理
 
 参照し得ないデータは、ニックネームやタイトル、本文に「【閲覧不可】」と入れてある。画面やレスポンスに表示されたら、権限判定の不具合である。
 
-- 日時は `now()` からの相対値。フィードは直近 7 日だけを返すため、日が経つとフィードの内容が減る。日時を合わせ直すには `mise run dev:reset` で DB を作り直す。
+- 日時は実行時点の `now()` からの相対値。seed を再実行すると日時も計算し直すため、直近 7 日のフィード用データも更新される。
 - k8s では、同じファイルを `seed` の Job(`infra/migrate.yaml`)が ConfigMap 経由で流す。ファイルが `infra/` にあるのは、kustomize が `infra/` の外のファイルを読めないため。
-- 何度適用しても同じ結果になる(`ON CONFLICT DO NOTHING`)。データを足したいときは、ID の付け方(`seed.sql` の冒頭)に従う。
+- 同じ ID の行があれば、ID 以外の全列を定義値で上書きする（`ON CONFLICT (id) DO UPDATE`）。**seed 対象のタスクの状態や、通知の既読状態などの手動変更も戻る。** seed にない ID の行は削除しない。データを足したいときは、ID の付け方(`seed.sql` の冒頭)に従う。
+
+DB が起動済みなら、次のコマンドで seed だけを再実行できる。DB 全体の削除は不要である。
+
+```bash
+docker compose run --rm --no-deps seed
+```
 
 ## マイグレーションを足す
 
