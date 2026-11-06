@@ -1,4 +1,5 @@
-# ローカル開発用。backend の API と PostgreSQL を起動する。
+# ローカル開発用。PostgreSQL、backend の API、frontend、nginx を起動する。
+# ブラウザは http://localhost:3000 を開く。本番と同じく、/api/* は backend、それ以外は frontend に振り分ける。
 #
 #   docker compose up --watch      起動して、ファイルの変更を監視する
 #   docker compose down            止める（データは残る）
@@ -6,8 +7,9 @@
 #
 # watch の動き（develop.watch）:
 #   - backend/src の変更    → コンテナにコピーする。コンテナ内の `tsx watch` が API を再起動する。
+#   - frontend/src の変更   → コンテナにコピーする。コンテナ内の `next dev` が反映する。
 #   - package.json などの変更 → イメージを作り直して、コンテナを入れ替える。
-# 本番用のイメージ（backend/Dockerfile）とは別物で、この設定は開発専用。
+# 本番用のイメージ（backend/Dockerfile、frontend/Dockerfile）とは別物で、この設定は開発専用。
 
 name: hackathon
 
@@ -84,6 +86,44 @@ services:
           path: ./pnpm-lock.yaml
         - action: rebuild
           path: ./pnpm-workspace.yaml
+
+  # Next.js の開発サーバー。ブラウザからは proxy 経由でアクセスする。
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
+    environment:
+      # 開発サーバーのテレメトリ送信を止める。
+      NEXT_TELEMETRY_DISABLED: "1"
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /repo/frontend/src
+        - action: sync
+          path: ./frontend/public
+          target: /repo/frontend/public
+        - action: sync+restart
+          path: ./frontend/next.config.ts
+          target: /repo/frontend/next.config.ts
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+        - action: rebuild
+          path: ./pnpm-workspace.yaml
+
+  # 本番の Ingress と同じ振り分け（/api/* は backend、それ以外は frontend）をするリバースプロキシ。
+  # ブラウザは http://localhost:3000 だけを開く。振り分けは infra/dev-proxy/default.conf。
+  proxy:
+    image: nginx:1.29-alpine
+    depends_on:
+      - api
+      - frontend
+    ports:
+      - "127.0.0.1:3000:80"
+    volumes:
+      - ./infra/dev-proxy/default.conf:/etc/nginx/conf.d/default.conf:ro
 
 volumes:
   db-data:

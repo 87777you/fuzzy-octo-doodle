@@ -35,7 +35,7 @@
 
 | コマンド | 内容 |
 |---|---|
-| `mise run dev` | frontend と backend を起動 |
+| `mise run dev` | DB、backend、frontend、nginx をコンテナで起動（http://localhost:3000） |
 | `mise run lint` | ESLint（`any` の禁止など） |
 | `mise run typecheck` | 型検査 |
 | `mise run test` | テスト |
