@@ -69,9 +69,11 @@ export default function CreateTaskPage() {
   const [deadline, setDeadline] = useState("");
   const [reward, setReward] = useState("500");
   const [visibility, setVisibility] = useState<TaskVisibility>("private");
+  const [titleError, setTitleError] = useState("");
   const [draftError, setDraftError] = useState("");
   const [deadlineError, setDeadlineError] = useState("");
   const [rewardError, setRewardError] = useState("");
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const storedDraft = window.sessionStorage.getItem(TASK_DRAFT_STORAGE_KEY);
@@ -84,6 +86,7 @@ export default function CreateTaskPage() {
         .toISOString()
         .slice(0, 16);
       setDeadline(localDeadline);
+      setHydrated(true);
       return;
     }
 
@@ -92,11 +95,13 @@ export default function CreateTaskPage() {
       parsedDraft = JSON.parse(storedDraft);
     } catch {
       setDraftError("保存された入力内容を読み込めませんでした。入力し直してください。");
+      setHydrated(true);
       return;
     }
 
     if (!isTaskDraft(parsedDraft)) {
       setDraftError("保存された入力内容を読み込めませんでした。入力し直してください。");
+      setHydrated(true);
       return;
     }
 
@@ -105,7 +110,27 @@ export default function CreateTaskPage() {
     setDeadline(parsedDraft.deadline);
     setReward(parsedDraft.reward);
     setVisibility(parsedDraft.visibility);
+    setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    const draft: TaskDraft = {
+      title,
+      description,
+      deadline,
+      reward,
+      visibility,
+    };
+    try {
+      window.sessionStorage.setItem(TASK_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      // 保存失敗は入力中に通知せず、送信時のチェックでエラーを表示する。
+    }
+  }, [hydrated, title, description, deadline, reward, visibility]);
 
   const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -121,7 +146,8 @@ export default function CreateTaskPage() {
     const titleError = validateTaskDraft(draft, now, "title");
     const nextDeadlineError = validateTaskDraft(draft, now, "deadline");
     const nextRewardError = validateTaskDraft(draft, now, "reward");
-    setDraftError(titleError ?? "");
+    setDraftError("");
+    setTitleError(titleError ?? "");
     setDeadlineError(nextDeadlineError ?? "");
     setRewardError(nextRewardError ?? "");
     if (titleError || nextDeadlineError || nextRewardError) {
@@ -155,13 +181,26 @@ export default function CreateTaskPage() {
               className={styles["textInput"]}
               type="text"
               value={title}
+              aria-invalid={!!titleError}
+              aria-describedby={titleError ? "title-error" : undefined}
               onChange={(event) => {
-                setTitle(event.target.value);
+                const nextTitle = event.target.value;
+                setTitle(nextTitle);
+                if (titleError) {
+                  setTitleError(
+                    validateTaskDraft(
+                      { title: nextTitle, description, deadline, reward, visibility },
+                      Date.now(),
+                      "title",
+                    ) ?? "",
+                  );
+                }
               }}
               placeholder="タスク名を入力してください"
               maxLength={100}
               required
             />
+            {titleError && <p id="title-error" className={styles["fieldError"]} role="alert">{titleError}</p>}
             <p className={styles["counter"]}>{title.length}/100</p>
           </div>
 
