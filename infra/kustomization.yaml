@@ -9,6 +9,11 @@ resources:
   - frontend.yaml
   - ingress.yaml
   - networkpolicy.yaml
+# 開発用のデータ(seed Job が流す)。compose も同じファイルを使う。
+configMapGenerator:
+  - name: dev-seed
+    files:
+      - seed.sql=dev-seed/seed.sql
 # アプリは、スキーマの適用(migrate、wave 1)が終わってから更新する。
 patches:
   - target:
