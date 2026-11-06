@@ -65,5 +65,5 @@ description = "開発用のコンテナを止め、DB のデータも消す"
 run = "docker compose down -v"
 
 [tasks."dev:migrate"]
-description = "新しいマイグレーションを DB に適用し、開発用の利用者を作る"
+description = "新しいマイグレーションを DB に適用し、開発用のデータを入れる"
 run = "docker compose run --rm migrate && docker compose run --rm --no-deps seed"
