@@ -1,14 +1,6 @@
-import type { FeedPost, ReactionType } from "../types/feed";
+import type { FeedPost } from "../types/feed";
 
-export const reactionDefinitions: readonly {
-  type: ReactionType;
-  emoji: string;
-}[] = [
-  { type: "support", emoji: "👏" },
-  { type: "fire", emoji: "🔥" },
-  { type: "congrats", emoji: "🎉" },
-  { type: "laugh", emoji: "😂" },
-];
+// 未接続のレビュー・異議画面だけで使う表示用サンプル。API 応答には使用しない。
 
 export const mockPosts: FeedPost[] = [
   {
@@ -70,50 +62,3 @@ export const mockPosts: FeedPost[] = [
     ],
   },
 ];
-
-const myReactions = new Map<string, ReactionType>();
-
-export function getPost(postId: string): FeedPost | undefined {
-  return mockPosts.find((post) => post.id === postId);
-}
-
-export function setReaction(postId: string, reactionType: ReactionType): FeedPost | undefined {
-  const post = getPost(postId);
-  if (!post) return undefined;
-
-  const previousType = myReactions.get(postId);
-  if (previousType === reactionType) return post;
-
-  if (previousType) {
-    const previousReaction = post.reactions.find((reaction) => reaction.type === previousType);
-    if (previousReaction && previousReaction.count > 0) previousReaction.count -= 1;
-  }
-
-  const nextReaction = post.reactions.find((reaction) => reaction.type === reactionType);
-  if (nextReaction) nextReaction.count += 1;
-  myReactions.set(postId, reactionType);
-  return post;
-}
-
-export function removeReaction(postId: string): FeedPost | undefined {
-  const post = getPost(postId);
-  if (!post) return undefined;
-
-  const previousType = myReactions.get(postId);
-  if (previousType) {
-    const reaction = post.reactions.find((item) => item.type === previousType);
-    if (reaction && reaction.count > 0) reaction.count -= 1;
-    myReactions.delete(postId);
-  }
-  return post;
-}
-
-export function getPostsForFeed(): FeedPost[] {
-  return mockPosts.map((post) => ({
-    ...post,
-    reactions: post.reactions.map((reaction) => ({
-      ...reaction,
-      reacted: myReactions.get(post.id) === reaction.type,
-    })),
-  }));
-}

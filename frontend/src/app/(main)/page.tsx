@@ -8,77 +8,8 @@ import { HomeHeader } from "../../components/ui/HomeHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
 import { Loading } from "../../components/ui/Loading";
-import type {
-  FeedFilter,
-  FeedPost,
-  FeedResponse,
-  ObjectionListItem,
-  ObjectionListResponse,
-  ReactionType,
-} from "../../types/feed";
-
-async function fetchFeed(signal: AbortSignal): Promise<FeedPost[]> {
-  // フレンドの投稿一覧を取得する。
-  const response = await fetch("/api/feed", { signal });
-  if (!response.ok) throw new Error("投稿一覧を取得できませんでした。");
-
-  const data: unknown = await response.json();
-  if (!isFeedResponse(data)) {
-    throw new Error("投稿一覧の形式が不正です。");
-  }
-  return data.items;
-}
-
-async function fetchAllMyObjections(
-  signal: AbortSignal,
-): Promise<ObjectionListItem[]> {
-  const allItems: ObjectionListItem[] = [];
-  let cursor: string | null = null;
-
-  // nextCursorがなくなるまでページを順番に取得し、全期間の異議を集める。
-  do {
-    const query = new URLSearchParams({ limit: "2" });
-    if (cursor !== null) query.set("cursor", cursor);
-
-    const response = await fetch(`/api/me/objections?${query.toString()}`, {
-      signal,
-    });
-    if (!response.ok) throw new Error("異議一覧を取得できませんでした。");
-
-    const data: unknown = await response.json();
-    if (!isObjectionListResponse(data)) {
-      throw new Error("異議一覧の形式が不正です。");
-    }
-    allItems.push(...data.items);
-    cursor = data.nextCursor;
-  } while (cursor !== null);
-
-  return allItems;
-}
-
-function isFeedResponse(value: unknown): value is FeedResponse {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "items" in value &&
-    Array.isArray(value.items) &&
-    "nextCursor" in value &&
-    (typeof value.nextCursor === "string" || value.nextCursor === null)
-  );
-}
-
-function isObjectionListResponse(
-  value: unknown,
-): value is ObjectionListResponse {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "items" in value &&
-    Array.isArray(value.items) &&
-    "nextCursor" in value &&
-    (typeof value.nextCursor === "string" || value.nextCursor === null)
-  );
-}
+import type { FeedFilter, FeedPost, ReactionType } from "../../types/feed";
+import { fetchFeed, sendReaction } from "../../lib/feedApi";
 
 export default function HomePage() {
   const router = useRouter();
@@ -101,21 +32,8 @@ export default function HomePage() {
       setError(false);
 
       try {
-        // まず表示対象になる投稿一覧を取得する。
-        const feedPosts = await fetchFeed(controller.signal);
-
-        if (filter === "all") {
-          // 「すべて」タブでは投稿一覧をそのまま表示する。
-          setPosts(feedPosts);
-        } else {
-          // 「異議」タブでは異議一覧から対象タスクIDを集める。
-          const objections = await fetchAllMyObjections(controller.signal);
-          const objectedTaskIds = new Set(
-            objections.map((objection) => objection.taskId),
-          );
-          // 投稿側のtaskIdが異議一覧に含まれる投稿だけを表示する。
-          setPosts(feedPosts.filter((post) => objectedTaskIds.has(post.taskId)));
-        }
+        const feedPosts = await fetchFeed(controller.signal, filter);
+        setPosts(feedPosts);
       } catch (cause) {
         // タブ切替などで中断された通信はエラー画面にしない。
         if (cause instanceof Error && cause.name === "AbortError") return;
@@ -150,19 +68,7 @@ export default function HomePage() {
     setReactionError(null);
 
     try {
-      const response = await fetch(`/api/posts/${postId}/reaction`, {
-        method: reacted ? "DELETE" : "PUT",
-        ...(reacted
-          ? {}
-          : {
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ reaction_type: reactionType }),
-            }),
-      });
-
-      if (!response.ok) {
-        throw new Error("リアクションを送信できませんでした。");
-      }
+      await sendReaction(postId, reactionType, reacted);
 
       retry();
     } catch {
@@ -205,6 +111,7 @@ export default function HomePage() {
             key={post.id}
             userName={post.userName}
             timeAgo={post.timeAgo}
+            {...(post.activityLabel !== undefined ? { activityLabel: post.activityLabel } : {})}
             taskTitle={post.taskTitle}
             status={post.status}
             reactions={post.reactions}

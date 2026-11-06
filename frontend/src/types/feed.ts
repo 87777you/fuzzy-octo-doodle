@@ -16,24 +16,12 @@ export interface FeedPost {
   userName: string;
   avatarUrl?: string;
   timeAgo: string;
+  activityLabel?: string;
   taskTitle: string;
   status: string;
   deadlineAt?: string;
   reviewEndsAt?: string;
   reactions: FeedReaction[];
-}
-
-export interface ObjectionListItem {
-  id: string;
-  // このtaskIdを投稿データと比較して、異議対象の投稿を判別する。
-  taskId: string;
-  createdAt: string;
-}
-
-export interface ObjectionListResponse {
-  items: ObjectionListItem[];
-  // nullなら最終ページ。それ以外なら次回取得に使うカーソル。
-  nextCursor: string | null;
 }
 
 export interface FeedResponse {
