@@ -41,7 +41,12 @@ export default function ProfileEditPage() {
           </label>
         </section>
 
-        <form className={styles["form"]} onSubmit={(event) => event.preventDefault()}>
+        <form
+          className={styles["form"]}
+          onSubmit={(event) => {
+            event.preventDefault();
+          }}
+        >
           <div className={styles["nameField"]}>
             <label htmlFor="profile-name">ユーザー名</label>
             <div className={styles["inputWrap"]}>
@@ -50,7 +55,9 @@ export default function ProfileEditPage() {
                 name="name"
                 value={name}
                 maxLength={MAX_NAME_LENGTH}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => {
+                  setName(event.target.value);
+                }}
                 autoComplete="nickname"
               />
               <span>{name.length} / {MAX_NAME_LENGTH}</span>

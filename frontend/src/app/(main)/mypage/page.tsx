@@ -141,7 +141,10 @@ export default function MyPage() {
               <span className={styles["chevron"]} aria-hidden="true">›</span>
             </Link>
           ))}
-          <Link href="/login" className={`${styles["settingItem"]} ${styles["logout"]}`}>
+          <Link
+            href="/login"
+            className={[styles["settingItem"], styles["logout"]].filter(Boolean).join(" ")}
+          >
             <span className={styles["settingIcon"]}>↪</span>
             <span className={styles["settingText"]}>
               <strong>ログアウト</strong>
