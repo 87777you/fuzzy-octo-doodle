@@ -1,4 +1,5 @@
--- 開発用の初期データ。compose の起動時に毎回適用する（何度実行しても同じ結果になる。ON CONFLICT DO NOTHING）。
+-- 開発用の初期データ。compose の起動時に適用し、同じ ID の行を定義値で上書きする。
+-- seed 対象への手動変更も戻る。seed にない ID の行は削除しない。
 --
 -- 開発用の認証ガードは、常に 11111111-1111-4111-8111-111111111111（開発ユーザー）として扱う。
 -- この利用者の視点で、次の 3 種類のデータを入れる。
@@ -9,7 +10,7 @@
 --                                          画面に表示されたら、権限判定の不具合である。
 --
 -- 日時は now() からの相対値で入れる（フィードは直近 7 日だけを返すため）。
--- 日時を現在に合わせ直すときは `docker compose down -v` で DB を作り直す。
+-- 再実行すると日時も更新する。DB を消さずに再投入するには `docker compose run --rm --no-deps seed` を使う。
 --
 -- ID の付け方（UUID の先頭 8 文字で、種類が分かる）:
 --   c1 users / c2 tasks / c31 初回の証拠 / c32 追加の証拠 / c41 created 投稿 / c42 reported 投稿 / c43 failed 投稿
@@ -36,7 +37,10 @@ INSERT INTO users (id, nickname, created_at, updated_at) VALUES
   ('c1000000-0000-4000-8000-000000000092', '【閲覧不可】フレンドの友達B', now() - interval '30 days', now() - interval '30 days'),
   ('c1000000-0000-4000-8000-000000000093', '【閲覧不可】ブロックしてきた人', now() - interval '30 days', now() - interval '30 days'),
   ('c1000000-0000-4000-8000-000000000094', '【閲覧不可】ブロックした相手', now() - interval '30 days', now() - interval '30 days')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  nickname = EXCLUDED.nickname,
+  created_at = EXCLUDED.created_at,
+  updated_at = EXCLUDED.updated_at;
 
 -- ---------------------------------------------------------------------------
 -- friendships（user_low_id < user_high_id。開発ユーザーの ID は c1... より小さい）
@@ -64,11 +68,23 @@ INSERT INTO friendships (id, user_low_id, user_high_id, requester_id, receiver_i
    'c1000000-0000-4000-8000-000000000001', 'c1000000-0000-4000-8000-000000000092', 'accepted', NULL, now() - interval '15 days', now() - interval '14 days'),
   ('c7000000-0000-4000-8000-000000000091', 'c1000000-0000-4000-8000-000000000091', 'c1000000-0000-4000-8000-000000000092',
    'c1000000-0000-4000-8000-000000000091', 'c1000000-0000-4000-8000-000000000092', 'accepted', NULL, now() - interval '15 days', now() - interval '14 days')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  user_low_id = EXCLUDED.user_low_id,
+  user_high_id = EXCLUDED.user_high_id,
+  requester_id = EXCLUDED.requester_id,
+  receiver_id = EXCLUDED.receiver_id,
+  status = EXCLUDED.status,
+  blocked_by = EXCLUDED.blocked_by,
+  requested_at = EXCLUDED.requested_at,
+  accepted_at = EXCLUDED.accepted_at;
 
 INSERT INTO friend_invites (id, inviter_id, token, is_active, created_at) VALUES
   ('c8000000-0000-4000-8000-000000000001', '11111111-1111-4111-8111-111111111111', 'seed-dev-invite-token-0001', true, now() - interval '5 days')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  inviter_id = EXCLUDED.inviter_id,
+  token = EXCLUDED.token,
+  is_active = EXCLUDED.is_active,
+  created_at = EXCLUDED.created_at;
 
 -- ---------------------------------------------------------------------------
 -- tasks
@@ -104,7 +120,7 @@ INSERT INTO tasks (id, user_id, original_task_id, title, achievement_condition, 
    now() + interval '3 days', 400, true, 'active', 0, NULL, NULL, NULL, NULL, now() - interval '3 days', now() - interval '3 days'),
   ('c2000000-0000-4000-8000-000000000009', '11111111-1111-4111-8111-111111111111', NULL,
    '本を 1 冊読み切る', '技術書を最後まで読む', '読了ページの写真',
-   now() - interval '10 days', 0, false, 'closed', 0, NULL, NULL, NULL, now() - interval '9 days', now() - interval '14 days', now() - interval '9 days'),
+   now() - interval '10 days', 100, false, 'closed', 0, NULL, NULL, NULL, now() - interval '9 days', now() - interval '14 days', now() - interval '9 days'),
   -- 2. 開発ユーザーが参照しうるフレンドのタスク
   ('c2000000-0000-4000-8000-000000000011', 'c1000000-0000-4000-8000-000000000001', NULL,
    '【フレンド 田中】毎日日記を書く', '7 日間、毎日 3 行以上書く', '日記のページの写真',
@@ -143,7 +159,23 @@ INSERT INTO tasks (id, user_id, original_task_id, title, achievement_condition, 
   ('c2000000-0000-4000-8000-000000000096', 'c1000000-0000-4000-8000-000000000004', NULL,
    '【閲覧不可】申請中の高橋のタスク', '【閲覧不可】フレンド申請が未承認の相手のタスクは見えてはいけない', '【閲覧不可】見えていたら権限判定の不具合',
    now() + interval '2 days', 666, true, 'active', 0, NULL, NULL, NULL, NULL, now() - interval '1 day', now() - interval '1 day')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  user_id = EXCLUDED.user_id,
+  original_task_id = EXCLUDED.original_task_id,
+  title = EXCLUDED.title,
+  achievement_condition = EXCLUDED.achievement_condition,
+  evidence_method = EXCLUDED.evidence_method,
+  deadline_at = EXCLUDED.deadline_at,
+  penalty_amount = EXCLUDED.penalty_amount,
+  is_penalty_public = EXCLUDED.is_penalty_public,
+  status = EXCLUDED.status,
+  review_round = EXCLUDED.review_round,
+  review_deadline_at = EXCLUDED.review_deadline_at,
+  additional_evidence_deadline_at = EXCLUDED.additional_evidence_deadline_at,
+  completed_at = EXCLUDED.completed_at,
+  finalized_at = EXCLUDED.finalized_at,
+  created_at = EXCLUDED.created_at,
+  updated_at = EXCLUDED.updated_at;
 
 -- ---------------------------------------------------------------------------
 -- task_evidences / evidence_photos
@@ -161,7 +193,11 @@ INSERT INTO task_evidences (id, task_id, submission_type, comment, submitted_at)
   ('c3100000-0000-4000-8000-000000000016', 'c2000000-0000-4000-8000-000000000016', 'initial', '練習の様子です', now() - interval '4 days' - interval '1 hour'),
   ('c3100000-0000-4000-8000-000000000092', 'c2000000-0000-4000-8000-000000000092', 'initial', '【閲覧不可】他人の証拠コメント。見えていたら不具合', now() - interval '1 day' - interval '1 hour'),
   ('c3100000-0000-4000-8000-000000000093', 'c2000000-0000-4000-8000-000000000093', 'initial', '【閲覧不可】フレンドの友達の証拠コメント。見えていたら不具合', now() - interval '2 days' - interval '2 hours')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  task_id = EXCLUDED.task_id,
+  submission_type = EXCLUDED.submission_type,
+  comment = EXCLUDED.comment,
+  submitted_at = EXCLUDED.submitted_at;
 
 INSERT INTO evidence_photos (id, evidence_id, storage_path, display_order) VALUES
   ('c3100000-0000-4000-8000-000000000003-1', 'c3100000-0000-4000-8000-000000000003', 'evidence/c2000000-0000-4000-8000-000000000003/c3100000-0000-4000-8000-000000000003/1.jpg', 1),
@@ -178,7 +214,10 @@ INSERT INTO evidence_photos (id, evidence_id, storage_path, display_order) VALUE
   ('c3100000-0000-4000-8000-000000000016-1', 'c3100000-0000-4000-8000-000000000016', 'evidence/c2000000-0000-4000-8000-000000000016/c3100000-0000-4000-8000-000000000016/1.jpg', 1),
   ('c3100000-0000-4000-8000-000000000092-1', 'c3100000-0000-4000-8000-000000000092', 'evidence/c2000000-0000-4000-8000-000000000092/c3100000-0000-4000-8000-000000000092/1.jpg', 1),
   ('c3100000-0000-4000-8000-000000000093-1', 'c3100000-0000-4000-8000-000000000093', 'evidence/c2000000-0000-4000-8000-000000000093/c3100000-0000-4000-8000-000000000093/1.jpg', 1)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  evidence_id = EXCLUDED.evidence_id,
+  storage_path = EXCLUDED.storage_path,
+  display_order = EXCLUDED.display_order;
 
 -- ---------------------------------------------------------------------------
 -- task_objections（task_id, review_round で一意）
@@ -201,7 +240,14 @@ INSERT INTO task_objections (id, task_id, user_id, review_round, reason_type, re
   -- 参照し得ない: 他人同士の異議。理由も見えてはいけない
   ('c5000000-0000-4000-8000-000000000091', 'c2000000-0000-4000-8000-000000000092', 'c1000000-0000-4000-8000-000000000092', 1,
    'other', '【閲覧不可】他人同士の異議の理由。見えていたら不具合', now() - interval '3 hours', NULL)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  task_id = EXCLUDED.task_id,
+  user_id = EXCLUDED.user_id,
+  review_round = EXCLUDED.review_round,
+  reason_type = EXCLUDED.reason_type,
+  reason_detail = EXCLUDED.reason_detail,
+  created_at = EXCLUDED.created_at,
+  withdrawn_at = EXCLUDED.withdrawn_at;
 
 -- ---------------------------------------------------------------------------
 -- posts（task_id, post_type で一意。c41 = created、c42 = reported、c43 = failed。連番は task と同じ）
@@ -240,7 +286,11 @@ INSERT INTO posts (id, task_id, user_id, post_type, created_at) VALUES
   ('c4100000-0000-4000-8000-000000000094', 'c2000000-0000-4000-8000-000000000094', 'c1000000-0000-4000-8000-000000000093', 'created', now() - interval '1 day'),
   ('c4100000-0000-4000-8000-000000000095', 'c2000000-0000-4000-8000-000000000095', 'c1000000-0000-4000-8000-000000000094', 'created', now() - interval '1 day'),
   ('c4100000-0000-4000-8000-000000000096', 'c2000000-0000-4000-8000-000000000096', 'c1000000-0000-4000-8000-000000000004', 'created', now() - interval '1 day')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  task_id = EXCLUDED.task_id,
+  user_id = EXCLUDED.user_id,
+  post_type = EXCLUDED.post_type,
+  created_at = EXCLUDED.created_at;
 
 -- ---------------------------------------------------------------------------
 -- reactions（id は `<post_id>:<user_id>`。post_id, user_id で一意）
@@ -257,7 +307,12 @@ INSERT INTO reactions (id, post_id, user_id, reaction_type, created_at, updated_
   ('c4100000-0000-4000-8000-000000000012:11111111-1111-4111-8111-111111111111', 'c4100000-0000-4000-8000-000000000012', '11111111-1111-4111-8111-111111111111', 'fire', now() - interval '2 days', now() - interval '2 days'),
   -- 参照し得ない: 他人の投稿への、他人のリアクション
   ('c4200000-0000-4000-8000-000000000092:c1000000-0000-4000-8000-000000000092', 'c4200000-0000-4000-8000-000000000092', 'c1000000-0000-4000-8000-000000000092', 'laugh', now() - interval '1 day', now() - interval '1 day')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  post_id = EXCLUDED.post_id,
+  user_id = EXCLUDED.user_id,
+  reaction_type = EXCLUDED.reaction_type,
+  created_at = EXCLUDED.created_at,
+  updated_at = EXCLUDED.updated_at;
 
 -- ---------------------------------------------------------------------------
 -- notifications（deduplication_key は一意）
@@ -283,6 +338,14 @@ INSERT INTO notifications (id, user_id, type, title, body, related_task_id, read
    'c2000000-0000-4000-8000-000000000092', NULL, now() - interval '3 hours', 'seed:objection_received:c5000000-0000-4000-8000-000000000091'),
   ('c6000000-0000-4000-8000-000000000092', 'c1000000-0000-4000-8000-000000000001', 'friend_request', '【閲覧不可】フレンド田中宛ての通知', '【閲覧不可】フレンド本人宛ての通知が見えていたら不具合',
    NULL, NULL, now() - interval '14 days', 'seed:friend_request:c7000000-0000-4000-8000-000000000092')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  user_id = EXCLUDED.user_id,
+  type = EXCLUDED.type,
+  title = EXCLUDED.title,
+  body = EXCLUDED.body,
+  related_task_id = EXCLUDED.related_task_id,
+  read_at = EXCLUDED.read_at,
+  created_at = EXCLUDED.created_at,
+  deduplication_key = EXCLUDED.deduplication_key;
 
 COMMIT;
