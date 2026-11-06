@@ -27,7 +27,7 @@ patches:
 # 3 つのイメージは同じコミットから作る。スキーマとコードのずれを防ぐため、タグは同時に更新する。
 images:
   - name: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
-    newTag: 20261106040150-a0c5ae5
+    newTag: 20261106042802-eafdc7a
     newName: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
   - name: ghcr.io/akatukisora/fuzzy-octo-doodle-frontend
     newTag: 20261106040150-a0c5ae5
