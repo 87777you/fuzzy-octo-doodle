@@ -142,6 +142,12 @@ export class CompleteEvidenceUploadUseCase {
         if (task === null || session === null) {
           throw new DomainError("NOT_FOUND", "タスクまたはアップロードセッションが見つかりません")
         }
+        if (session.userId !== input.userId || task.ownerId !== input.userId) {
+          throw new DomainError("FORBIDDEN", "このセッションは利用できません");
+        }
+        if (session.taskId !== task.id) {
+          throw new DomainError("NOT_FOUND", "タスクとセッションが一致しません");
+        }
         const uploading = expectUploading(session);
         const completed = completeUpload(uploading, input.userId, now);
         await this.uploadSessions.save(tx, completed);
