@@ -131,10 +131,6 @@ export default function ConfirmTaskPage() {
                 <dd>{formatDeadline(draft.deadline)}</dd>
               </div>
               <div className={styles["detail"]}>
-                <dt>達成条件</dt>
-                <dd>{draft.description.trim() || "写真で判定"}</dd>
-              </div>
-              <div className={styles["detail"]}>
                 <dt>金額設定</dt>
                 <dd>{draft.reward}円</dd>
               </div>
