@@ -1,21 +1,5 @@
-
-import { PageHeader } from "../../../../../components/layout/PageHeader";
-import { BottomNavigation } from "../../../../../components/layout/BottomNavigation";
-import { TaskInfoCard } from "../../../../../components/tasks/TaskInfoCard";
+import { EvidenceInitial } from "../../../../../components/evidence/EvidenceInitial";
 
 export default function EvidencePage() {
-  return (
-    <>
-      <PageHeader title="証拠提出" backHref="/" />
-
-      <main style={{ padding: "20px" }}>
-        <TaskInfoCard
-          title="毎日ストレッチする"
-          deadline="2025/04/25 23:59"
-        />
-      </main>
-
-      <BottomNavigation />
-    </>
-  );
+  return <EvidenceInitial />;
 }

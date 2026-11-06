@@ -1,23 +1,23 @@
 export type SubmissionType = "initial" | "additional";
-export type EvidenceTask = {
+export interface EvidenceTask {
   id: string;
   title: string;
   deadlineAt: string;
   status: string;
   viewer: "owner" | "friend";
-};
-export type EvidenceItem = {
+}
+export interface EvidenceItem {
   submissionType: SubmissionType;
   submittedAt: string;
   photoUrls: string[];
-};
+}
 
 const apiRoot = "/api/tasks";
 
 async function jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { credentials: "include", ...init });
   if (!response.ok) {
-    let message = `通信に失敗しました（${response.status}）`;
+    let message = `通信に失敗しました（${String(response.status)}）`;
     try {
       const body: unknown = await response.json();
       if (body && typeof body === "object" && "message" in body) {
@@ -87,7 +87,7 @@ export async function submitEvidence(
       body: file,
     });
     if (!result.ok) {
-      throw new Error(`写真${index + 1}のアップロードに失敗しました`);
+      throw new Error(`写真${String(index + 1)}のアップロードに失敗しました`);
     }
     paths.push(upload.path);
   }

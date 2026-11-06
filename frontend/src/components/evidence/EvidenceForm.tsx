@@ -55,33 +55,33 @@ export function EvidenceForm({ type }: { type: SubmissionType }) {
   return (
     <>
       <PageHeader title={additional ? "追加証拠の提出" : "証拠提出"} backHref={base} />
-      <main className={styles.main}>
+      <main className={styles["main"]}>
         {loading ? <p>タスクを読み込んでいます...</p> : task ? (
           <>
             <TaskInfoCard title={task.title} deadline={dateText(task.deadlineAt)} />
-            {additional && <div className={styles.notice}>
+            {additional && <div className={styles["notice"]}>
               <strong>追加の証拠を提出してください</strong>
               <p>異議申し立てにより追加証拠が求められています。期限内に提出してください。</p>
             </div>}
             <EvidencePhotoPicker files={files} onChange={setFiles} disabled={busy} />
-            <section className={styles.memoSection}>
+            <section className={styles["memoSection"]}>
               <h2>メモ（任意）</h2>
               <textarea value={memo} maxLength={200} disabled={busy}
                 placeholder="補足があれば入力してください"
-                onChange={(event) => setMemo(event.target.value)} />
-              <div className={styles.counter}>{memo.length} / 200</div>
-              <p className={styles.hint}>現在、メモはサーバーに保存されません。</p>
+                onChange={(event) => { setMemo(event.target.value); }} />
+              <div className={styles["counter"]}>{memo.length} / 200</div>
+              <p className={styles["hint"]}>現在、メモはサーバーに保存されません。</p>
             </section>
-            {error && <p role="alert" className={styles.error}>{error}</p>}
-            <button type="button" className={styles.primary}
+            {error && <p role="alert" className={styles["error"]}>{error}</p>}
+            <button type="button" className={styles["primary"]}
               disabled={busy || task.viewer !== "owner" || !files.some(Boolean)}
               onClick={() => { void onSubmit(); }}>
               {busy ? "アップロード中..." : additional ? "追加証拠を提出する" : "提出する"}
             </button>
-            {additional && <button type="button" className={styles.secondary}
-              disabled={busy} onClick={() => router.push(base)}>キャンセル</button>}
+            {additional && <button type="button" className={styles["secondary"]}
+              disabled={busy} onClick={() => { router.push(base); }}>キャンセル</button>}
           </>
-        ) : <p role="alert" className={styles.error}>{error || "タスクを取得できませんでした"}</p>}
+        ) : <p role="alert" className={styles["error"]}>{error || "タスクを取得できませんでした"}</p>}
       </main>
       <BottomNavigation />
     </>
