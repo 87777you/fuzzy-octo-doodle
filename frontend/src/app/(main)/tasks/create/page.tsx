@@ -137,7 +137,7 @@ export default function CreateTaskPage() {
         <PageHeader title="タスク作成" backHref="/tasks" />
 
         <form className={styles["formCard"]} onSubmit={handleSubmit}>
-          {draftError && <p className={styles["hint"]}>{draftError}</p>}
+          {draftError && <p className={styles["fieldError"]} role="alert">{draftError}</p>}
           <div className={styles["field"]}>
             <label className={styles["labelRow"]} htmlFor="task-title">
               <span className={styles["label"]}>タスク名</span>

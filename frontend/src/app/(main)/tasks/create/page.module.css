@@ -251,6 +251,14 @@
   line-height: 1.5;
 }
 
+.fieldError {
+  margin: -4px 0 0;
+  color: #d12335;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .visibilityOptions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
