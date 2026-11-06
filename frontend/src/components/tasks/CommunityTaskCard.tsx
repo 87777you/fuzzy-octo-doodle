@@ -18,6 +18,7 @@ interface CommunityTaskCardProps {
   userName: string;
   avatarUrl?: string;
   timeAgo: string;
+  activityLabel?: string;
   taskTitle: string;
   status: string;
   deadlineAt?: string;
@@ -32,6 +33,7 @@ export function CommunityTaskCard({
   userName,
   avatarUrl,
   timeAgo,
+  activityLabel = "タスクを作成しました",
   taskTitle,
   status,
   deadlineAt,
@@ -96,7 +98,7 @@ export function CommunityTaskCard({
               </p>
 
               <p className={styles["time"]}>
-                タスクを作成しました・{timeAgo}
+                {activityLabel}・{timeAgo}
               </p>
             </div>
           </div>

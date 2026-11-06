@@ -8,7 +8,7 @@ function formatDateTime(value: string): string {
   }).format(new Date(value));
 }
 
-// API連携まで、一覧と詳細・異議画面で同じタスクの仮データを使う。
+// API 未接続のレビュー・異議画面で使う表示用サンプル。
 export function getMockTaskReview(taskId: string) {
   const post = mockPosts.find((item) => item.taskId === taskId);
   if (!post) return null;
