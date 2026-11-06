@@ -8,12 +8,14 @@ interface AppLayoutProps {
   children: ReactNode;
   title?: string;
   showHeader?: boolean;
+  headerActions?: ReactNode;
 }
 
 export function AppLayout({
   children,
   title,
   showHeader = true,
+  headerActions,
 }: AppLayoutProps) {
   return (
     <div className={styles["layout"]}>
@@ -27,6 +29,7 @@ export function AppLayout({
                 {title ?? "Donee"}
               </h1>
 
+              {headerActions}
             </div>
           </header>
         )}
