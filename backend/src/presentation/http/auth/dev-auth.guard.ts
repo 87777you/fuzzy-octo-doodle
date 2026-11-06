@@ -13,7 +13,7 @@ import { IS_PUBLIC_KEY } from "./public.decorator.ts";
  * `@Public()` のエンドポイントは、本物と同じく何もせず通す。それ以外では `request.userId` に固定の利用者を載せる。
  * 以降は本物と同じで、`@CurrentUser()` がその値を読む。
  *
- * 固定の利用者は DB の `users` に存在している必要がある（外部キーのため）。compose の起動時に `backend/dev/seed.sql` で作られる。
+ * 固定の利用者は DB の `users` に存在している必要がある（外部キーのため）。compose の起動時と k8s の `seed` Job が、`infra/dev-seed/seed.sql` で作る。
  * 本番では有効にならない（`loadDevAuthUserId` が起動を失敗させる）。
  */
 @Injectable()

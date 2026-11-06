@@ -68,5 +68,5 @@ kubectl kustomize infra
 認証方式が決まるまでの暫定として、backend は `DEV_AUTH_USER_ID` で固定の利用者として動く。認証なしで `/api` を使えるので、公開ドメインに出る間は、閉じたアプリの範囲でのみ使う。
 
 - backend は `NODE_ENV=production` だと起動に失敗するため、Deployment で `NODE_ENV=development` に上書きしている。
-- その利用者は、`seed` の Job(Sync フック、wave 2)が作る。`migrate`(wave 1)のあと、アプリ(wave 3)より先に実行され、何度実行しても同じ結果になる。
+- その利用者と動作確認用のデータは、`seed` の Job(Sync フック、wave 2)が `infra/dev-seed/seed.sql`(ConfigMap `dev-seed`)から入れる。`migrate`(wave 1)のあと、アプリ(wave 3)より先に実行され、何度実行しても同じ結果になる。日時は初回の投入時点からの相対値で、既存の行は更新しない。フィードは直近 7 日だけを返すので、日が経つと空に近づく。
 - 認証を実装したら、`seed` の Job、`NetworkPolicy` の `seed` の許可、backend の 2 つの環境変数を消す。
