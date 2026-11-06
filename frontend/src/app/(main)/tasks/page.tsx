@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
-import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { AppLayout } from "../../../components/layout/AppLayout";
 import { TaskCard } from "../../../components/tasks/TaskCard";
@@ -129,7 +128,6 @@ function getRemainingText(task: TaskView): string | undefined {
 }
 
 export default function TasksPage() {
-  const router = useRouter();
   const requestGeneration = useRef(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [tasks, setTasks] = useState<TaskView[]>([]);
@@ -410,6 +408,7 @@ export default function TasksPage() {
                     return (
                       <TaskCard
                         key={task.id}
+                        href={`/tasks/${encodeURIComponent(task.id)}`}
                         title={task.title}
                         description={task.achievementCondition}
                         deadline={formatDate(
@@ -418,9 +417,6 @@ export default function TasksPage() {
                         )}
                         status={task.status}
                         {...(remainingText === undefined ? {} : { remainingText })}
-                        onClick={() => {
-                          router.push(`/tasks/${encodeURIComponent(task.id)}`);
-                        }}
                       />
                     );
                   })}
