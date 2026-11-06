@@ -7,9 +7,8 @@ description = "依存関係をロックファイルどおりにインストー�
 run = "pnpm install --frozen-lockfile"
 
 [tasks.dev]
-description = "frontend と backend を並列に起動する"
-depends = ["build"]
-run = "pnpm -r --parallel --filter ./frontend --filter ./backend dev"
+description = "DB、backend、frontend、nginx をコンテナで起動し、変更を監視する（http://localhost:3000。Docker が必要）"
+run = "docker compose up --build --watch"
 
 [tasks.lint]
 description = "ESLint（any の禁止などの厳密な静的検査）"
@@ -51,10 +50,6 @@ run = "git diff --exit-code -- backend/migrations/atlas.sum"
 [tasks.ci]
 description = "CI と同じ検証をローカルで実行する"
 depends = ["lint", "typecheck", "test", "build", "image:build", "db:check"]
-
-[tasks."dev:up"]
-description = "DB と API をコンテナで起動し、変更を監視する（Docker が必要）"
-run = "docker compose up --build --watch"
 
 [tasks."dev:down"]
 description = "開発用のコンテナを止める（DB のデータは残る）"

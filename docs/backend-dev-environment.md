@@ -1,6 +1,6 @@
 # backend のローカル開発環境
 
-DB（PostgreSQL）と API をコンテナで起動し、ソースを変更すると自動で反映される環境。
+DB（PostgreSQL）、API、frontend をコンテナで起動し、nginx で本番と同じ構成（`/api/*` は backend、それ以外は frontend）にまとめる環境。ソースを変更すると自動で反映される。
 
 ## 必要なもの
 
@@ -15,7 +15,7 @@ DB（PostgreSQL）と API をコンテナで起動し、ソースを変更する
 
 | やりたいこと | mise | docker compose |
 | --- | --- | --- |
-| 起動して変更を監視する | `mise run dev:up` | `docker compose up --build --watch` |
+| 起動して変更を監視する | `mise run dev` | `docker compose up --build --watch` |
 | 止める（データは残る） | `mise run dev:down` | `docker compose down` |
 | 止めて DB のデータも消す | `mise run dev:reset` | `docker compose down -v` |
 | 新しい SQL を適用する | `mise run dev:migrate` | `docker compose run --rm migrate && docker compose run --rm --no-deps seed` |
@@ -27,11 +27,17 @@ DB（PostgreSQL）と API をコンテナで起動し、ソースを変更する
 2. `migrate` — [Atlas](https://atlasgo.io/)(Community Edition)が `backend/migrations/*.sql` を番号順に適用して終了する。適用済みは DB の `atlas_schema_revisions` に記録するため、何度実行しても同じ結果になる。
 3. `seed` — 開発用の利用者と、動作確認用のデータを入れて終了する(次の「動作確認用のデータ」を参照)。
 4. `api` — `tsx watch` で API が起動する（`127.0.0.1:8080`）。
+5. `frontend` — `next dev` が起動する。ホストには公開しない。
+6. `proxy` — nginx が `127.0.0.1:3000` で待ち受け、本番の Ingress と同じく `/api/*` を `api`、それ以外を `frontend` に振り分ける（設定は `infra/dev-proxy/default.conf`）。
+
+ブラウザでは `http://localhost:3000` を開く。フロントエンドの `fetch("/api/...")` が、本番と同じ同一オリジンで backend に届く。
 
 動作確認:
 
 ```bash
-curl -i http://127.0.0.1:8080/healthz      # 200 が返る
+curl -i http://127.0.0.1:3000/api/me       # proxy 経由で backend に届く
+curl -i http://127.0.0.1:3000/             # proxy 経由で frontend に届く
+curl -i http://127.0.0.1:8080/healthz      # backend に直接。200 が返る
 ```
 
 ## 変更が反映される仕組み
@@ -96,6 +102,6 @@ docker compose exec db psql -U app -d app
 
 - `docker: 'compose' is not a docker command` — Compose プラグインが入っていない。上の手順 1 を見る。
 - `permission denied ... docker.sock` — ユーザーが `docker` グループに入っていない。上の手順 1 を見る。
-- ポート 5432 や 8080 が使用中 — 他のプロセスを止める。`compose.yaml` の `ports` の左側の数字を変えてもよい（コミットしない）。
+- ポート 5432、8080、3000 が使用中 — 他のプロセスを止める。`compose.yaml` の `ports` の左側の数字を変えてもよい（コミットしない）。
 - マイグレーションが失敗した — エラーの SQL を直したあと、`mise run dev:reset` で DB を作り直す。
 - 以前の開発 DB が残っていて `atlas_schema_revisions` がない — スキーマは適用済みなのに Atlas が DB が空でないとして失敗する。`mise run dev:reset` で DB を作り直す。

@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1
+# 開発用イメージ。本番用の frontend/Dockerfile とは別で、ビルドせず `next dev` を実行する。
+# ビルドコンテキストはリポジトリルート: compose.yaml から使われる。
+#
+# 依存関係は、このイメージのビルド時に入れる。package.json やロックファイルが変わると、
+# compose の watch が `rebuild` を実行してこのイメージを作り直す。ソースの変更は作り直さず、コンテナにコピーする。
+
+FROM node:24-slim
+WORKDIR /repo
+RUN corepack enable
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
+COPY frontend/package.json frontend/
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
+    pnpm install --frozen-lockfile --filter @app/frontend... --store-dir /pnpm-store
+COPY frontend frontend
+WORKDIR /repo/frontend
+EXPOSE 3000
+CMD ["pnpm", "exec", "next", "dev", "-H", "0.0.0.0", "-p", "3000"]

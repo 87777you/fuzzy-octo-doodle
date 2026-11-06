@@ -15,7 +15,7 @@ mise.toml         ツールチェーン固定とタスク定義
 
 ```bash
 mise install
-mise run dev      # frontend と backend を起動
+mise run dev      # DB・backend・frontend・nginx を起動（Docker が必要）。http://localhost:3000 を開く
 mise run ci       # CI と同じ検証（Docker が必要）
 ```
 
