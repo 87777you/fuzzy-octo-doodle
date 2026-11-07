@@ -10,7 +10,7 @@
     "start": "node dist/main.js",
     "job": "node dist/jobs-main.js",
     "dev:job": "tsx src/jobs-main.ts",
-    "test": "tsx --test src/*.test.ts"
+    "test": "tsx --test src/*.test.ts && node --test scripts/*.test.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^12.2.0",
