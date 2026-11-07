@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "../../../../../components/layout/AppLayout";
@@ -51,7 +51,7 @@ export default function ProfileEditPage() {
       });
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
     setSaveError(null);
@@ -90,7 +90,7 @@ export default function ProfileEditPage() {
 
         <form
           className={styles["form"]}
-          onSubmit={handleSubmit}
+          onSubmit={(event) => { void handleSubmit(event); }}
         >
           <div className={styles["nameField"]}>
             <label htmlFor="profile-name">ユーザー名</label>
