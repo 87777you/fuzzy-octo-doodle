@@ -312,18 +312,6 @@
   text-decoration: none;
 }
 
-.submitButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.62;
-}
-
-.submitUnavailable {
-  margin: 6px 0 0;
-  color: #8390a6;
-  font-size: 12px;
-  text-align: center;
-}
-
 .submitButton span {
   font-size: 19px;
 }

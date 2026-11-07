@@ -11,15 +11,6 @@ import { fetchTaskEvidences, type TaskEvidence } from "../../../../lib/evidenceA
 import type { TaskStatus } from "../../../../types/task";
 import styles from "./page.module.css";
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace -- Augments Node's public build-time environment typing.
-  namespace NodeJS {
-    interface ProcessEnv {
-      NEXT_PUBLIC_TASK_EVIDENCE_ROUTE_ENABLED?: string;
-    }
-  }
-}
-
 interface TaskDetail {
   id: string;
   title: string;
@@ -125,8 +116,6 @@ function getRemainingText(deadlineAt: string): string {
 }
 
 const standardSteps = ["タスク作成", "挑戦中", "証拠提出", "審査中", "完了"];
-const evidenceSubmitRouteAvailable =
-  process.env.NEXT_PUBLIC_TASK_EVIDENCE_ROUTE_ENABLED === "true";
 
 function getProgress(status: TaskStatus) {
   switch (status) {
@@ -391,26 +380,15 @@ export default function TaskDetailPage({
                   </button>
                 </div>
               )}
-              {task.viewer === "owner" && (isActive || task.status === "disputed") &&
-                (evidenceSubmitRouteAvailable ? (
-                  <Link
-                    className={styles["submitButton"]}
-                    href={`/tasks/${encodeURIComponent(task.id)}/evidence${task.status === "disputed" ? "/additional" : ""}`}
-                  >
-                    <span aria-hidden="true">▧</span>
-                    {task.status === "disputed" ? "追加証拠を提出する" : "証拠を提出する"}
-                  </Link>
-                ) : (
-                  <div>
-                    <button className={styles["submitButton"]} type="button" disabled>
-                      <span aria-hidden="true">▧</span>
-                      {task.status === "disputed" ? "追加証拠を提出する" : "証拠を提出する"}
-                    </button>
-                    <p className={styles["submitUnavailable"]}>
-                      証拠提出画面は準備中です。
-                    </p>
-                  </div>
-                ))}
+              {task.viewer === "owner" && (isActive || task.status === "disputed") && (
+                <Link
+                  className={styles["submitButton"]}
+                  href={`/tasks/${encodeURIComponent(task.id)}/evidence${task.status === "disputed" ? "/additional" : ""}`}
+                >
+                  <span aria-hidden="true">▧</span>
+                  {task.status === "disputed" ? "追加証拠を提出する" : "証拠を提出する"}
+                </Link>
+              )}
             </section>
 
           </div>
