@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { AppLayout } from "../../../components/layout/AppLayout";
+import { fetchProfile, readStoredAvatar } from "../../../lib/profileApi";
 import styles from "./MyPage.module.css";
 
 const settings = [
@@ -83,6 +87,21 @@ function SettingIcon({ name }: { name: (typeof settings)[number]["icon"] }) {
 }
 
 export default function MyPage() {
+  const [nickname, setNickname] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAvatarUrl(readStoredAvatar());
+    fetchProfile()
+      .then((profile) => {
+        setNickname(profile.nickname);
+      })
+      .catch(() => {
+        setProfileError("プロフィールを取得できませんでした。");
+      });
+  }, []);
+
   return (
     <AppLayout showHeader={false}>
       <div className={styles["page"]}>
@@ -95,12 +114,17 @@ export default function MyPage() {
 
         <section className={styles["profileCard"]} aria-label="プロフィール">
           <div className={styles["avatar"]} aria-hidden="true">
-            🐱
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" />
+            ) : (
+              "🐱"
+            )}
           </div>
           <div className={styles["profileName"]}>
-            <strong>りく</strong>
+            <strong>{nickname ?? "読み込み中..."}</strong>
             <span>@riku_123</span>
           </div>
+          {profileError && <p role="alert">{profileError}</p>}
           <Link href="/mypage/profile/edit" className={styles["editLink"]}>
             プロフィールを編集 <span aria-hidden="true">›</span>
           </Link>
