@@ -31,7 +31,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ["backend/scripts/verify-friends.mjs"],
+    files: [
+      "backend/scripts/verify-friends.mjs",
+      "backend/scripts/verify-friends-rollback.mjs",
+      "backend/scripts/verify-friends-rollback.test.mjs",
+    ],
     ...tseslint.configs.disableTypeChecked,
     languageOptions: {
       ...tseslint.configs.disableTypeChecked.languageOptions,
