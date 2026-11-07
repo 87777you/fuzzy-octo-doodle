@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
 import { z } from "zod";
 import { AppLayout } from "../../../components/layout/AppLayout";
@@ -9,7 +9,8 @@ import { TaskSection } from "../../../components/tasks/TaskSection";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { ErrorState } from "../../../components/ui/ErrorState";
 import { Loading } from "../../../components/ui/Loading";
-import { formatTaskCardDate, getAppliedConditionsLabel } from "../../../lib/task-list-display";
+import { formatTaskCardDate } from "../../../lib/task-list-display";
+import { createInitialTaskListState, taskListReducer } from "../../../lib/task-list-state";
 import styles from "./page.module.css";
 
 const taskStatusSchema = z.enum([
@@ -127,11 +128,11 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<TaskView[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [view, setView] = useState<TaskListView>("active");
-  const [draftSearch, setDraftSearch] = useState("");
-  const [search, setSearch] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(true);
-  const [filter, setFilter] = useState<TaskFilter>("all");
+  const [listState, dispatchListState] = useReducer(
+    taskListReducer<TaskView["status"]>,
+    createInitialTaskListState<TaskView["status"]>(),
+  );
+  const { draftSearch, search, searchOpen, filtersOpen, filter } = listState;
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -188,11 +189,6 @@ export default function TasksPage() {
       })),
     [tasks],
   );
-  const selectedStatusLabel =
-    filter === "all"
-      ? undefined
-      : filtersByView[view].find((item) => item.value === filter)?.label;
-  const appliedConditionsLabel = getAppliedConditionsLabel(search, selectedStatusLabel);
 
   async function loadMore() {
     if (nextCursor === null || loadingMore) return;
@@ -228,31 +224,26 @@ export default function TasksPage() {
   function submitSearch(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextSearch = draftSearch.trim();
-    if (nextSearch !== search) {
-      requestGeneration.current += 1;
-      setSearch(nextSearch);
-    }
+    if (nextSearch !== search) requestGeneration.current += 1;
+    dispatchListState({ type: "apply-search" });
   }
 
   function selectView(nextView: TaskListView) {
     if (nextView === view) return;
     requestGeneration.current += 1;
     setView(nextView);
-    setFilter("all");
+    dispatchListState({ type: "change-view" });
   }
 
   function selectFilter(nextFilter: TaskFilter) {
     if (nextFilter === filter) return;
     requestGeneration.current += 1;
-    setFilter(nextFilter);
+    dispatchListState({ type: "select-filter", filter: nextFilter });
   }
 
   function clearSearch() {
-    setDraftSearch("");
-    if (search !== "") {
-      requestGeneration.current += 1;
-      setSearch("");
-    }
+    if (search !== "") requestGeneration.current += 1;
+    dispatchListState({ type: "clear-search" });
   }
 
   return (
@@ -264,7 +255,8 @@ export default function TasksPage() {
             type="button"
             className={styles["headerButton"]}
             onClick={() => {
-              setSearchOpen((open) => !open);
+              if (searchOpen && search !== "") requestGeneration.current += 1;
+              dispatchListState({ type: "toggle-search-panel" });
             }}
             aria-label={searchOpen ? "検索を閉じる" : "タスクを検索"}
             aria-expanded={searchOpen}
@@ -285,7 +277,8 @@ export default function TasksPage() {
             type="button"
             className={styles["headerButton"]}
             onClick={() => {
-              setFiltersOpen((open) => !open);
+              if (filtersOpen && filter !== "all") requestGeneration.current += 1;
+              dispatchListState({ type: "toggle-filter-panel" });
             }}
             aria-label={filtersOpen ? "絞り込みを閉じる" : "絞り込みを開く"}
             aria-expanded={filtersOpen}
@@ -314,7 +307,7 @@ export default function TasksPage() {
                 type="search"
                 value={draftSearch}
                 onChange={(event) => {
-                  setDraftSearch(event.target.value);
+                  dispatchListState({ type: "draft-search-changed", value: event.target.value });
                 }}
                 placeholder="タスクを検索"
               />
@@ -329,10 +322,6 @@ export default function TasksPage() {
             )}
           </div>
         )}
-
-        <p className={styles["appliedConditions"]} aria-live="polite">
-          {appliedConditionsLabel}
-        </p>
 
         <div className={styles["views"]} role="group" aria-label="タスクの表示">
           {views.map((item) => (

@@ -46,13 +46,6 @@
   margin-bottom: 12px;
 }
 
-.appliedConditions {
-  margin: 0 4px 12px;
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
 .search {
   display: flex;
   flex: 1;
