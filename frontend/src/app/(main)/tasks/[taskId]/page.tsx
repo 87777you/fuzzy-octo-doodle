@@ -125,12 +125,6 @@ function getRemainingText(deadlineAt: string): string {
 }
 
 const standardSteps = ["タスク作成", "挑戦中", "証拠提出", "審査中", "完了"];
-const taskReactions = [
-  { type: "support", label: "応援", emoji: "👏" },
-  { type: "fire", label: "すごい", emoji: "🔥" },
-  { type: "congrats", label: "お祝い", emoji: "🎉" },
-  { type: "laugh", label: "笑い", emoji: "😂" },
-] as const;
 const evidenceSubmitRouteAvailable =
   process.env.NEXT_PUBLIC_TASK_EVIDENCE_ROUTE_ENABLED === "true";
 
@@ -423,27 +417,6 @@ export default function TaskDetailPage({
                 ))}
             </section>
 
-            <section className={styles["panel"]}>
-              <h3>応援・リアクション</h3>
-              <div className={styles["reactionList"]}>
-                {taskReactions.map((reaction) => (
-                  <span
-                    className={styles["reactionCount"]}
-                    key={reaction.type}
-                    role="img"
-                    aria-label={`${reaction.label} 0件`}
-                  >
-                    <span aria-hidden="true">{reaction.emoji}</span>
-                    <span aria-hidden="true">0</span>
-                  </span>
-                ))}
-              </div>
-            </section>
-
-            <section className={styles["comments"]}>
-              <h3>コメント</h3>
-              <p>コメント機能は未対応のため、表示できません。</p>
-            </section>
           </div>
         ) : null}
       </div>

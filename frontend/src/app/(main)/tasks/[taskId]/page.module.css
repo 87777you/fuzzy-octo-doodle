@@ -137,8 +137,7 @@
 }
 
 .conditionCard h3,
-.panel h3,
-.comments h3 {
+.panel h3 {
   margin: 0;
   color: #17213a;
   font-size: 16px;
@@ -327,33 +326,6 @@
 
 .submitButton span {
   font-size: 19px;
-}
-
-.reactionList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.reactionCount {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
-  border-radius: 8px;
-  color: #8994a9;
-  font-size: 13px;
-}
-
-.comments {
-  padding: 2px 2px 12px;
-}
-
-.comments p {
-  margin: 10px 0 0;
-  color: #8994a9;
-  font-size: 13px;
 }
 
 @media (max-width: 400px) {
