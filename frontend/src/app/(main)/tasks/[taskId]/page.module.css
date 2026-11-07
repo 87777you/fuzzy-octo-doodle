@@ -329,11 +329,21 @@
   font-size: 19px;
 }
 
-.unavailable {
-  margin: 12px 0 0;
-  color: #8390a6;
+.reactionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.reactionCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  color: #8994a9;
   font-size: 13px;
-  line-height: 1.5;
 }
 
 .comments {
