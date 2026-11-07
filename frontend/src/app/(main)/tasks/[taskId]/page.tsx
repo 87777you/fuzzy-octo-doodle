@@ -391,24 +391,20 @@ export default function TaskDetailPage({
                   </button>
                 </div>
               )}
-              {isActive && task.viewer === "owner" &&
+              {task.viewer === "owner" && (isActive || task.status === "disputed") &&
                 (evidenceSubmitRouteAvailable ? (
                   <Link
                     className={styles["submitButton"]}
-                    href={`/tasks/${encodeURIComponent(task.id)}/evidence`}
+                    href={`/tasks/${encodeURIComponent(task.id)}/evidence${task.status === "disputed" ? "/additional" : ""}`}
                   >
                     <span aria-hidden="true">▧</span>
-                    証拠を提出する
+                    {task.status === "disputed" ? "追加証拠を提出する" : "証拠を提出する"}
                   </Link>
                 ) : (
                   <div>
-                    <button
-                      className={styles["submitButton"]}
-                      type="button"
-                      disabled
-                    >
+                    <button className={styles["submitButton"]} type="button" disabled>
                       <span aria-hidden="true">▧</span>
-                      証拠を提出する
+                      {task.status === "disputed" ? "追加証拠を提出する" : "証拠を提出する"}
                     </button>
                     <p className={styles["submitUnavailable"]}>
                       証拠提出画面は準備中です。
