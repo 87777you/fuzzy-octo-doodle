@@ -123,12 +123,16 @@ export default function ConfirmTaskPage() {
                 <dd>{draft.title}</dd>
               </div>
               <div className={styles["detail"]}>
-                <dt>詳細</dt>
+                <dt>達成条件</dt>
                 <dd>{draft.description || "未入力"}</dd>
               </div>
               <div className={styles["detail"]}>
                 <dt>期限</dt>
                 <dd>{formatDeadline(draft.deadline)}</dd>
+              </div>
+              <div className={styles["detail"]}>
+                <dt>証拠提出方法</dt>
+                <dd>写真で判定</dd>
               </div>
               <div className={styles["detail"]}>
                 <dt>金額設定</dt>

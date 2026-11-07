@@ -206,7 +206,7 @@ export default function CreateTaskPage() {
 
           <div className={styles["field"]}>
             <label className={styles["labelRow"]} htmlFor="task-description">
-              <span className={styles["label"]}>詳細</span>
+              <span className={styles["label"]}>達成条件</span>
               <span className={styles["optionalBadge"]}>任意</span>
             </label>
             <textarea
@@ -219,7 +219,7 @@ export default function CreateTaskPage() {
               onChange={(event) => {
                 setDescription(event.target.value);
               }}
-              placeholder="タスクの詳細を入力してください"
+              placeholder="達成条件を入力してください"
               maxLength={200}
             />
             <p className={styles["counter"]}>{description.length}/200</p>
@@ -266,7 +266,7 @@ export default function CreateTaskPage() {
             )}
           >
             <legend className={styles["labelRow"]}>
-              <span className={styles["label"]}>達成条件</span>
+              <span className={styles["label"]}>証拠提出方法</span>
               <RequiredBadge />
             </legend>
             <label className={styles["evidenceOption"]}>
