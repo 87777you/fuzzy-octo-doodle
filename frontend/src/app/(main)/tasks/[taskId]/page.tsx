@@ -7,6 +7,7 @@ import { PageHeader } from "../../../../components/layout/PageHeader";
 import { TaskStatusBadge } from "../../../../components/tasks/TaskStatusBadge";
 import { ErrorState } from "../../../../components/ui/ErrorState";
 import { Loading } from "../../../../components/ui/Loading";
+import { fetchTaskEvidences, type TaskEvidence } from "../../../../lib/evidenceApi.ts";
 import type { TaskStatus } from "../../../../types/task";
 import styles from "./page.module.css";
 
@@ -35,6 +36,17 @@ interface TaskDetail {
 type TaskLoadError =
   | { kind: "notFound"; message: string }
   | { kind: "request"; message: string };
+
+type EvidenceViewState =
+  | { kind: "loading" }
+  | { kind: "loaded"; evidences: readonly TaskEvidence[] }
+  | { kind: "forbidden" }
+  | { kind: "error"; message: string };
+
+interface TaskEvidenceState {
+  taskId: string;
+  state: EvidenceViewState;
+}
 
 const taskStatuses: readonly TaskStatus[] = [
   "active",
@@ -144,6 +156,11 @@ export default function TaskDetailPage({
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [error, setError] = useState<TaskLoadError | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [evidenceState, setEvidenceState] = useState<TaskEvidenceState>({
+    taskId,
+    state: { kind: "loading" },
+  });
+  const [evidenceReloadKey, setEvidenceReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,6 +208,45 @@ export default function TaskDetailPage({
     };
   }, [taskId, reloadKey]);
 
+  useEffect(() => {
+    if (task?.id !== taskId) return;
+    const controller = new AbortController();
+    setEvidenceState({ taskId, state: { kind: "loading" } });
+
+    async function loadEvidences() {
+      try {
+        const result = await fetchTaskEvidences(taskId, controller.signal);
+        if (controller.signal.aborted) return;
+        if (result.kind === "error") {
+          setEvidenceState({
+            taskId,
+            state: {
+              kind: "error",
+              message: `証拠を取得できませんでした（HTTP ${String(result.status)}）。`,
+            },
+          });
+          return;
+        }
+        setEvidenceState({ taskId, state: result });
+      } catch {
+        if (!controller.signal.aborted) {
+          setEvidenceState({
+            taskId,
+            state: { kind: "error", message: "証拠を取得できませんでした。" },
+          });
+        }
+      }
+    }
+
+    void loadEvidences();
+    return () => {
+      controller.abort();
+    };
+  }, [task?.id, taskId, evidenceReloadKey]);
+
+  const visibleEvidenceState = evidenceState.taskId === taskId
+    ? evidenceState.state
+    : { kind: "loading" as const };
   const { steps: progressSteps, current: progressIndex } = getProgress(task?.status ?? "active");
   const isActive = task?.status === "active";
 
@@ -286,16 +342,55 @@ export default function TaskDetailPage({
 
             <section className={styles["panel"]}>
               <h3>提出された証拠</h3>
-              <div className={styles["emptyEvidence"]}>
-                <span className={styles["imageIcon"]} aria-hidden="true">▧</span>
-                <span>
-                  {isActive
-                    ? "まだ証拠が提出されていません"
-                    : task.status === "failed"
-                      ? "期限までに証拠が提出されませんでした"
-                      : "証拠の提出状況を確認中です"}
-                </span>
-              </div>
+              {visibleEvidenceState.kind === "loading" && (
+                <div className={styles["emptyEvidence"]} role="status" aria-live="polite">
+                  証拠を読み込んでいます...
+                </div>
+              )}
+              {visibleEvidenceState.kind === "loaded" && visibleEvidenceState.evidences.length === 0 && (
+                <div className={styles["emptyEvidence"]} role="status">
+                  提出された証拠はありません。
+                </div>
+              )}
+              {visibleEvidenceState.kind === "loaded" && visibleEvidenceState.evidences.length > 0 && (
+                <ol className={styles["evidenceList"]}>
+                  {visibleEvidenceState.evidences.map((evidence, index) => (
+                    <li
+                      className={styles["evidenceItem"]}
+                      key={`${evidence.submittedAt}:${evidence.submissionType}:${String(index)}`}
+                    >
+                      <div className={styles["evidenceHeader"]}>
+                        <strong>{evidence.submissionType === "initial" ? "初回提出" : "追加提出"}</strong>
+                        <time dateTime={evidence.submittedAt}>{formatDate(evidence.submittedAt, true)}</time>
+                      </div>
+                      <p className={styles["evidencePreviewUnavailable"]}>
+                        {evidence.photoCount > 0
+                          ? `写真${String(evidence.photoCount)}枚のプレビューは利用できません。`
+                          : "写真は登録されていません。"}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {visibleEvidenceState.kind === "forbidden" && (
+                <div className={styles["evidenceError"]} role="alert">
+                  この証拠を閲覧する権限がありません。
+                </div>
+              )}
+              {visibleEvidenceState.kind === "error" && (
+                <div className={styles["evidenceError"]} role="alert">
+                  <span>{visibleEvidenceState.message}</span>
+                  <button
+                    className={styles["evidenceRetry"]}
+                    type="button"
+                    onClick={() => {
+                      setEvidenceReloadKey((key) => key + 1);
+                    }}
+                  >
+                    再試行
+                  </button>
+                </div>
+              )}
               {isActive && task.viewer === "owner" &&
                 (evidenceSubmitRouteAvailable ? (
                   <Link
@@ -324,17 +419,14 @@ export default function TaskDetailPage({
 
             <section className={styles["panel"]}>
               <h3>応援・リアクション</h3>
-              <div className={styles["reactions"]} aria-label="リアクション">
-                <span><span aria-hidden="true">❤️</span> 0</span>
-                <span><span aria-hidden="true">🔥</span> 0</span>
-                <span><span aria-hidden="true">🎉</span> 0</span>
-                <span><span aria-hidden="true">😀</span> 0</span>
-              </div>
+              <p className={styles["unavailable"]}>
+                リアクション数は取得できません（タスク単位の取得APIは未対応です）。
+              </p>
             </section>
 
             <section className={styles["comments"]}>
               <h3>コメント</h3>
-              <p>コメントはまだありません。</p>
+              <p>コメント機能は未対応のため、表示できません。</p>
             </section>
           </div>
         ) : null}
