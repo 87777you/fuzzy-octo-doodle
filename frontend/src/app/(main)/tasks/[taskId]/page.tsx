@@ -7,7 +7,7 @@ import { PageHeader } from "../../../../components/layout/PageHeader";
 import { TaskStatusBadge } from "../../../../components/tasks/TaskStatusBadge";
 import { ErrorState } from "../../../../components/ui/ErrorState";
 import { Loading } from "../../../../components/ui/Loading";
-import { fetchTaskEvidences, type TaskEvidence } from "../../../../lib/evidenceApi.ts";
+import { fetchTaskEvidences, type TaskEvidence } from "../../../../lib/taskEvidenceApi.ts";
 import type { TaskStatus } from "../../../../types/task";
 import styles from "./page.module.css";
 

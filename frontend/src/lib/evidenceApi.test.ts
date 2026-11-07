@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { fetchTaskEvidences } from "./evidenceApi.ts";
+import { fetchTaskEvidences } from "./taskEvidenceApi.ts";
 
 const evidence = {
   submissionType: "additional",
