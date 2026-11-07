@@ -9,6 +9,7 @@ import { TaskSection } from "../../../components/tasks/TaskSection";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { ErrorState } from "../../../components/ui/ErrorState";
 import { Loading } from "../../../components/ui/Loading";
+import { formatTaskCardDate, getAppliedConditionsLabel } from "../../../lib/task-list-display";
 import styles from "./page.module.css";
 
 const taskStatusSchema = z.enum([
@@ -111,13 +112,6 @@ function getSectionStatus(status: TaskView["status"]): SectionStatus {
   }
 }
 
-function formatDate(value: string, includeTime: boolean): string {
-  return new Intl.DateTimeFormat("ja-JP", {
-    dateStyle: "medium",
-    ...(includeTime ? { timeStyle: "short" } : {}),
-  }).format(new Date(value));
-}
-
 function getRemainingText(task: TaskView): string | undefined {
   if (task.status !== "active") return undefined;
   const remainingMilliseconds = Date.parse(task.deadlineAt) - Date.now();
@@ -194,6 +188,11 @@ export default function TasksPage() {
       })),
     [tasks],
   );
+  const selectedStatusLabel =
+    filter === "all"
+      ? undefined
+      : filtersByView[view].find((item) => item.value === filter)?.label;
+  const appliedConditionsLabel = getAppliedConditionsLabel(search, selectedStatusLabel);
 
   async function loadMore() {
     if (nextCursor === null || loadingMore) return;
@@ -331,6 +330,10 @@ export default function TasksPage() {
           </div>
         )}
 
+        <p className={styles["appliedConditions"]} aria-live="polite">
+          {appliedConditionsLabel}
+        </p>
+
         <div className={styles["views"]} role="group" aria-label="タスクの表示">
           {views.map((item) => (
             <button
@@ -411,8 +414,9 @@ export default function TasksPage() {
                         href={`/tasks/${encodeURIComponent(task.id)}`}
                         title={task.title}
                         description={task.achievementCondition}
-                        deadline={formatDate(
+                        deadline={formatTaskCardDate(
                           isHistory ? task.createdAt : task.deadlineAt,
+                          isHistory,
                           !isHistory && (status === "active" || status === "reviewing"),
                         )}
                         status={task.status}
