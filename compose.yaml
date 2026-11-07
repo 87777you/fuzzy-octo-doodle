@@ -84,6 +84,7 @@ services:
         - action: sync
           path: ./backend/scripts
           target: /repo/backend/scripts
+          initial_sync: true
         - action: rebuild
           path: ./backend/package.json
         - action: rebuild
